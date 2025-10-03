@@ -1,0 +1,17 @@
+# hugo.toml (Site)
+[params.hugo-grid-gallery]
+  debug = false
+  coverfoto_identifier = "cover"
+  isNewSince = -7
+  isNewSymbol = "⭐"
+
+[module]
+  proxy = "direct"
+
+  [[module.imports]]
+    path = "github.com/<deinuser>/hugo-grid-gallery"
+
+  # OPTIONAL: Assets aus dem Modul in die Site „mounten“
+  [[module.mounts]]
+    source = "assets"
+    target = "assets"
