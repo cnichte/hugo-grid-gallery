@@ -1,0 +1,21 @@
+{
+  "name": "hugo-grid-gallery",
+  "version": "1.0.0",
+  "description": "remote auf github anlegen <https://github.com/cnichte/>",
+  "homepage": "https://github.com/cnichte/hugo-grid-gallery#readme",
+  "bugs": {
+    "url": "https://github.com/cnichte/hugo-grid-gallery/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cnichte/hugo-grid-gallery.git"
+  },
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "dev":"hugo server --disableFastRender --noHTTPCache",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}

@@ -1,0 +1,6 @@
+[params.hugo-grid-gallery]
+    debug = false                # Logausgabe still oder geschwätzig
+    sass_transpiler = "dartsass" # oder "libsass"
+    isNewSince = -7              # Tage
+    isNewSymbol = "⭐"           # Gallery is new or updated
+    coverfoto_identifier="cover" # kann irgendwo im Dateinamen stecken

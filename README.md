@@ -19,6 +19,29 @@ git push -u origin main
 tree -a -L 3 ./assets > verzeichnis-struktur.txt
 ```
 
+### Versionen taggen und updaten
+
+Im Modul-Repo:
+
+```bash
+git tag v0.1.0
+git push --tags
+```
+
+In der nutzenden Webseite:
+
+```bash
+hugo mod get github.com/cnichte/hugo-grid-gallery@v0.1.0
+# oder neueste:
+hugo mod get -u github.com/cnichte/hugo-grid-gallery
+```
+
+## Smoke test
+
+```bash
+hugo server --disableFastRender --noHTTPCache
+```
+
 ## Einbinden
 
 ```toml
