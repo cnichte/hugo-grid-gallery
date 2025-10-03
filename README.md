@@ -17,6 +17,19 @@ git push -u origin main
 
 ```bash
 tree -a -L 3 ./assets > verzeichnis-struktur.txt
+
+# was kennt git
+git status
+git ls-files | wc -l            # wie viele Dateien sind getrackt?
+git ls-files | sed -n '1,30p'   # Beispielanzeige
+
+# „Doctor“-Block zum direkt Ausführen Führt die wichtigsten Checks nacheinander aus
+echo "== Repo Status ==" && git status && \
+echo "== Remote ==" && git remote -v && \
+echo "== Branch/History ==" && git branch --show-current && git log --oneline --decorate -n 5 && \
+echo "== Any nested .git? ==" && find . -type d -name ".git" && \
+echo "== .gitmodules ==" && (cat .gitmodules || echo "(none)") && \
+echo "== Ignored? (sample) ==" && git check-ignore -v -- assets js static layouts 2>/dev/null || true
 ```
 
 ### Versionen taggen und updaten

@@ -3,7 +3,7 @@
 */}}
 {{/* {{< gallery-index taxonomy="categories" >}} */}}
 {{ $taxonomy := .Get "taxonomy" | default "categories" }}
-{{ partial "hugo-grid-gallery/grid-index/list-taxonomy-index.html" (dict
+{{ partial "gallery-grid/list-taxonomy-index.html" (dict
   "page" .Page
   "taxonomy" $taxonomy
 ) }}
