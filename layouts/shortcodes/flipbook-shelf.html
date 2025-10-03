@@ -1,0 +1,74 @@
+{{/* https://discourse.gohugo.io/t/shortcode-parameter-with-multiple-values/40537/2 */}}
+{{- $items := split .Inner "\n- " -}}
+
+{{- $my_path := "/bookshelf/" -}}
+
+{{- if .IsNamedParams -}}
+{{/* pdf in global folder = "/bookshelf/"" */}}
+{{/* pdf in Page bundles = "pdf/" */}}
+{{- $my_path = .Get "path" | default "/bookshelf/" -}}
+{{- end -}}
+
+{{/* https://jquery.dearflip.com/docs/options-list/ */}}
+{{/* TODO Ich hätte gern unter jedem Buch den Link auf die Detailseite (geht nicht), oder im geöffneten Buch einen
+Button. */}}
+{{/* TODO https://jquery.dearflip.com/docs/add-close-button-to-toolbar/ */}}
+<script>
+  var option_flipbook = {
+    soundEnable: false,
+    enableDownload: false,
+    hideControls: "share, print, outline, thumbnail, search",
+    hard: "cover", //possible values are "all", "none", "cover"
+
+    paddingTop: 30,
+    paddingLeft: 50,
+    paddingRight: 50,
+    paddingBottom: 30,
+
+    scrollWheel: true,
+
+    webgl: true,
+    webglShadow: true,
+    transparent: true,
+
+    stiffness: 3, // more value for more flexiblilty
+    // 0 is absolute flat – close to hard page flat
+    // 1 is curvy,
+    // 2 is less curvy
+    // default is 3
+
+    /*3D settings*/
+    spotLightIntensity: 0.22,
+    ambientLightColor: "red",
+    ambientLightIntensity: 0.8,
+    shadowOpacity: 0.15
+  };
+</script>
+
+{{ range $items -}}
+{{- $fields := split . "\n " -}}
+{{- $src := index $fields 0 }}
+{{- $cov := index $fields 1 }}
+{{- $alt := index $fields 2 }}
+{{ with $src -}}
+
+<div class="_df_thumb" id="flipbook" source="{{ $my_path }}{{ strings.TrimSpace $src }}"
+  thumb="{{ $my_path }}{{ strings.TrimSpace $cov }}">{{ $alt }}
+</div>
+
+{{ end -}}
+{{ end -}}
+
+{{/*
+
+<li>
+  <figure>
+    <img src="{{ . }}" {{ with $alt }}alt="{{ . }}" {{ end }} />
+    {{ with $cap -}}
+    <figcaption>{{ . }}</figcaption>
+    {{ end -}}
+  </figure>
+</li>
+
+
+*/}}

@@ -1,0 +1,17 @@
+{{/* 
+  star-rating.html
+  Übergabeparameter:
+    - rating (int oder float)
+    - max (int, optional, default = 5)
+
+  Beispiel:
+    {{ partial "star-rating.html" (dict "rating" 4 "max" 5) }}
+*/}}
+
+{{- $rating := .rating | default 0 -}}
+{{- $max := .max | default 5 -}}
+
+{{- range seq $max }}
+  {{- if le . $rating -}}★{{- else -}}☆{{- end -}}
+{{- end -}}
+ ({{ $rating }} out of {{ $max }})

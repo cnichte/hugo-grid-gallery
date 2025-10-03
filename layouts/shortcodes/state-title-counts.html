@@ -1,0 +1,26 @@
+{{/* 
+  Shortcode: state-title-counts
+
+  Beispiele:
+    {{< state-title-counts >}}
+    {{< state-title-counts showTitles="true" >}}
+    {{< state-title-counts sortBy="name" descending="false" >}}
+    {{< state-title-counts labelSingular="Title" labelPlural="Title" >}}  <!-- exakt wie in deinem Beispiel -->
+*/}}
+
+{{- $showTitles   := .Get "showTitles"   | default "false" -}}
+{{- $sortBy       := .Get "sortBy"       | default "count" -}}
+{{- $descending   := .Get "descending"   | default "true" -}}
+{{- $skipEmpty    := .Get "skipEmpty"    | default "true" -}}
+{{- $labelSingular:= .Get "labelSingular"| default "Title" -}}
+{{- $labelPlural  := .Get "labelPlural"  | default "Titles" -}}
+
+{{- partial "state-title-counts.html" (dict 
+  "ctx" .Page
+  "showTitles" (eq (lower $showTitles) "true")
+  "sortBy" (lower $sortBy)
+  "descending" (eq (lower $descending) "true")
+  "skipEmpty" (eq (lower $skipEmpty) "true")
+  "labelSingular" $labelSingular
+  "labelPlural" $labelPlural
+) -}}

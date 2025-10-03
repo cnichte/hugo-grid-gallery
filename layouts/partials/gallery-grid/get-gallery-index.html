@@ -1,0 +1,73 @@
+{{/* layouts/partials/gallery-grid/get-gallery-index.html */}}
+{{/* Stellt einen Index aller Bilder einer Gallerie zusammen.
+
+Initialisiere Ergebnisliste
+
+Ich verwende das Bildformat: 5×7 inches (aspect ratio 1.4 bzw 0.714).
+Export aus Lightroom = 1000x714 => Cover-Thumb = 400x(714*0,714) = 400x285,6
+
+.Resize "400x285" → skaliert auf 400×285, ohne Rücksicht auf Seitenverhältnis (kann verzerren).
+.Fit "400x285" → skaliert so, dass es komplett hineinpasst, ggf. mit weißen Rändern.
+.Fill "400x285" → skaliert und füllt genau diese Maße, indem es überschüssige Teile wegschneidet.
+
+Frontmatter property cover_crop in index.md der gallery -> $anchor
+Werte - smart | oben | mitte | unten | top | center | bottom
+smart - Option für den Zuschnitt: Hugo versucht, den interessantesten Bereich des Bildes
+        zu behalten statt nur von der Mitte aus zu croppen. 
+        Es wird mit einer einfachen “Gesichts-/Kontrast-Erkennung” gearbeitet.
+
+{{ partial "gallery-grid/get-gallery-index.html" (dict "images" $images "page" .) }} - nutzt default: smart
+{{ partial "gallery-grid/get-gallery-index.html" (dict "images" $images "page" . "crop" "unten") }}
+
+*/}}
+
+{{/* layouts/partials/gallery-grid/get-gallery-index.html */}}
+{{- $debug  := (index site.Params "hugo-grid-gallery").debug | default false -}}
+{{- $images := .images | default slice -}}
+{{- $page   := .page   | default . -}} {{/* .page kann beim Aufruf mitgegeben werden; sonst nimm aktuellen Kontext */}}
+{{- $thumbs := slice -}} {{/* Rückgabewerte: Eine Liste aller Bilder mit Metadaten. Siehe $entry */}}
+
+{{/* 
+  Crop-Strategie defensiv bestimmen:
+  - .crop (expliziter Aufruf)
+  - sonst: falls $page.Params.cover_crop vorhanden, diesen nehmen
+  - sonst: "smart"
+  WICHTIG: Kein .Param()-Call, sondern sicher über .Params zugreifen. 
+*/}}
+
+{{/* erst Page-Crop sicher herausziehen, ohne .Param() aufzurufen */}}
+{{- $pageCrop := "" -}}
+{{- with $page }}
+  {{- with .Params }}
+    {{- with .cover_crop }}
+      {{- $pageCrop = . -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+
+{{/* Crop-Strategie aus Parametern holen: expliziter Aufruf > Page-Param > Default */}}
+{{- $cropParam := .crop | default $pageCrop | default "smart" -}}
+{{- $crop := lower (printf "%v" $cropParam) -}}
+{{- $anchor := partial "helpers/crop-anchor.html" (dict "crop" $crop) -}}
+
+{{- range $i, $img := $images }}
+  {{- $thumb := $img.Fill (printf "400x285 %s" $anchor) -}} {{/* Querformat via Fill + Anchor */}}
+  {{- $large := $img.Resize "1200x q90" -}}
+  {{- $title := $img.Name | default (printf "Image %d" (add $i 1)) -}}
+  
+  {{/* Die Binary-Voids Nummer (Werknummer) ist im Dateinamen */}} 
+  {{- $numberMatches := findRE `^\d+` $img.Name -}}
+  {{- $number := cond (gt (len $numberMatches) 0) (index $numberMatches 0) "" -}}
+
+  {{- $entry := dict
+      "src"    ($large.RelPermalink | safeURL)
+      "thumb"  ($thumb.RelPermalink | safeURL)
+      "width"  $large.Width
+      "height" $large.Height
+      "title"  $title
+      "imageTag" $number
+  -}}
+  {{- $thumbs = $thumbs | append $entry -}}
+{{- end -}}
+
+{{- return $thumbs -}}

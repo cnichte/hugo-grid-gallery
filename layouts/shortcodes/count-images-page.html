@@ -1,0 +1,16 @@
+{{- $path := .Get "path" | default ""  -}}
+{{- $prefix := .Get "prefix" | default "This collection contains "  -}}
+{{- $einzahl := .Get "einzahl" | default " Photo"  -}}
+{{- $mehrzahl := .Get "mehrzahl" | default " Photos"  -}}
+{{- $suffix := .Get "suffix" | default ":" -}}
+
+{{ $p := .Page }}
+{{ with $path }}
+  {{ with $p.GetPage . }}
+    {{ $p = . }}
+  {{ end }}
+{{ end }}
+
+{{$count := (len $p.Resources) }}
+
+{{$prefix}}{{ $count }} {{- if gt $count 1 -}} {{$mehrzahl}} {{- else -}} {{$einzahl}} {{- end -}}{{$suffix}}

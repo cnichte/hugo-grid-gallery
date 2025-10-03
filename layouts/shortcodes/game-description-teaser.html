@@ -1,0 +1,14 @@
+{{/* 
+  Usage:
+  {{< game-description-teaser >}}            → nimmt den Seitentitel
+  {{< game-description-teaser "Fallout" >}}  → nimmt den übergebenen Titel
+*/}}
+
+{{ $title := .Page.Title }}
+{{ if ge (len .Params) 1 }}
+  {{ $title = .Get 0 }}
+{{ end }}
+
+{{ $limit := site.Params.truncateTeaser | default 20 }}
+
+{{ partial "game-description-teaser.html" (dict "title" $title "limit" $limit) }}

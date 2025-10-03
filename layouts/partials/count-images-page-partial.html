@@ -1,0 +1,29 @@
+{{/* Partial: count-images-page-partial.html
+   Zählt Bilder in einer einzelnen Seite (Bundle).
+   Params:
+     path         (string)   – Pflicht
+     prefix       (string)   – optional
+     suffix       (string)   – optional
+     numberTag    (string)   – optional (wrappt nur die Zahl)
+     componentTag (string)   – optional (wrappt die gesamte Ausgabe inkl. prefix/suffix)
+*/}}
+
+{{- $path         := .path -}}
+{{- $prefix       := default "" .prefix -}}
+{{- $suffix       := default "" .suffix -}}
+{{- $numberTag    := default "" .numberTag -}}
+{{- $componentTag := default "" .componentTag -}}
+
+{{- $page := site.GetPage $path -}}
+{{- if $page -}}
+  {{- $images := len ($page.Resources.ByType "image") -}}
+
+  {{- $numOpen  := cond (ne $numberTag "") (printf "<%s>"  $numberTag) "" -}}
+  {{- $numClose := cond (ne $numberTag "") (printf "</%s>" $numberTag) "" -}}
+  {{- $compOpen  := cond (ne $componentTag "") (printf "<%s>"  $componentTag) "" -}}
+  {{- $compClose := cond (ne $componentTag "") (printf "</%s>" $componentTag) "" -}}
+
+  {{- printf "%s%s%s%d%s%s%s" $compOpen $prefix $numOpen $images $numClose $suffix $compClose | safeHTML -}}
+{{- else -}}
+  {{- printf "%s%s0%s%s" "" "(" ")" "" -}}
+{{- end -}}

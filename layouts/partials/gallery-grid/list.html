@@ -1,0 +1,166 @@
+{{/* themes/hugo-grid-gallery/layouts/partials/gallery-grid/list.html umgezogen von layouts/_default/list.html */}}
+{{ if .IsHome }}
+  {{ partial "recently-updated.html" (dict "section" "galleries" "limit" 3) }}
+{{ else if (eq .Section "stories") }}
+  {{ partial "recently-updated.html" (dict "section" "stories" "limit" 3) }}
+{{ else  if eq .Kind "taxonomy" }}
+  <div class="tag-cloud-container">The structuring according to (mostly) game categories serves to <b>rearrange</b> the virtual Photographs of the individual games <b>randomly</b> in a different context. Enjoy :-)</div>
+{{ end }}
+
+{{- $coverfoto_identifier := (index site.Params "hugo-grid-gallery").coverfoto_identifier | default "cover" }}
+
+<div class="galleries" id="gallery-container"> {{/* TODO: bootstrap */}}
+
+{{ if eq .Kind "taxonomy" }}
+
+  {{/* ---------- Terms-Seite (z. B. /categories/) ---------- */}}
+  {{ range sort .Pages "Title" }}
+    {{ $term := .Title }}
+    {{ $termURL := .RelPermalink }}
+
+    {{/* Alle Galerien (Pages) ermitteln, die diese Kategorie tragen */}}
+    {{ $galleries := where site.RegularPages "Section" "galleries" }}
+    {{ $matching := where $galleries "Params.categories" "intersect" (slice $term) }}
+
+    {{/* ---------- 1) Alle Kandidaten-Thumbs sammeln (wie gehabt) ---------- */}}
+    {{ $allThumbs := slice }}
+    {{ range $matching }}
+      {{ $images := partial "get-images.html" . }}
+      {{/* get-gallery-index liefert pro Bild ein Dict mit thumb/src/width/height/title/imageTag */}}
+      {{ $thumbs := partial "gallery-grid/get-gallery-index.html" (dict "images" $images "page" .) }}
+      {{ if gt (len $thumbs) 0 }}
+        {{ $allThumbs = $allThumbs | append $thumbs }}
+      {{ end }}
+    {{ end }}
+
+    {{/* ---------- 2) Kategorie-Metadaten + Cover-Auflösung VOR dem Rendern ---------- */}}
+    {{ $cat := index (where site.Data.games_categories "name" $term) 0 }}
+    {{ $catCrop := "" }}
+    {{ if $cat }}{{ $catCrop = $cat.cover_crop | default "smart" }}{{ end }}
+
+    {{/* Scratch für die "Rückgabe" des Helper-Partials: resolved -> Thumb-Dict */}}
+    {{ $resScratch := newScratch }}
+
+    {{/* Versuche, das explizite Cover aus den vorhandenen Galerien aufzulösen.
+         Unterstützt: Nummer ("12428"), Dateiname ("binary-voids-12428.jpg"),
+         oder "slug/filename" ("sifu/binary-voids-11477.jpg"). */}}
+    {{ if $cat }}
+      {{ partial "helpers/resolve-category-cover.html" (dict
+          "term"     $term
+          "cat"      $cat
+          "matching" $matching
+          "crop"     $catCrop
+          "scratch"  $resScratch
+      ) }}
+    {{ end }}
+
+    {{/* Finale Thumb-Entscheidung:
+         - Priorität 1: Cover aus JSON erfolgreich aufgelöst -> das nehmen.
+         - Priorität 2: Fallback: deterministisch "zufällig" aus $allThumbs. */}}
+    {{ $thumb_final := dict }}
+    {{ $resolved := $resScratch.Get "resolved" }}
+    {{ if $resolved }}
+      {{ $thumb_final = $resolved }}
+    {{ else if gt (len $allThumbs) 0 }}
+      {{ $hash := hash.FNV32a $term }}
+      {{ $index := mod $hash (len $allThumbs) }}
+      {{ $thumb_final = index $allThumbs $index }}
+    {{ end }}
+
+    {{/* Wenn wir irgendeinen Thumb haben, rendern wir die Karte. */}}
+    {{ if $thumb_final }}
+      <div class="card" data-title="{{ $term }}" data-image-count="{{ len $matching }}">
+        <a class="card-img" href="{{ $termURL }}">
+          <img
+            src="{{ $thumb_final.thumb }}"
+            alt="{{ $term }}"
+            width="{{ $thumb_final.width }}"
+            height="{{ $thumb_final.height }}"
+          />
+          {{/* Bildanzahl (Summe aller Bilder in den passenden Galerien) */}}
+          {{ $imageCount := 0 }}
+          {{ range $matching }}
+            {{ $images := partial "get-images.html" . }}
+            {{ $imageCount = add $imageCount (len $images) }}
+          {{ end }}
+          <span class="num-photos">{{ $imageCount }} {{ T "photo" $imageCount }}</span>
+        </a>
+
+        <div class="body">
+          <h2><a href="{{ $termURL }}">{{ $term }}</a></h2>
+
+          {{/* Kategorie-Beschreibung aus data/games_categories.json */}}
+          {{ if $cat }}
+            <p class="category-description">{{ $cat.description | markdownify }}</p>
+          {{ end }}
+
+          {{/* Optionaler Debug-Hinweis (nur wenn du willst):
+              Zeigt, ob Cover aus JSON kam oder Fallback. 
+              Aktivierbar z. B. per site.Params.hugo-grid-gallery.debug */}}
+          {{/* 
+          {{ $debug := (index site.Params "hugo-grid-gallery").debug | default false }}
+          {{ if $debug }}
+            {{ if $resolved }}
+              <p style="opacity:.6">[debug] Cover: JSON-resolved</p>
+            {{ else }}
+              <p style="opacity:.6">[debug] Cover: fallback (hash/randomized)</p>
+            {{ end }}
+          {{ end }}
+          */}}
+        </div>
+      </div>
+    {{ end }}
+  {{ end }}
+
+{{ else }}
+
+    {{/* ---------- Index-Listenansicht (zB. /galleries/ oder /stories/)) ---------- */}}
+
+    {{ $pages := .Pages }}
+    {{ if .IsHome }}
+      {{ with site.GetPage "galleries" }}
+        {{ $pages = .RegularPagesRecursive }}
+      {{ end }}
+    {{ end }}
+
+    {{ range sort $pages "Title" }}
+      {{ $images := partial "get-images.html" . }}
+      {{/* $thumbs := partial "gallery-grid/get-gallery-index.html" (dict "images" $images) */}}
+      {{ $thumbs := partial "gallery-grid/get-gallery-index.html" (dict "images" $images "page" .) }}
+
+      {{ if gt (len $thumbs) 0 }}
+
+        {{ $coverThumbs := slice }}
+        {{ range $thumbs }}
+          {{/* Wenn es ein Bild mit cover im Namen gibt, bevorzuge das. */}}
+          {{ if findRE "(?i)cover" .title }}
+            {{ $coverThumbs = $coverThumbs | append . }}
+          {{ end }}
+        {{ end }}
+        {{ $thumb := cond (gt (len $coverThumbs) 0) (index $coverThumbs 0) (index $thumbs 0) }}
+
+        {{- $isNewSince := (index site.Params "hugo-grid-gallery").isNewSince | default -7 | int }}
+        {{- $isNewSymbol := (index site.Params "hugo-grid-gallery").isNewSymbol | default "⭐" }}
+
+        {{ $isNew := and (.Lastmod) (ge .Lastmod (now.AddDate 0 0 $isNewSince)) }}
+
+        <div class="card" data-title="{{ .LinkTitle }}" data-image-count="{{ len $thumbs }}"
+          data-updated="{{ .Lastmod.Format "2006-01-02T15:04:05" }}">
+
+          <a class="card-img" href="{{ .RelPermalink }}">
+            <img src="{{ $thumb.thumb }}" alt="{{ $thumb.title }}" width="{{ $thumb.width }}" height="{{ $thumb.height }}" />
+            <span class="num-photos">{{ len $thumbs }} {{ T "photo" (len $thumbs) }}
+              {{ if $isNew }}{{ $isNewSymbol }}{{ end }}
+            </span>
+          </a>
+
+          <div class="body">
+            <h2><a href="{{ .RelPermalink }}">{{ .LinkTitle }}</a></h2>
+            <p>{{.Summary }}</p>{{/* TODO: use truncate-words.html */}}
+          </div>
+        </div>
+      {{ end }}
+    {{ end }}
+  {{ end }}
+
+</div>

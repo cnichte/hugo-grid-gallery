@@ -1,0 +1,33 @@
+{{/* 
+  Shortcode: count-images-all
+  Counts all image resources of all pages in a section (non-recursive).
+
+  Named params ONLY:
+    section       (string)  e.g. "galleries" or "/galleries" (leading/trailing slashes are trimmed)
+    numberTag     (string)  optional, e.g. "code"
+    componentTag  (string)  optional, e.g. "strong"
+
+  Examples:
+    {{< count-images-all section="galleries" >}}
+    {{< count-images-all section="/galleries" numberTag="code" >}}
+    {{< count-images-all section="galleries" componentTag="strong" >}}
+*/}}
+
+{{- $sectionRaw    := .Get "section" | default "galleries" -}}
+{{- $section       := trim $sectionRaw "/" -}}  {{/* normalize to e.g. "galleries" */}}
+{{- $numberTag     := .Get "numberTag"     | default "" -}}
+{{- $componentTag  := .Get "componentTag"  | default "" -}}
+
+{{- $pages := where site.RegularPages "Section" "==" $section -}}
+{{- $count := 0 -}}
+{{- range $pg := $pages -}}
+  {{- $count = add $count (len ($pg.Resources.ByType "image")) -}}
+{{- end -}}
+
+{{/* wraps */}}
+{{- $numOpen  := cond (ne $numberTag "") (printf "<%s>"  $numberTag) "" -}}
+{{- $numClose := cond (ne $numberTag "") (printf "</%s>" $numberTag) "" -}}
+{{- $compOpen  := cond (ne $componentTag "") (printf "<%s>"  $componentTag) "" -}}
+{{- $compClose := cond (ne $componentTag "") (printf "</%s>" $componentTag) "" -}}
+
+{{- printf "%s%s%d%s%s" $compOpen $numOpen $count $numClose $compClose | safeHTML -}}

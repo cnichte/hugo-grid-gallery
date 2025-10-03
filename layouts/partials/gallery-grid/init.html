@@ -1,0 +1,60 @@
+{{/* layouts/partials/gallery-grid/init.html */}}
+
+{{/* takes either a slice of .images or a .sourcePath that points to a bundle with images. 
+An .id will be calculated if not provided. This will be used to create the URL to the data file. */}}
+
+{{/*
+Erzeugt strukturierte Bilddaten (JSON) aus einer Bildquelle.
+Funktioniert sowohl mit:
+– .images (Slice of Resources)
+– .sourcePath (z. B. "galleries/a-plague-tale")
+*/}}
+
+{{/* layouts/partials/gallery-grid/init.html */}}
+{{- $debug := (index site.Params "hugo-grid-gallery").debug | default false }}
+
+{{- $input := . }}
+{{- $scratch := $input.Scratch }}
+{{- $page := $input.page }}
+
+{{ if $debug }}{{ warnf "🌀 init.html called by %s – ID: %s" $page.Title $input.id }}{{ end }}
+
+{{- $id := "" }}
+{{- if reflect.IsMap $input }}
+{{- with $input.id }}
+{{- $id = . | urlize }}
+{{ else }}
+{{- $id = (printf "%v" $input) | urlize }}
+{{ end }}
+{{- else }}
+{{- $id = printf "%v" $input | urlize }}
+{{- end }}
+
+{{- $images := partial "get-images.html" $input }}
+
+{{- if eq (len $images) 0 }}
+{{- if $debug }}{{ warnf "🛑 init.html: Keine Bilder erhalten für ID=%s" $id }}{{ end }}
+{{- $scratch.Set "result" (dict "imageDataUrl" "") }}
+{{- return }}
+{{- end }}
+
+{{- $thumbs := partial "gallery-grid/create-thumbs.html" (dict "images" $images) }}
+
+{{- if $debug }}{{ warnf "🐛 init.html: %d thumbs erzeugt" (len $thumbs) }}{{ end }}
+
+{{- $json := $thumbs | jsonify | resources.FromString (printf "%s-gallery.json" (md5 $id)) | resources.Minify }}
+{{- if not $json }}
+{{- if $debug }}{{ warnf "❌ init.html: Konnte JSON nicht erzeugen für ID=%s" $id }}{{ end }}
+{{- $scratch.Set "result" (dict "imageDataUrl" "") }}
+{{- return }}
+{{- end }}
+
+{{- $url := $json.RelPermalink }}
+
+{{- if eq $url "" }}
+{{- if $debug }}{{ warnf "⚠️ init.html: JSON-URL ist leer für ID=%s" $id }}{{ end }}
+{{- end }}
+
+{{- if $debug }}{{ warnf "✅ init.html liefert an list-gallery.html = %s" $url }}{{ end }}
+
+{{- $scratch.Set "result" (dict "imageDataUrl" $url) }}

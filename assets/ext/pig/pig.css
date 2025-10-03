@@ -1,0 +1,33 @@
+/* Minimal CSS für pig.js Grid (custom, da original fehlt) */
+.pig-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+  padding: 1rem;
+}
+
+.pig-container img {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+
+.pig {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.pig a {
+  flex: 1 1 200px;
+  max-width: 300px;
+}
+
+.pig img {
+  width: 100%;
+  height: auto;
+  display: block;
+}

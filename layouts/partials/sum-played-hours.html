@@ -1,0 +1,120 @@
+{{/* 
+  sum-played-hours.html
+  Summiert Spielzeit aus data/games.json.
+
+  Usage:
+    {{ partial "sum-played-hours.html" (dict "ctx" . "title" "Far Cry") }}
+    {{ partial "sum-played-hours.html" (dict "ctx" .) }}  // alle Titel
+
+  Optional:
+    - format: "string" | "minutes"  (Default: "string")
+    - numberTag:    z.B. "strong" | "code" | "i"  (wrappt nur die Zahl)
+    - unitTag:      z.B. "i"                      (wrappt nur die Einheit)
+    - componentTag: z.B. "code"                   (wrappt "Zahl + Einheit")
+
+  Hinweis:
+    Wenn "title" gesetzt ist, werden nur Einträge des Spiels mit exakt diesem title
+    aufsummiert. Es werden alle items des Titels berücksichtigt.
+*/}}
+
+{{- $p := . -}}
+{{- $ctx := $p.ctx | default . -}}
+{{- $wantTitle := $p.title | default "" -}}
+{{- $format := $p.format | default "string" -}}
+
+{{- $numberTag := $p.numberTag | default "strong" -}}
+{{- $unitTag := $p.unitTag | default "i" -}}
+{{- $componentTag := $p.componentTag | default "code" -}}
+
+{{- $games := or $ctx.Site.Data.games site.Data.games -}} {{/* Daten aus games.json */}}
+{{- $scratch := newScratch -}}
+{{- $scratch.Set "totalMinutes" 0 -}}
+
+{{- range $game := $games -}}
+  {{- $title := $game.title | default "" -}}
+  {{- $items := $game.items | default (slice) -}}
+
+  {{- $useGame := or (eq $wantTitle "") (eq $title $wantTitle) -}}
+  {{- if not $useGame -}} {{- continue -}} {{- end -}}
+
+  {{- range $item := $items -}}
+    {{- $playTimeRaw := ($item.playedHours | strings.TrimSpace) -}}
+    {{- if not $playTimeRaw -}} {{- continue -}} {{- end -}}
+
+    {{/* ---- Zeitstring in Minuten umrechnen (robust: d/h/m optional, case-insensitive, mit/ohne Space) ---- */}}
+    {{- $d := 0 -}}
+    {{- $h := 0 -}}
+    {{- $m := 0 -}}
+
+    {{- $dMatch := findRE "(?i)(\\d+)\\s*d" $playTimeRaw -}}
+    {{- if gt (len $dMatch) 0 -}} {{- $d = int (replaceRE "\\D+" "" (index $dMatch 0)) -}} {{- end -}}
+
+    {{- $hMatch := findRE "(?i)(\\d+)\\s*h" $playTimeRaw -}}
+    {{- if gt (len $hMatch) 0 -}} {{- $h = int (replaceRE "\\D+" "" (index $hMatch 0)) -}} {{- end -}}
+
+    {{- $mMatch := findRE "(?i)(\\d+)\\s*m" $playTimeRaw -}}
+    {{- if gt (len $mMatch) 0 -}} {{- $m = int (replaceRE "\\D+" "" (index $mMatch 0)) -}} {{- end -}}
+
+    {{- $mins := add (mul $d 1440) (add (mul $h 60) $m) -}}
+    {{- $scratch.Add "totalMinutes" $mins -}}
+  {{- end -}}
+{{- end -}}
+
+{{- $total := $scratch.Get "totalMinutes" | default 0 -}}
+
+{{- if eq $format "minutes" -}}
+  {{- $total -}}
+{{- else -}}
+  {{- $days := div $total 1440 -}}
+  {{- $remAfterDays := mod $total 1440 -}}
+  {{- $hours := div $remAfterDays 60 -}}
+  {{- $mins := mod $remAfterDays 60 -}}
+
+  {{/* Tag-Wrapper vorbereiten */}}
+  {{- $numOpen  := cond (ne $numberTag "") (printf "<%s>"  $numberTag) "" -}}
+  {{- $numClose := cond (ne $numberTag "") (printf "</%s>" $numberTag) "" -}}
+  {{- $unitOpen  := cond (ne $unitTag   "") (printf "<%s>"  $unitTag)   "" -}}
+  {{- $unitClose := cond (ne $unitTag   "") (printf "</%s>" $unitTag)   "" -}}
+
+  {{- $parts := slice -}}
+
+  {{- if gt $days 0 -}}
+    {{- $label := cond (eq $days 1) "day" "days" -}}
+    {{- $num := printf "%s%d%s" $numOpen $days $numClose -}}
+    {{- $unit := printf "%s%s%s" $unitOpen $label $unitClose -}}
+    {{- $phrase := printf "%s %s" $num $unit -}}
+    {{- if ne $componentTag "" -}} {{- $phrase = printf "<%s>%s</%s>" $componentTag $phrase $componentTag -}} {{- end -}}
+    {{- $parts = $parts | append $phrase -}}
+  {{- end -}}
+
+  {{- if gt $hours 0 -}}
+    {{- $label := cond (eq $hours 1) "hour" "hours" -}}
+    {{- $num := printf "%s%d%s" $numOpen $hours $numClose -}}
+    {{- $unit := printf "%s%s%s" $unitOpen $label $unitClose -}}
+    {{- $phrase := printf "%s %s" $num $unit -}}
+    {{- if ne $componentTag "" -}} {{- $phrase = printf "<%s>%s</%s>" $componentTag $phrase $componentTag -}} {{- end -}}
+    {{- $parts = $parts | append $phrase -}}
+  {{- end -}}
+
+  {{- if gt $mins 0 -}}
+    {{- $label := cond (eq $mins 1) "minute" "minutes" -}}
+    {{- $num := printf "%s%d%s" $numOpen $mins $numClose -}}
+    {{- $unit := printf "%s%s%s" $unitOpen $label $unitClose -}}
+    {{- $phrase := printf "%s %s" $num $unit -}}
+    {{- if ne $componentTag "" -}} {{- $phrase = printf "<%s>%s</%s>" $componentTag $phrase $componentTag -}} {{- end -}}
+    {{- $parts = $parts | append $phrase -}}
+  {{- end -}}
+
+  {{- $n := len $parts -}}
+  {{- if eq $n 0 -}}
+    {{- printf "%s%d%s %s%s%s" $numOpen 0 $numClose $unitOpen "minutes" $unitClose | safeHTML -}}
+  {{- else if eq $n 1 -}}
+    {{- index $parts 0 | safeHTML -}}
+  {{- else if eq $n 2 -}}
+    {{- printf "%s and %s" (index $parts 0) (index $parts 1) | safeHTML -}}
+  {{- else -}}
+    {{- $head := first (sub $n 1) $parts -}}
+    {{- $tail := index $parts (sub $n 1) -}}
+    {{- printf "%s and %s" (delimit $head ", ") $tail | safeHTML -}}
+  {{- end -}}
+{{- end -}}

@@ -1,0 +1,26 @@
+{{/* layouts/partials/hugogridgallery/gallery-grid/header.html.html */}}
+{{/* Stellt die Gallerie Configuration (data/gallery/config.json) im Web zur verfügung */}}
+<script id="gd-config" type="application/json">
+  {{ index site.Data.gallery.config  | jsonify | safeJS  }}
+</script>
+
+
+{{/*
+  einmal pro Seite einbinden.
+  TODO NEW - oben ist die alte Lösung
+      Dieses Partial aus list-gallery.html heraus aufrufen
+      dann sind Assets immer da, egal ob Page, Term oder Taxonomy.
+
+{{ $k := "hgg-assets-loaded" }}
+{{ if not (.Scratch.Get $k) }}
+  {{ .Scratch.Set $k true }}
+
+  {{ $js := resources.Get "js/gallery/index.js" | js.Build | fingerprint }}
+  <script defer src="{{ $js.RelPermalink }}"></script>
+
+  {{ $css := resources.Get "css/gallery/styles.css" | minify | fingerprint }}
+  <link rel="stylesheet" href="{{ $css.RelPermalink }}">
+{{ end }}
+
+
+*/}}

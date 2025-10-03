@@ -1,0 +1,9 @@
+{{/* layouts/shortcodes/gallery-index.html
+     Beispiel_ {{< gallery-index taxonomy="categories" >}}
+*/}}
+{{/* {{< gallery-index taxonomy="categories" >}} */}}
+{{ $taxonomy := .Get "taxonomy" | default "categories" }}
+{{ partial "hugo-grid-gallery/grid-index/list-taxonomy-index.html" (dict
+  "page" .Page
+  "taxonomy" $taxonomy
+) }}

@@ -1,0 +1,11 @@
+{{/* layouts/partials/helpers/crop-anchors.html */}}
+{{- $raw := .crop | default "smart" -}}
+{{- $c := lower (printf "%v" $raw) -}}
+
+{{/* Deutsch/Englisch auf Hugo-Anchor mappen */}}
+{{- $anchor := "smart" -}}
+{{- if or (eq $c "oben")   (eq $c "top") }}{{- $anchor = "top" -}}{{ end -}}
+{{- if or (eq $c "mitte")  (eq $c "center") }}{{- $anchor = "center" -}}{{ end -}}
+{{- if or (eq $c "unten")  (eq $c "bottom") }}{{- $anchor = "bottom" -}}{{ end -}}
+{{- /* weitere möglich: topLeft, topRight, left, right, bottomLeft, bottomRight */ -}}
+{{- return $anchor -}}

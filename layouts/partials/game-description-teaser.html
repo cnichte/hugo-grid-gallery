@@ -1,0 +1,40 @@
+{{/* {{ partial "game-description-teaser.html" (dict "title" "Fallout" "limit" 25) }} */}}
+{{- $title := .title -}}
+{{- $limit := .limit | default 20 -}}
+{{- $game := index (where site.Data.games "title" $title) 0 -}}
+
+{{ if $game }}
+    {{ if $game.subtitle }}<p style="font-weight: bold;">{{  $game.subtitle }}</p>{{ end }}
+    
+    {{ if $game.developer.name }}
+      <p>Developer: 
+      {{ if $game.developer.link }}
+      <a href="{{ $game.developer.link }}" target="_blank" rel="noopener">{{ $game.developer.name }}</a>
+      {{ else }}
+        {{ $game.developer.name }}
+      {{ end }}
+      </p>
+    {{ end }}
+    
+    {{ if $game.publisher.name }}
+      <p>Publisher: 
+      {{ if $game.publisher.link }}
+        <a href="{{ $game.publisher.link }}" target="_blank" rel="noopener">{{ $game.publisher.name }}</a>
+      {{ else }}
+        {{ $game.publisher.name }}
+      {{ end }}
+      </p>
+    {{ end }}
+
+  <p>{{/* TODO: use truncate-words.html */}}
+    {{ $words := split $game.description " " }}
+    {{ $short := delimit (first $limit $words) " " }}
+    {{ if gt (len $words) $limit }}
+      {{ $short }}…
+    {{ else }}
+      {{ $short }}
+    {{ end }}
+  </p>
+{{ else }}
+  <p style="color:red">No game found for: {{ $title }}</p>
+{{ end }}

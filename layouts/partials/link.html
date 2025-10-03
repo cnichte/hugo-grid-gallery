@@ -1,0 +1,25 @@
+{{/* layouts/partials/link.html
+
+Rendert einen Link mit dem Markdown-Renderer von Hugo.
+Rendert einen Link via Markdown, damit die Render-Hooks greifen.
+Nutzt dann automatisch layouts/_default/_markup/render-heading.html
+
+Beispiel:
+
+{{ partial "link.html" (dict "page"  .Page "text" $entry.publisher.name "href"  $entry.publisher.link "title" $entry.publisher.name) }}
+
+*/}}
+
+{{- $p := or .page .Page -}}
+{{- $text := .text | default "" -}}
+{{- $href := .href | default "" -}}
+{{- $title := .title -}}
+
+{{- $titlePart := cond (and $title (ne $title "")) (printf " %q" $title) "" -}}
+{{- $md := printf "[%s](%s%s)" $text $href $titlePart -}}
+
+{{- if $p -}}
+  {{- $p.RenderString (dict "display" "inline") $md -}}
+{{- else -}}
+  <a href="{{ $href | safeURL }}"{{ with $title }} title="{{ . }}"{{ end }}>{{ $text | safeHTML }}</a>
+{{- end -}}

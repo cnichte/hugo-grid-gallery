@@ -1,0 +1,124 @@
+{{/* 
+  Partial: progress-bar-svg-stacked
+  Zeichnet EINEN gestapelten Balken aus bis zu 3 Segmenten (finished/wip/shame).
+
+  Params (dict):
+    finishedCount int, finishedLabel string, finishedColor string
+    wipCount      int, wipLabel      string, wipColor      string
+    shameCount    int, shameLabel    string, shameColor    string
+    total         int (optional; Default: Summe der Counts)
+    width         int (Default 480), height int (Default 18)
+    radius        int (Default 6)
+    bgColor       string (Default "#e5e7eb")
+    showLegend    bool (Default false)
+    textColor     string (Default "#111827")
+    fontSize      int (Default 12)
+    class         string
+
+    valign string "middle" oder "text-bottom"
+    nudge string  "-0.05" - optionales Feintuning
+
+  Beispiel:
+    {{ partial "progress-bar-svg-stacked.html" (dict "finishedCount" 20 "wipCount" 14 "shameCount" 5) }}
+*/}}
+
+{{- $p := . -}}
+{{- $fc := int (or $p.finishedCount 0) -}}
+{{- $wc := int (or $p.wipCount 0) -}}
+{{- $sc := int (or $p.shameCount 0) -}}
+{{- $sum := add (add $fc $wc) $sc -}}
+{{- $total := int (or $p.total $sum) -}}
+{{- if lt $total 1 }}{{- $total = 1 -}}{{- end -}}
+
+{{- $w := int (or $p.width 100) -}}
+{{- $h := int (or $p.height 18) -}}
+{{- $r := int (or $p.radius 6) -}}
+{{- $bg := or $p.bgColor "#e5e7eb" -}}
+{{- $class := or $p.class "" -}}
+{{- $txt := or $p.textColor "#111827" -}}
+{{- $fs  := int (or $p.fontSize 12) -}}
+
+{{- $fl := or $p.finishedLabel "Finished" -}}
+{{- $wl := or $p.wipLabel      "Work in progress" -}}
+{{- $sl := or $p.shameLabel    "Pile of shame" -}}
+
+{{- $fcol := or $p.finishedColor "#16a34a" -}}
+{{- $wcol := or $p.wipColor      "#f59e0b" -}}
+{{- $scol := or $p.shameColor    "#ef4444" -}}
+
+{{- $valign := or $p.valign "middle" -}}
+{{- $nudge  := printf "%v" (or $p.nudge "0") -}}  {{/* als String, damit 0.1 etc. geht */}}
+
+{{- $showLegend := $p.showLegend -}}
+{{- if not (in (slice true false) $showLegend) -}}
+  {{- $showLegend = ne (lower (printf "%v" (or $showLegend "true"))) "false" -}}
+{{- end -}}
+
+{{/* Segmentbreiten berechnen (Integer, Summe exakt == width) */}}
+{{- $fw := div (mul $fc $w) $total -}}
+{{- $ww := div (mul $wc $w) $total -}}
+{{- $sw := div (mul $sc $w) $total -}}
+{{- $sumW := add (add $fw $ww) $sw -}}
+{{- $rem := sub $w $sumW -}}
+{{- $sw = add $sw $rem -}} {{/* Rest auf letztes Segment */}}
+{{- $id := printf "stack-%d-%d-%d-%d" $fc $wc $sc $total -}}
+{{- $clipId := printf "%s-clip" $id -}}
+
+{{/* TODO: Der Code-Linter meckert hier an $valign und $nudge rum, es läuft aber einwandfrei */}}
+<svg
+  width="{{ $w }}" height="{{ $h }}" viewBox="0 0 {{ $w }} {{ $h }}"
+  role="img" aria-labelledby="{{ $id }}" class="{{ $class }}"
+  style="display:inline-block; vertical-align: {{ $valign }}; {{ if ne $nudge "0" }}transform: translateY({{ $nudge }}em);{{ end }}">
+  <title id="{{ $id }}">{{ printf "%s %d, %s %d, %s %d (Total %d)" $fl $fc $wl $wc $sl $sc $total }}</title>
+
+  <!-- Hintergrund (voller Rounded-Container) -->
+  <rect x="0" y="0" width="{{ $w }}" height="{{ $h }}" rx="{{ $r }}" ry="{{ $r }}" fill="{{ $bg }}" />
+
+  <!-- ClipPath mit denselben Rundungen; alles im <g> wird daran beschnitten -->
+  <defs>
+    <clipPath id="{{ $clipId }}">
+      <rect x="0" y="0" width="{{ $w }}" height="{{ $h }}" rx="{{ $r }}" ry="{{ $r }}" />
+    </clipPath>
+  </defs>
+
+  <!-- Segmente: keine Rundungen! werden sauber an ClipPath-Kontur beschnitten -->
+  <g clip-path="url(#{{ $clipId }})" shape-rendering="crispEdges">
+    {{- $x := 0 -}}
+    {{- if gt $fw 0 -}}
+      <rect x="{{ $x }}" y="0" width="{{ $fw }}" height="{{ $h }}" fill="{{ $fcol }}" />
+      {{- $x = add $x $fw -}}
+    {{- end -}}
+
+    {{- if gt $ww 0 -}}
+      <rect x="{{ $x }}" y="0" width="{{ $ww }}" height="{{ $h }}" fill="{{ $wcol }}" />
+      {{- $x = add $x $ww -}}
+    {{- end -}}
+
+    {{- if gt $sw 0 -}}
+      <!-- Rest auf letztes Segment addiert: schließt bündig ohne Spalte -->
+      <rect x="{{ $x }}" y="0" width="{{ $sw }}" height="{{ $h }}" fill="{{ $scol }}" />
+    {{- end -}}
+  </g>
+</svg>
+
+
+{{- if $showLegend -}}
+<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="{{ add $fs 8 }}" role="img" aria-label="Legend">
+  {{- $y := add $fs 2 -}}
+  <g font-size="{{ $fs }}" fill="{{ $txt }}" dominant-baseline="middle">
+    <g>
+      <rect x="0" y="2" width="12" height="{{ sub (add $fs 4) 4 }}" fill="{{ $fcol }}" />
+      <text x="18" y="{{ $y }}">{{ $fl }} ({{ $fc }})</text>
+    </g>
+    <g>
+      <rect x="160" y="2" width="12" height="{{ sub (add $fs 4) 4 }}" fill="{{ $wcol }}" />
+      <text x="178" y="{{ $y }}">{{ $wl }} ({{ $wc }})</text>
+    </g>
+    <g>
+      <rect x="340" y="2" width="12" height="{{ sub (add $fs 4) 4 }}" fill="{{ $scol }}" />
+      <text x="358" y="{{ $y }}">{{ $sl }} ({{ $sc }})</text>
+    </g>
+    <text x="98%" y="{{ $y }}" text-anchor="end" opacity=".8">Total: {{ $total }}</text>
+  </g>
+</svg>
+{{- end -}}

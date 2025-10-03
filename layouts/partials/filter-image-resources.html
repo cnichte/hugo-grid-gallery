@@ -1,0 +1,44 @@
+{{/* layouts/partials/filter-image-resources.html */}}
+{{/* Wandelt ein Slice aus Strings oder gemischten Elementen in ein valides Resource-Slice um */}}
+
+{{/* layouts/partials/filter-image-resources.html */}}
+{{- $debug := (index site.Params "hugo-grid-gallery").debug | default false }}
+
+{{ $input := . | default slice }}
+{{ $result := slice }}
+
+{{ range $index, $item := $input }}
+  {{ $type := printf "%T" $item }}
+
+  {{/* Typ 1: Bereits Hugo Resource */}}
+  {{ if or (eq $type "*resources.resourceAdapter") (eq $type "*resources.image") }}
+    {{ if eq $index 0 }}
+      {{ if $debug }}{{ warnf "filter-image-resources: already resource: %q (%T)" $item.Name $item }}{{ end }}
+    {{ end }}
+    {{ $result = $result | append $item }}
+
+  {{/* Typ 2: Pfad als String → versuche laden */}}
+  {{ else if eq $type "string" }}
+    {{ $resource := resources.Get $item }}
+    {{ if $resource }}
+      {{ if eq $resource.MediaType.Type "image" }}
+        {{ if eq $index 0 }}
+          {{ if $debug }}{{ warnf "filter-image-resources: loaded image from string: %q" $item }}{{ end }}
+        {{ end }}
+        {{ $result = $result | append $resource }}
+      {{ else if eq $index 0 }}
+        {{ if $debug }}{{ warnf "filter-image-resources: not an image: %q" $item }}{{ end }}
+      {{ end }}
+    {{ else if eq $index 0 }}
+      {{ if $debug }}{{ warnf "filter-image-resources: not found: %q" $item }}{{ end }}
+    {{ end }}
+
+  {{/* Typ 3: Unbekannt */}}
+  {{ else }}
+    {{ if eq $index 0 }}
+      {{ if $debug }}{{ warnf "filter-image-resources: unknown type at [0]: %T => %v" $item $item }}{{ end }}
+    {{ end }}
+  {{ end }}
+{{ end }}
+
+{{ return $result }}

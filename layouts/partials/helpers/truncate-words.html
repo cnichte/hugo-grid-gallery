@@ -1,0 +1,31 @@
+{{- /* Partials: layouts/partials/helpers/truncate-words.html
+     Inputs:
+       s : string (Pflicht) – Text/Markdown
+       limit  : int (optional, default 20) – Wortanzahl
+       suffix : string (optional, default …) – Anhang bei Kürzung
+
+       Das Problem ist Markdown und html - wenn der SChnitt innerhalb eines Links erfolgt 
+       ist das Markdown kaputt– 
+*/ -}}
+
+{{- /* Inputs:
+      s: string (Markdown/HTML)
+      limit: int (Wortlimit für Fallback; default 30)
+      suffix: string (Default "…")
+      page: *Page (für RenderString; default .)
+   */ -}}
+
+{{- /* layouts/partials/helpers/truncate-words.html */ -}}
+{{- /* layouts/partials/helpers/truncate-words.html */ -}}
+{{- /* layouts/partials/helpers/truncate-words.html
+     Inputs:
+       s      : string (Markdown oder HTML)
+       limit  : int (default 30)
+       suffix : string (default "…")
+       page   : *Page (für RenderString)
+*/ -}}
+
+{{- $s      := .s | default "" -}}
+{{- $limit  := .limit | default 30 -}}
+{{- $suffix := .suffix | default "…" -}}
+{{- $page   := .page | default . -}}

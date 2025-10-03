@@ -1,0 +1,111 @@
+{{/* 
+  Partial: helpers/resolve-category-cover.html
+
+  Aufgabe:
+  - Ein Cover-Bild für eine Kategorie anhand der vorhandenen Galerie-Bilder finden.
+  - "cover" im JSON kann sein:
+      - nur eine Nummer:          "12428"
+      - ein Dateiname:            "binary-voids-12428.jpg"
+      - slug/Dateiname:           "hell-is-us/binary-voids-12428.jpg"
+  - Match-Prioritäten:
+      1) exakter Dateiname (case-insensitive)
+      2) Basisname enthält den Hint (z.B. ohne "-web")
+      3) Werknummer (erste Zahl im Namen) stimmt überein
+  - Bei "slug/..." wird zuerst auf die passende Galerie eingeschränkt.
+  - Das Ergebnis (Thumb-Struktur) kommt über Scratch ("resolved") zurück.
+*/}}
+
+{{/* helpers/resolve-category-cover.html */}}
+{{- $cat := .cat -}}
+{{- $coverRaw := $cat.cover | default "" -}}
+{{- $scratch := .scratch -}}
+{{- if not $scratch }}{{- $scratch = newScratch -}}{{- end -}}
+
+{{- /* Rückgabe initial leeren */ -}}
+{{- $scratch.Delete "resolved" -}}
+
+{{- /* Wenn kein cover angegeben: leise beenden (kein Return-Arg erlaubt) */ -}}
+{{- if eq $coverRaw "" -}}
+  {{- /* nothing to do */ -}}
+{{- else -}}
+
+  {{- /* Ziel-Crop ermitteln (Param > JSON > Fallback) */ -}}
+  {{- $crop := .crop | default ($cat.cover_crop | default "smart") -}}
+  {{- /* anchor-Auflösung (oben/mitte/unten -> top/center/bottom) */ -}}
+  {{- $anchor := partial "helpers/crop-anchor.html" (dict "crop" $crop) -}}
+
+  {{/* Cover-String optional in "slug/filename" zerlegen */}}
+  {{- $slug := "" -}}
+  {{- $fileHint := $coverRaw -}}
+  {{- if in $coverRaw "/" -}}
+    {{- $parts := split $coverRaw "/" -}}
+    {{- $slug = index $parts 0 -}}
+    {{- $fileHint = index $parts (sub (len $parts) 1) -}}
+  {{- end -}}
+
+  {{/* Werknummer aus dem Hint extrahieren (erste gefundene Zahl) */}}
+  {{- $hintNumberMatches := findRE `\d+` $fileHint -}}
+  {{- $hintNumber := cond (gt (len $hintNumberMatches) 0) (index $hintNumberMatches 0) "" -}}
+
+  {{/* Kandidaten-Galerien bestimmen:
+       - wenn slug gesetzt, erst auf Titel-Slug und ggf. Permalink einschränken,
+         sonst alle "matching" Galerien verwenden. */}}
+  {{- $candidatesPages := .matching -}}
+  {{- if $slug -}}
+    {{- $slugLc := lower $slug -}}
+    {{- $tmp := slice -}}
+    {{- range .matching -}}
+      {{- $titleSlug := urlize .Title -}}
+      {{- if or (eq $titleSlug $slugLc) (in .RelPermalink (printf "/galleries/%s/" $slugLc)) -}}
+        {{- $tmp = $tmp | append . -}}
+      {{- end -}}
+    {{- end -}}
+    {{- if gt (len $tmp) 0 -}}{{- $candidatesPages = $tmp -}}{{- end -}}
+  {{- end -}}
+
+  {{/* Steuer-Flag im Scratch: sobald ein "exakter" Treffer gefunden ist, wird nicht weiter gesucht. */}}
+  {{- $scratch.Set "foundExact" false -}}
+
+  {{/* Über alle Kandidaten-Galerien und deren Bilder iterieren und Match-Prioritäten prüfen */}}
+  {{- range $p := $candidatesPages }}
+    {{- $imgs := partial "get-images.html" $p -}}
+    {{- range $imgs }}
+      {{- if $scratch.Get "foundExact" -}}
+        {{- /* Bereits perfekter Treffer gefunden: Rest überspringen */ -}}
+      {{- else -}}
+        {{- $name := .Name -}}
+
+        {{- /* Basisname ohne "-web"/"_web", damit "contains"-Matching robust wird */ -}}
+        {{- $base := (replace (replace $name "-web" "") "_web" "") -}}
+
+        {{- /* Werknummer aus realem Dateinamen */ -}}
+        {{- $numMatches := findRE `\d+` $name -}}
+        {{- $num := cond (gt (len $numMatches) 0) (index $numMatches 0) "" -}}
+
+        {{- /* Prioritäten prüfen */ -}}
+        {{- $exact := eq (lower $name) (lower $fileHint) -}}
+        {{- $contains := and (ne $fileHint "") (in (lower $base) (lower $fileHint)) -}}
+        {{- $numMatch := and (ne $hintNumber "") (eq $num $hintNumber) -}}
+
+        {{- if or $exact $contains $numMatch -}}
+          {{- /* Nur dieses eine Bild durch get-gallery.html jagen,
+               damit wir die gleiche Thumb-Struktur (thumb/src/width/height/...) erhalten. */}}
+          {{- $one := slice . -}}
+          {{- $thumbs := partial "gallery-grid/get-gallery-index.html" (dict
+                "images" $one
+                "page"   $p
+                "crop"   $crop
+          ) -}}
+          {{- if gt (len $thumbs) 0 -}}
+            {{- $scratch.Set "resolved" (index $thumbs 0) -}}
+            {{- if $exact -}}
+              {{- /* harter Abbruch durch Flag (kein Return-Arg erlaubt) */ -}}
+              {{- $scratch.Set "foundExact" true -}}
+            {{- end -}}
+          {{- end -}}
+        {{- end -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+
+{{- end -}}

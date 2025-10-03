@@ -1,0 +1,30 @@
+{{/* 
+  Shortcode: sum-played-hours
+
+  Supports:
+    {{< sum-played-hours >}}                             // alle Titel
+    {{< sum-played-hours "Far Cry" >}}                   // positionell: title
+    {{< sum-played-hours "Far Cry" "minutes" >}}         // positionell: title, format
+    {{< sum-played-hours "Far Cry" "string" "strong" >}} // + numberTag
+    {{< sum-played-hours "Far Cry" "string" "strong" "i" >}} // + unitTag
+    {{< sum-played-hours "Far Cry" "string" "strong" "i" "code" >}} // + componentTag
+
+    {{< sum-played-hours title="Far Cry" >}}             // benannt
+    {{< sum-played-hours title="Far Cry" format="minutes" >}}
+    {{< sum-played-hours title="Far Cry" numberTag="strong" unitTag="i" componentTag="code" >}}
+*/}}
+
+{{- $title        := or (.Get "title")        (.Get 0) "" -}}
+{{- $format       := or (.Get "format")       (.Get 1) "string" -}}
+{{- $numberTag    := or (.Get "numberTag")    (.Get 2) "" -}}
+{{- $unitTag      := or (.Get "unitTag")      (.Get 3) "" -}}
+{{- $componentTag := or (.Get "componentTag") (.Get 4) "" -}}
+
+{{- partial "sum-played-hours.html" (dict 
+      "ctx" .Page 
+      "title" $title 
+      "format" $format 
+      "numberTag" $numberTag 
+      "unitTag" $unitTag 
+      "componentTag" $componentTag
+) -}}

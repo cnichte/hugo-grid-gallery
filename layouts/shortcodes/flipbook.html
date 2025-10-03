@@ -1,0 +1,18 @@
+{{- $my_source := "" -}}
+
+{{- if .IsNamedParams -}}
+{{- $my_source = .Get "source" | default "" -}}
+{{- else -}}
+{{ errorf "No Named Parameters provided!" }}
+{{- end -}}
+
+{{/* https://jquery.dearflip.com/docs/options-list/ */}}
+<script>
+    var option_flipbook = {
+        soundEnable: false,
+        enableDownload: false,
+        hideControls: "share, print, outline, thumbnail, search",
+        hard: "cover", //possible values are "all", "none", "cover"
+    };
+</script>
+<div class="_df_book" id="flipbook" source="{{ $my_source }}"></div>

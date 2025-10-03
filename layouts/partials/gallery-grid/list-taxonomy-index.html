@@ -1,0 +1,96 @@
+{{/* 
+  Zeigt Karten für alle Terms einer Taxonomie (z. B. categories).
+  Erwartet ctx: { page: .Page, taxonomy: "categories" | "tags" }
+*/}}
+
+{{ $ctx       := . }}
+{{ $page      := $ctx.page }}
+{{ $taxonomy  := $ctx.taxonomy | default "categories" }}
+{{ $debug     := (index site.Params "hugo-grid-gallery").debug | default false }}
+
+{{ if $debug }}{{ warnf "🧭 list-taxonomy-index: taxonomy=%s on %s" $taxonomy $page.RelPermalink }}{{ end }}
+
+{{/* Terms holen (als Seiten-Objekte, damit .Title/.RelPermalink funktionieren) */}}
+{{ $termsPage := site.GetPage (printf "/%s" $taxonomy) }}
+{{ if not $termsPage }}
+  {{ if $debug }}{{ warnf "⛔ Keine Taxonomie-Seite für '%s' gefunden" $taxonomy }}{{ end }}
+  <p>Unknown taxonomy ‘{{ $taxonomy }}’.</p>
+  {{ return }}
+{{ end }}
+
+<div class="galleries" id="gallery-container">
+  {{ range sort $termsPage.Pages "Title" }}
+    {{ $term    := .Title }}
+    {{ $termURL := .RelPermalink }}
+
+    {{/* alle Galerien mit diesem Term finden */}}
+    {{ $galleries := where site.RegularPages "Section" "galleries" }}
+    {{ $matching  := where $galleries "Params.categories" "intersect" (slice $term) }}
+
+    {{/* Thumbs aus allen passenden Galerien sammeln */}}
+    {{ $allThumbs := slice }}
+    {{ range $p := $matching }}
+      {{ $images := partial "get-images.html" $p }}
+      {{ $thumbs := partial "gallery-grid/get-gallery-index.html" (dict "images" $images "page" $p) }}
+      {{ if gt (len $thumbs) 0 }}
+        {{ $allThumbs = $allThumbs | append $thumbs }}
+      {{ end }}
+    {{ end }}
+
+    {{/* Kategorie-Info aus data/games_categories.json (optional) */}}
+    {{ $cat     := index (where site.Data.games_categories "name" $term) 0 }}
+    {{ $catCrop := cond $cat ($cat.cover_crop | default "smart") "smart" }}
+
+    {{/* Cover-Resolver (optional): schreibt "resolved" ins Scratch */}}
+    {{ $resScratch := newScratch }}
+    {{ if $cat }}
+      {{ partial "helpers/resolve-category-cover.html" (dict
+          "term"     $term
+          "cat"      $cat
+          "matching" $matching
+          "crop"     $catCrop
+          "scratch"  $resScratch
+      ) }}
+    {{ end }}
+
+    {{/* finale Thumb-Wahl */}}
+    {{ $thumb_final := dict }}
+    {{ $resolved    := $resScratch.Get "resolved" }}
+    {{ if $resolved }}
+      {{ $thumb_final = $resolved }}
+    {{ else if gt (len $allThumbs) 0 }}
+      {{ $hash  := hash.FNV32a $term }}
+      {{ $index := mod $hash (len $allThumbs) }}
+      {{ $thumb_final = index $allThumbs $index }}
+    {{ end }}
+
+    {{ if $thumb_final }}
+      <div class="card" data-title="{{ $term }}" data-image-count="{{ len $matching }}">
+        <a class="card-img" href="{{ $termURL }}">
+          <img
+            src="{{ $thumb_final.thumb }}"
+            alt="{{ $term }}"
+            width="{{ $thumb_final.width }}"
+            height="{{ $thumb_final.height }}"
+          />
+          {{/* Bildanzahl über alle passenden Galerien */}}
+          {{ $imageCount := 0 }}
+          {{ range $matching }}
+            {{ $imgs := partial "get-images.html" . }}
+            {{ $imageCount = add $imageCount (len $imgs) }}
+          {{ end }}
+          <span class="num-photos">{{ $imageCount }} {{ T "photo" $imageCount }}</span>
+        </a>
+
+        <div class="body">
+          <h2><a href="{{ $termURL }}">{{ $term }}</a></h2>
+          {{ if $cat }}
+            <p class="category-description">{{ $cat.description | markdownify }}</p>
+          {{ end }}
+        </div>
+      </div>
+    {{ else }}
+      {{ if $debug }}{{ warnf "⚠️ Kein Thumb für Term '%s' (matching=%d)" $term (len $matching) }}{{ end }}
+    {{ end }}
+  {{ end }}
+</div>

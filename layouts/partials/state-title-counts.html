@@ -1,0 +1,129 @@
+{{/* 
+  state-title-counts.html
+  Zählt pro STATE die Anzahl der Titel (nicht Items).
+  Regeln:
+    - Für jeden Titel wird nur das ERSTE Item zur State-Bestimmung genutzt.
+    - Leere States werden standardmäßig ignoriert (skipEmpty=true).
+
+  Optionen:
+    - ctx (optional): Page-/Site-Kontext; fallback auf site.
+    - showTitles (bool, default=false): Titel je State auflisten.
+    - sortBy ("name"|"count", default="count")
+    - descending (bool, default=true)
+    - skipEmpty (bool, default=true): leere/fehlende States überspringen
+    - labelSingular (string, default="Title")
+    - labelPlural   (string, default="Titles")
+
+    für Progress-Bar
+    - total (int, optional): Gesamtwert für die Progress-Bar (Default: autoTotal, d. h. Summe aller counts)
+    - barWidth (int, default=10): Breite der Balken in Zeichen.
+
+  Usage-Beispiele:
+    {{ partial "state-title-counts.html" . }}
+    {{ partial "state-title-counts.html" (dict "ctx" . "showTitles" true "sortBy" "name") }}
+*/}}
+
+{{/* Paramter, über dic */}}
+
+{{- $ctx := .ctx | default . | default site -}}
+{{- $games := or $ctx.Site.Data.games site.Data.games -}}
+
+{{- $showTitles := .showTitles | default false -}}
+{{- $sortBy := .sortBy | default "count" -}}
+{{- $descending := .descending | default true -}}
+{{- $skipEmpty := .skipEmpty | default true -}}
+
+{{- $labelSingular := .labelSingular | default "Title" -}}
+{{- $labelPlural   := .labelPlural   | default "Titles" -}}
+
+{{- $barWidth := .barWidth | default 10 -}}
+
+{{/* Map: state -> {count:int, titles:[]string} */}}
+{{- $acc := dict -}}
+
+{{- range $game := $games -}}
+  {{- $title := $game.title | default "" -}}
+  {{- $items := $game.items | default (slice) -}}
+  {{- if gt (len $items) 0 -}}
+    {{- $first := index $items 0 -}}
+    {{- $state := $first.state | default "" -}}
+
+    {{- if and $skipEmpty (eq $state "") -}}
+      {{- continue -}}
+    {{- end -}}
+
+    {{- $entry := index $acc $state | default (dict "count" 0 "titles" (slice)) -}}
+    {{- $newCount := add (index $entry "count") 1 -}}
+    {{- $newTitles := (index $entry "titles") | append $title -}}
+    {{- $acc = merge $acc (dict $state (dict "count" $newCount "titles" $newTitles)) -}}
+  {{- end -}}
+{{- end -}}
+
+{{/* In Liste wandeln und optional sortieren */}}
+{{- $rows := slice -}}
+{{- range $state, $v := $acc -}}
+  {{- $rows = $rows | append (dict 
+      "state"  ($state | default "—")
+      "count"  (index $v "count")
+      "titles" (uniq (index $v "titles"))
+  ) -}}
+{{- end -}}
+
+{{/* Gesamt (Total) automatisch berechnen – Summe aller counts */}}
+
+{{- $scratchTotal := newScratch -}}
+{{- $scratchTotal.Set "sum" 0 -}}
+{{- range $rows -}}
+  {{- $scratchTotal.Add "sum" .count -}}
+{{- end -}}
+{{- $autoTotal := $scratchTotal.Get "sum" | default 0 -}}
+
+{{- $total := .total | default $autoTotal -}} {{/* Gesamtwert für die Progress-Bar, oder total aus dem Paramter */}}
+
+{{- if lt $total 1 }}{{- $total = 1 -}}{{- end -}}
+
+{{/* Sortierung */}}
+
+{{- if eq $sortBy "count" -}}
+  {{- if $descending -}}
+    {{- $rows = sort $rows "count" "desc" -}}
+  {{- else -}}
+    {{- $rows = sort $rows "count" -}}
+  {{- end -}}
+{{- else -}}
+  {{- $rows = sort $rows "state" -}}
+{{- end -}}
+
+{{- if eq $sortBy "name" -}}
+  {{- $rows = sort $rows "state" -}}
+{{- else -}}
+  {{- if $descending -}}
+    {{- $rows = sort $rows "count" "desc" -}}
+  {{- else -}}
+    {{- $rows = sort $rows "count" -}}
+  {{- end -}}
+{{- end -}}
+
+{{/* Ausgabe */}}
+
+{{- $labelSingular := $labelSingular | default "Title" -}}
+{{- $labelPlural   := $labelPlural   | default "Titles" -}}
+
+{{ partial "progress-bar-svg-stacked.html" (dict "finishedCount" 20 "wipCount" 14 "shameCount" 5 "showLegend" false "valign" "middle" "nudge" "-0.05"  ) }}
+<ul>
+  {{- range $row := $rows -}}
+    {{- $n := $row.count -}}
+    {{- $label := cond (eq $n 1) $labelSingular $labelPlural -}}
+    <li>
+      {{ partial "progress-bar-svg.html" (dict "count" $n "total" $total) }}
+      <em>'{{ $row.state }}'</em> <code>{{ $n }} {{ $label }}</code>
+      {{- if $showTitles -}}
+        <ul>
+          {{- range sort ($row.titles) -}}
+            <li>{{ . }}</li>
+          {{- end -}}
+        </ul>
+      {{- end -}}
+    </li>
+  {{- end -}}
+</ul>

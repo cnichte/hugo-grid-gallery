@@ -1,0 +1,76 @@
+{{/* 
+  platform-title-counts.html
+  Zählt pro Plattform die Anzahl der Titel (nicht Items).
+  Optionen:
+    - ctx (optional): Page- oder Site-Kontext; falls nicht gesetzt, wird "site" verwendet.
+    - showTitles (bool, optional): wenn true, Liste der Titel je Plattform ausgeben.
+    - sortBy (string, optional): "name" (default) oder "count" – Sortierung der Plattformliste.
+    - descending (bool, optional): bei sortBy="count" absteigend sortieren (default: true).
+
+  Usage:
+    {{ partial "platform-title-counts.html" . }}
+    {{ partial "platform-title-counts.html" (dict "ctx" . "showTitles" true "sortBy" "count") }}
+*/}}
+
+{{- $ctx := .ctx | default . | default site -}}
+{{- $games := $ctx.Site.Data.games -}}
+{{- $showTitles := .showTitles | default false -}}
+{{- $sortBy := .sortBy | default "name" -}}
+{{- $descending := .descending | default true -}}
+
+{{/* Map: platform -> {count:int, titles:[]string} */}}
+{{- $acc := dict -}}
+
+{{- range $game := $games -}}
+  {{- $title := $game.title -}}
+  {{- $items := $game.items | default (slice) -}}
+
+  {{/* Plattformen dieses Titels einsammeln & deduplizieren */}}
+  {{- $platforms := slice -}}
+  {{- range $it := $items -}}
+    {{- if $it.platform -}}
+      {{- $platforms = $platforms | append ($it.platform | printf "%s") -}}
+    {{- end -}}
+  {{- end -}}
+  {{- $platforms = uniq $platforms -}}
+
+  {{/* Für jede Plattform: Titel einmal zählen */}}
+  {{- range $p := $platforms -}}
+    {{- $entry := index $acc $p | default (dict "count" 0 "titles" (slice)) -}}
+    {{- $newCount := add (index $entry "count") 1 -}}
+    {{- $newTitles := (index $entry "titles") | append $title -}}
+    {{- $acc = merge $acc (dict $p (dict "count" $newCount "titles" $newTitles)) -}}
+  {{- end -}}
+{{- end -}}
+
+{{/* In Liste überführen für Sortierung */}}
+{{- $rows := slice -}}
+{{- range $p, $v := $acc -}}
+  {{- $rows = $rows | append (dict "platform" $p "count" (index $v "count") "titles" (uniq (index $v "titles"))) -}}
+{{- end -}}
+
+{{- if eq $sortBy "count" -}}
+  {{- if $descending -}}
+    {{- $rows = sort $rows "count" "desc" -}}
+  {{- else -}}
+    {{- $rows = sort $rows "count" -}}
+  {{- end -}}
+{{- else -}}
+  {{- $rows = sort $rows "platform" -}}
+{{- end -}}
+
+{{/* Ausgabe */}}
+<ul>
+  {{- range $row := $rows -}}
+    <li>
+      <em>'{{ $row.platform }}'</em> for <code>{{ $row.count }} Titles</code>.
+      {{- if $showTitles -}}
+        <ul>
+          {{- range sort ($row.titles) -}}
+            <li>{{ . }}</li>
+          {{- end -}}
+        </ul>
+      {{- end -}}
+    </li>
+  {{- end -}}
+</ul>

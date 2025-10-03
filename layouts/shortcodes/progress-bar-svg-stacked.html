@@ -1,0 +1,21 @@
+{{/* Shortcode: state-stacked-bar-svg (benannte Params) */}}
+{{- partial "progress-bar-svg-stacked.html" (dict
+  "finishedCount" (.Get "finished")
+  "wipCount"      (.Get "wip")
+  "shameCount"    (.Get "shame")
+  "finishedLabel" (.Get "labelFinished")
+  "wipLabel"      (.Get "labelWip")
+  "shameLabel"    (.Get "labelShame")
+  "finishedColor" (.Get "colorFinished")
+  "wipColor"      (.Get "colorWip")
+  "shameColor"    (.Get "colorShame")
+  "total"         (.Get "total")
+  "width"         (.Get "width")
+  "height"        (.Get "height")
+  "radius"        (.Get "radius")
+  "bgColor"       (.Get "bgColor")
+  "showLegend"    (.Get "showLegend")
+  "textColor"     (.Get "textColor")
+  "fontSize"      (.Get "fontSize")
+  "class"         (.Get "class")
+) -}}

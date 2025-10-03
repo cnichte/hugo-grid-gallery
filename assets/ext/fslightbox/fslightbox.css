@@ -1,0 +1,4 @@
+/* TODO: Abdeckung der Safe Areas auf iOS-Geräten */
+.fslightbox-container{
+    background: linear-gradient(rgba(30,30,30,1.0),#000 1810%) !important;
+}  

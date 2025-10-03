@@ -1,0 +1,50 @@
+{{/* game-description-list.html - Listet Spiele aus einer der games.json Datei als HTML */}}
+{{ $json := .Site.Data.games}}
+
+{{/* Inhaltsverzeichnis */}}
+{{ $links := slice }}
+{{ range $entry := sort $json "title" }}
+  {{ $links = $links | append (printf "<a href=\"#%s\">%s</a>" ($entry.title | urlize) $entry.title) }}
+{{ end }}
+{{ delimit $links ", " | safeHTML }}.
+
+<hr/>
+
+<div class="gallery-list">
+  {{ range $i, $entry := sort $json "title" }}
+    {{ $anchor := $entry.title | urlize }}
+    <section class="gallery-entry">
+      {{/* TODO <h Tag (oder h Tag-Ebene) als Parameter übergeben. */}}
+      <h4 id="{{ $anchor }}">
+        {{ add $i 1 }}. {{ $entry.title }}
+        <a href="#{{ $anchor }}">#</a>
+      </h4>
+
+      <p>{{ $entry.description }}</p>
+
+      {{ if $entry.galleryLink }}
+      <ul>
+        <li>Travel time: {{ partial "sum-played-hours.html" (dict "ctx" $ "title" $entry.title) }}</li>{{/* Root-Kontext ($) */}}
+        <li>Platform: {{ (index $entry.items 0).platform }}</li> {{/* Ein items element ist immer da */}}
+        {{- if $entry.developer.link -}}
+          <li>Developer: <a href="{{ $entry.developer.link }}" target="_blank" rel="noopener">{{ $entry.developer.name }}</a></li>
+        {{- else -}}
+          <li>Developer: {{ $entry.developer.name }}</li>
+        {{- end -}}
+        {{- if and $entry.publisher.name $entry.publisher.link -}}
+          <li>Publisher: {{ partial "link.html" (dict "page"  .Page "text" $entry.publisher.name "href"  $entry.publisher.link "title" $entry.publisher.name) }}</li>
+        {{- else if $entry.publisher.name -}}
+          <li>Publisher: {{ $entry.publisher.name }}</li>
+        {{- end -}}
+        <li>Rating Photomode: {{ partial "star-rating.html" (dict "rating" $entry.review.rating "max" 5) }}</li> 
+        <li>Status: {{ (index $entry.items 0).state }}</li> {{/* Ein items element ist immer da */}}</li>
+        <li>
+          <a href="{{ $entry.galleryLink }}">Visit Gallery</a>{{ partial "count-images-page-partial.html" (dict "path" $entry.galleryLink "prefix" " - " "suffix" " virtual Photographs" "numberTag" "code") }}
+        </li>
+      </ul>
+      {{ end }}
+    </section>
+  {{ end }}
+</div>
+
+<hr/>

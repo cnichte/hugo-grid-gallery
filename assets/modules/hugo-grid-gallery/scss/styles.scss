@@ -1,0 +1,472 @@
+/* assets/modules/hugo-grid-gallery/scss/styles.scss */
+
+/* Import the vars in order of precedence: Hugo config first. */
+/* --- Core Sass Modules --- */
+@use "sass:color";
+
+/* --- Deine Variablen / Themes --- */
+@use "hugo:vars" as *;      //TODO: Wie nutzt man das?  → Als Modul einbinden; Variablen stehen hiermit un-namespaced bereit.
+@use "vars" as *;
+@use "themes" as *;         // behält themed()/get() global
+@use "themes-mixins" as tm; // nur hier gebraucht für text-color-links()
+// @use "themes-settings";  // nicht direkt benötigt – weglassen
+
+
+/* --- CSS-emittierende Partials --- */
+@use "reset"; // enthält echte CSS-Regeln, wird beim Use emittiert
+@use "markdown";
+
+/* --- Bootstrap mit Namespace (keine Konflikte) --- */
+//TODO: @use "bootstrap/scss/bootstrap" as bs;
+
+//? Guides:
+// https://github.com/kaitlinmctigue/kaitlinmctigue.github.io/blob/source/src/styles/_color-themes.scss
+// https://kaitlinmctigue.github.io/#/
+
+//! Problem: js nested css-classes didnt update when parent css-class changes
+// https://www.pivale.co/blog/css-nesting
+// https://stackoverflow.com/questions/10036156/whats-the-difference-between-css-classes-foo-bar-without-space-and-foo-bar
+// affects .class1 inside .class2
+// solution: add somethig to <html>
+
+/* cnichte: Header */
+
+.back-to-top-button {
+
+  //! @include dc_links($color_background);
+  @include themed() {
+    color: get($cp);
+    background-color: get($cp);
+  }
+}
+
+/*
+Change SVG Color (toTop)
+Guide: https://stackoverflow.com/questions/22252472/how-can-i-change-the-color-of-an-svg-element
+svg path{
+  fill: green;
+}
+*/
+.header-box {
+
+  //! background-color:$color-background-header;
+  @include themed() {
+    background-color: get($cbh);
+  }
+
+  margin-top: 0;
+  margin-bottom:2px;
+  padding: 15px 5px;
+  /* top and bottom | left and right */
+}
+
+.header-menu {
+  margin-bottom: 25px;
+  padding: 10px 5px;
+  /* top and bottom | left and right */
+
+  ul {
+    display: flex;
+    align-items: center;
+  }
+}
+
+.header-menu-line {
+  @include themed() {
+    background-color: get($chml);
+    height: 1px;
+    border: 0;
+  }
+}
+
+/* cnichte: HugoGridGallery: Lightbox background not transparent */
+.gd-modal {
+
+  //! background-color: $color-background-modal !important;
+  @include themed() {
+    background-color: get($cbm);
+  }
+}
+
+/* cnichte: HugoGridGallery: Image Background before loaded */
+.gd-figure {
+  //! background-color: adjust($color_background, $lightness: -2%) !important;
+  position: relative;
+  display: block;
+  gap: 8em;
+
+  @include themed() {
+    background-color: get($cb);
+  }
+}
+
+/* cnichte: Menue (Primäres Menü) */
+.menu-selected {
+
+  //! @include dc_menu_links_bg($color_background);
+  @include themed() {
+    color: get($cmit);
+    background-color: get($cmib);
+  }
+
+  padding:5px;
+  white-space: nowrap;
+}
+
+/* cnichte: Menue-Sek (Also Sekundäres Menü) */
+.menu-selected-sek {
+
+  //! @include dc_menu_links_bg($color_background);
+  @include themed() {
+    color: get($cmit);
+    background-color: color.adjust(get($cmib), $lightness: 18%);
+  }
+
+  padding:2px !important;
+  white-space: nowrap;
+}
+
+.menu-link {
+  padding: 5px;
+  line-height: 150%;
+  white-space: nowrap;
+}
+
+a .menu-item {
+  //! color: $color-menu-item-text !important;
+  @include themed() {
+    color: tm.text-color-links(get($cmit));
+  }
+}
+
+
+
+// DarkMode Button-Styles
+.svg-container {
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+
+.svg {
+  margin: 0 auto;
+  display: block;
+}
+
+// Navigation unten
+.nav-container {
+  padding-top: 20px;
+  display: inline-block;
+}
+
+.nav-container-next {
+  float: right;
+  width: 49%;
+  padding: 40px;
+
+  //! @include dc_nav($color_background);
+  @include themed() {
+    color: get($ct);
+    background-color: get($cbnc);
+  }
+
+  text-align: right;
+}
+
+.nav-container-prev {
+  float: left;
+  display: block;
+  width: 49%;
+  padding: 40px;
+
+  //! @include dc_nav($color_background);
+  @include themed() {
+    color: get($ct);
+    background-color: get($cbnc);
+  }
+
+  text-align: left;
+}
+
+.base-container {
+  display: block;
+  width: 100%;
+  padding: 20px;
+  margin-top: 25px;
+
+  //! @include dc_nav($color_background);
+  @include themed() {
+    color: get($ct);
+    background-color: get($cbnc);
+  }
+
+  text-align: center;
+}
+
+.tag-cloud-container {
+  @extend .base-container;
+  word-spacing: 1px;
+  line-height: 2.2;
+}
+
+.description-container {
+  @extend .base-container;
+}
+
+.tag-cloud-container-headline {
+  padding-bottom: 10px;
+}
+
+/* cnichte: end */
+
+html,
+body {
+  min-height: 90vh;
+}
+
+body {
+
+  // color: $black;
+  //! @include dc_text($color_background);
+  @include themed() {
+    background: get($cb);
+    color: get($ct);
+    // border: 1px solid get($border);
+  }
+
+  font-family: $font-family-base; // TODO bootstrap: bs.$font-family-base
+  margin: 0;
+  padding: 0;
+  font-size: $font_size_base;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-font-smoothing: antialiased;
+  fill: green;
+  /* Applies to SVG only */
+}
+
+footer {
+
+  //! @include dc_text($color_background_footer);
+  @include themed() {
+    color: get($ct);
+    background: get($cbf);
+
+    box-shadow: 0 50vh 0 50vh get($cbf);
+    border-top: 2px solid color.adjust(get($cbf), $lightness: -1%); // TODO soll umgekehrt: light = darken-this, dark = lighten-this
+  }
+
+  // margin-top: 3rem;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+
+  &>div {
+    min-height: 80px;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    flex-direction: column;
+
+    @media (min-width: $breakpoint_md) {
+      flex-direction: row;
+    }
+  }
+}
+
+a {
+
+  //! @include dc_links($color_background);
+  @include themed() {
+    color: get($cp);
+  }
+
+  text-decoration: none;
+  font-weight: bold;
+
+  &:hover {
+    text-decoration: underline;
+    opacity: 0.8;
+  }
+}
+
+ol,
+ul {
+  list-style: disc;
+}
+
+main {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  margin: 0 auto;
+  padding-bottom: 5rem;
+  max-width: 140ch;
+
+  &>* {
+    width: 100%;
+  }
+}
+
+header {
+  display: grid;
+  align-items: center;
+  // justify-content: center;
+  text-align: center;
+  margin-top: 0rem;
+  margin-bottom: 0rem;
+
+  ul {
+    display: flex;
+    justify-content: center;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    li {
+      margin: 0 0.5rem;
+
+      a {
+        text-decoration: none;
+        text-transform: capitalize;
+
+        &:hover {
+          text-decoration: underline;
+          opacity: 0.8;
+        }
+      }
+    }
+  }
+
+  h1 {
+    font-size: 3rem;
+    font-weight: bold;
+    margin-bottom: 1rem;
+
+    //! @include dc_header_text($color_background);
+    @include themed() {
+      color: get($ct);
+    }
+  }
+}
+
+.galleries {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  grid-gap: 0.5rem;
+
+  a {
+    text-decoration: none;
+
+    //! @include dc_links($color_background);
+    @include themed() {
+      color: get($cp);
+    }
+  }
+
+  .card {
+    padding: 2rem;
+
+    .card-img {
+      display: block;
+      position: relative;
+      overflow: hidden;
+
+      img {
+        width: 100%;
+        height: auto;
+        object-fit: cover;
+        border-radius: 0.25rem;
+      }
+
+      .num-photos {
+        position: absolute;
+        top: 0.5rem;
+        right: 0.5rem;
+        padding: 0.25rem 0.5rem;
+        background-color: rgba(0, 0, 0, 0.5);
+        border-radius: 0.25rem;
+        color: $white; // TODO bootstrap:bs.$white
+        font-size: 0.75rem;
+      }
+    }
+
+    .body {
+      margin-left: 0.75rem;
+
+      h2 {
+        font-size: 1.5rem;
+        font-weight: bold;
+        margin: 1rem 0 0.5rem 0;
+      }
+
+      p {
+        font-size: 1.25rem;
+        line-height: 1.5;
+      }
+    }
+  }
+}
+
+
+/* Tag-Overlay im Grid-Tumbnail - rechts unten */
+.gd-image-tag {
+  position: absolute;
+  bottom: 6px;
+  right: 6px;
+  padding: 2px 6px;
+  background-color: rgba(0, 0, 0, 0.6);
+  color: silver;
+  font-size: 0.7rem;
+  font-family: system-ui, sans-serif;
+  border-radius: 4px;
+  line-height: 1;
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* Tag-Overlay im Grid-Tumbnail - unten zentriert */
+/*
+.gd-image-tag {
+  position: absolute;
+  bottom: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 2px 6px;
+  background-color: rgba(0, 0, 0, 0.6);
+  color: white;
+  font-size: 0.8rem;
+  font-family: system-ui, sans-serif;
+  border-radius: 4px;
+  line-height: 1;
+  pointer-events: none;
+  z-index: 10;
+}
+*/
+
+
+/*  TODO: Wird das noch gebraucht? suche nach -thumbs & -thumb
+  .gd-thumbs {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 8em;
+  }
+  .gd-thumb img {
+    width: 100%
+    ;height: auto;
+    display: block;
+  }
+  .gd-thumb {
+    position: relative;
+    background: #111;
+  }
+*/
+
+/* Utilities */
+
+.serif {
+  font-family: $font_family_serif;
+}
+
+.mt {
+  margin-top: 1rem;
+}

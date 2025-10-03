@@ -1,0 +1,30 @@
+{{/* 
+  truncate-words.html
+  usage: {{< truncate-words "This is a long sentence..." >}}
+  usage: {{< truncate-words "This is a long sentence..." 50 >}}
+  default limit: 20
+*/}}
+
+{{ $input := .Get 0 }} {{/* Optionaler Parameter */}}
+{{ $limit := 20 }}  {{/* Fallback-Wert */}}
+
+{{ with site.Params.truncateTeaser }} {{/* Parameter aus hugo.toml */}}
+  {{ $limit = int . }}
+{{ end }}
+
+{{ if .IsNamedParams }}
+  {{ with .Get "limit" }}
+    {{ $limit = . | int }}
+  {{ end }}
+{{ else if ge (len .Params) 2 }}
+  {{ $limit = index .Params 1 | int }}
+{{ end }}
+
+{{ $words := split $input " " }}
+{{ $short := delimit (first $limit $words) " " }}
+
+{{ if gt (len $words) $limit }}
+  {{ $short }}…
+{{ else }}
+  {{ $short }}
+{{ end }}

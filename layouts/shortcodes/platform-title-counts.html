@@ -1,0 +1,19 @@
+{{/* 
+  Shortcode: platform-title-counts
+
+  Beispiele:
+    {{< platform-title-counts >}} 
+    {{< platform-title-counts showTitles="true" >}}
+    {{< platform-title-counts sortBy="count" descending="true" >}}
+*/}}
+
+{{- $showTitles := .Get "showTitles" | default "false" -}}
+{{- $sortBy := .Get "sortBy" | default "name" -}}
+{{- $descending := .Get "descending" | default "true" -}}
+
+{{- partial "platform-title-counts.html" (dict 
+      "ctx" .Page 
+      "showTitles" (eq $showTitles "true") 
+      "sortBy" $sortBy 
+      "descending" (eq $descending "true")
+) -}}

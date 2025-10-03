@@ -1,0 +1,57 @@
+{{/* layouts/partials/get-images.html */}}
+{{/* get-images.html: Gibt ein valides Slice von Image-Resources zurück, aus .Resources oder direkt als Übergabe */}}
+{{/* get-images.html – gibt .Resources-Bilder zurück */}}
+
+{{/* layouts/partials/get-images.html */}}
+
+{{- $debug := (index site.Params "hugo-grid-gallery").debug | default false -}}
+
+{{- $logPrefix := "get-images" -}}
+{{- $source := . -}}
+{{- $images := slice -}}
+
+{{/* ✅ Verhindere Endlosschleife durch zu frühes Aufrufen mit .Resources
+     Nur Maps mit "images"/"Resources" ODER Pages sind valide Kontexte.
+     Wichtig: isset NUR auf Maps anwenden, sonst gibt's Warnungen. */ -}}
+{{- $isMap := reflect.IsMap $source -}}
+{{- $t := printf "%T" $source -}}
+{{- $isPage := or (eq $t "*hugolib.pageState") (eq $t "hugolib.pageState") -}}
+
+{{- $hasImages := false -}}
+{{- $hasResources := false -}}
+{{- if $isMap -}}
+  {{- $hasImages = isset $source "images" -}}
+  {{- $hasResources = isset $source "Resources" -}}
+{{- end -}}
+
+{{- if not (or $isPage (or $hasImages $hasResources)) -}}
+  {{- if $debug }}{{ warnf "⛔️ %s: Aufruf ignoriert – kein valider Kontext (%T)" $logPrefix $source }}{{ end -}}
+  {{- return -}}
+{{- end -}}
+
+{{- if $isMap -}}
+  {{- with index $source "images" -}}
+    {{- if and (reflect.IsSlice .) (gt (len .) 0) -}}
+      {{- $images = . -}}
+      {{- if $debug }}{{ warnf "%s: .images direkt übergeben (%d)" $logPrefix (len $images) }}{{ end -}}
+    {{- else -}}
+      {{- if $debug }}{{ warnf "%s: .images vorhanden aber leer oder kein Slice (%T)" $logPrefix . }}{{ end -}}
+    {{- end -}}
+  {{- else -}}
+    {{- with index $source "Resources" -}}
+      {{- $images = .ByType "image" -}}
+      {{- if $debug }}{{ warnf "%s: Resources im Map (%d)" $logPrefix (len $images) }}{{ end -}}
+    {{- end -}}
+  {{- end -}}
+{{- else if $isPage -}}
+  {{- with $source.Resources -}}
+    {{- $images = .ByType "image" -}}
+    {{- if $debug }}{{ warnf "%s: .Resources direkt (%d)" $logPrefix (len $images) }}{{ end -}}
+  {{- else -}}
+    {{- if $debug }}{{ warnf "%s: Keine .Resources auf Page %s" $logPrefix $source.Path }}{{ end -}}
+  {{- end -}}
+{{- else -}}
+  {{- if $debug }}{{ warnf "❌ %s: Kein valider Typ (Typ: %T)" $logPrefix $source }}{{ end -}}
+{{- end -}}
+
+{{- return $images -}}

@@ -1,0 +1,19 @@
+{{/* Shortcode: progress-bar-svg (benannte Params)
+
+{{< progress-bar-svg label="Finished" count=20 total=39 width=360 height=18 barColor="#22c55e" >}}
+
+*/}}
+{{- partial "progress-bar-svg.html" (dict
+  "label" (.Get "label")
+  "count" (.Get "count")
+  "total" (.Get "total")
+  "width" (.Get "width")
+  "height" (.Get "height")
+  "radius" (.Get "radius")
+  "barColor" (.Get "barColor")
+  "bgColor" (.Get "bgColor")
+  "textColor" (.Get "textColor")
+  "fontSize" (.Get "fontSize")
+  "showText" (.Get "showText")
+  "class" (.Get "class")
+) -}}

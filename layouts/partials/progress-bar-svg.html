@@ -1,0 +1,60 @@
+{{/* 
+  Partial: progress-bar-svg
+  Zeichnet einen einzelnen SVG-Balken.
+
+  Params (dict):
+    label       string   – Beschriftung (für <title> & optional Text)
+    count       int      – aktueller Wert
+    total       int      – Gesamt (Default: count → 100%)
+    width       int      – Pixelbreite (Default 320)
+    height      int      – Pixelhöhe (Default 16)
+    radius      int      – Eckenradius (Default 4)
+    barColor    string   – #hex oder css var (Default "#06b6d4")
+    bgColor     string   – Hintergrund (Default "#e5e7eb")
+    textColor   string   – Textfarbe (Default "#111827")
+    fontSize    int      – px (Default 12)
+    showText    bool     – Prozent in der Mitte anzeigen (Default true)
+    class       string   – optionale CSS-Klassen am <svg>
+
+  Beispiel:
+    {{ partial "progress-bar-svg.html" (dict "label" "Finished" "count" 20 "total" 39) }}
+*/}}
+
+{{- $p := . -}}
+{{- $label    := $p.label    | default "" -}}
+{{- $count    := int ($p.count | default 0) -}}
+{{- $total    := int (or $p.total $count) -}}
+{{- $w        := int (or $p.width 50) -}}
+{{- $h        := int (or $p.height 16) -}}
+{{- $r        := int (or $p.radius 4) -}}
+{{- $bar      := or $p.barColor "#06b6d4" -}}
+{{- $bg       := or $p.bgColor  "#e5e7eb" -}}
+{{- $txt      := or $p.textColor "#111827" -}}
+{{- $fs       := int (or $p.fontSize 12) -}}
+{{- $class    := or $p.class "" -}}
+
+{{- $showText := $p.showText -}}
+{{- if not (in (slice true false) $showText) -}}
+  {{- $showText = ne (lower (printf "%v" (or $showText "true"))) "false" -}}
+{{- end -}}
+
+{{- if lt $total 1 }}{{- $total = 1 -}}{{- end -}}
+{{- if lt $count 0 }}{{- $count = 0 -}}{{- end -}}
+
+{{- $filled := div (add (mul $count $w) (div $total 2)) $total -}}
+{{- if gt $filled $w }}{{- $filled = $w -}}{{- end -}}
+
+{{- $pct := div (add (mul $count 100) (div $total 2)) $total -}}
+{{- $id := printf "pb-%s" (urlize (printf "%s-%d-%d" $label $count $total)) -}}
+
+<svg 
+  width="{{ $w }}" height="{{ $h }}" viewBox="0 0 {{ $w }} {{ $h }}"
+  role="img" aria-labelledby="{{ $id }}" class="{{ $class }}">
+  <title id="{{ $id }}">{{ printf "%s: %d/%d (%d%%)" $label $count $total $pct }}</title>
+  <rect x="0" y="0" width="{{ $w }}" height="{{ $h }}" rx="{{ $r }}" ry="{{ $r }}" fill="{{ $bg }}" />
+  <rect x="0" y="0" width="{{ $filled }}" height="{{ $h }}" rx="{{ $r }}" ry="{{ $r }}" fill="{{ $bar }}" />
+  {{- if $showText -}}
+    <text x="{{ div $w 2 }}" y="{{ div $h 2 }}" text-anchor="middle" dominant-baseline="central"
+          fill="{{ $txt }}" font-size="{{ $fs }}">{{ $pct }}%</text>
+  {{- end -}}
+</svg>
