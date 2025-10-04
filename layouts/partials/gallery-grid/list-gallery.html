@@ -74,7 +74,7 @@
 {{ $gallery := $scratch.Get "result" }}
 {{ if $debug }}{{ warnf "📎 Gallery object: %#v" $gallery }}{{ end }}
 
-{{ partial "gallery-grid/gallery-config.html" $p }}
+{{/* partial "gallery-grid/gallery-config.html" $p */}}
 
 <div id="hugogridgallery" data-gd-image-data-url="{{ $gallery.imageDataUrl }}"></div>
 

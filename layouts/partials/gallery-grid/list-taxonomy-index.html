@@ -12,7 +12,7 @@
 {{- $galleryTypes := (index site.Params "hugo-grid-gallery").gallerySections | default (slice "hugo-grid-gallery") -}}
 
 {{/* Einmalig Assets sicherstellen */}}
-{{ partial "gallery-grid/gallery-config.html" $page }}
+{{/* partial "gallery-grid/gallery-config.html" $page */}}
 
 {{ if $debug }}{{ warnf "🧭 list-taxonomy-index: taxonomy=%s on %s" $taxonomy $page.RelPermalink }}{{ end }}
 
