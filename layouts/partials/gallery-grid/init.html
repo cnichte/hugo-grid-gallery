@@ -11,50 +11,84 @@ Funktioniert sowohl mit:
 */}}
 
 {{/* layouts/partials/gallery-grid/init.html */}}
-{{- $debug := (index site.Params "hugo-grid-gallery").debug | default false }}
+{{- $debug := (index site.Params "hugo-grid-gallery").debug | default false -}}
 
-{{- $input := . }}
-{{- $scratch := $input.Scratch }}
-{{- $page := $input.page }}
+{{- $in      := . -}}
+{{- $scratch := $in.Scratch -}}
+{{- $page    := $in.page | default . -}}
 
-{{ if $debug }}{{ warnf "🌀 init.html called by %s – ID: %s" $page.Title $input.id }}{{ end }}
+{{- $rawID := "" -}}
+{{- if reflect.IsMap $in -}}
+  {{- with $in.id -}}
+    {{- $rawID = printf "%v" . -}}
+  {{- else -}}
+    {{- $rawID = printf "%v" $in -}}
+  {{- end -}}
+{{- else -}}
+  {{- $rawID = printf "%v" $in -}}
+{{- end -}}
+{{- $baseID := $rawID | urlize -}}
 
-{{- $id := "" }}
-{{- if reflect.IsMap $input }}
-{{- with $input.id }}
-{{- $id = . | urlize }}
-{{ else }}
-{{- $id = (printf "%v" $input) | urlize }}
-{{ end }}
-{{- else }}
-{{- $id = printf "%v" $input | urlize }}
-{{- end }}
+{{- if $debug }}{{ warnf "🌀 init.html called by %s – ID: %s" ($page.Title | default "<?>") $baseID }}{{ end -}}
 
-{{- $images := partial "get-images.html" $input }}
+{{/* ---------- 1) Bilderquelle robust auflösen ---------- */}}
+{{- $images := slice -}}
 
-{{- if eq (len $images) 0 }}
-{{- if $debug }}{{ warnf "🛑 init.html: Keine Bilder erhalten für ID=%s" $id }}{{ end }}
-{{- $scratch.Set "result" (dict "imageDataUrl" "") }}
-{{- return }}
-{{- end }}
+{{- if reflect.IsMap $in -}}
+  {{- if isset $in "images" -}}
+    {{- $images = (index $in "images") | default (slice) -}}
+  {{- else if isset $in "resources" -}}
+    {{- $resources := (index $in "resources") | default (slice) -}}
+    {{- range $resources -}}
+      {{- if and .Name (ne .MediaType.SubType "svg") -}}
+        {{- $images = $images | append . -}}
+      {{- end -}}
+    {{- end -}}
+  {{- else if isset $in "page" -}}
+    {{- $images = partial "get-images.html" (dict "page" (index $in "page")) -}}
+  {{- else -}}
+    {{- /* Fallback: ganze Map klappt nicht -> leer */ -}}
+  {{- end -}}
+{{- else -}}
+  {{- /* Fallback: Parameter ist eine Page */ -}}
+  {{- $images = partial "get-images.html" (dict "page" $in) -}}
+{{- end -}}
 
-{{- $thumbs := partial "gallery-grid/create-thumbs.html" (dict "images" $images) }}
+{{- if eq (len $images) 0 -}}
+  {{- if $debug }}{{ warnf "🛑 init.html: Keine Bilder erhalten für ID=%s" $baseID }}{{ end -}}
+  {{- $scratch.Set "result" (dict "imageDataUrl" "") -}}
+  {{- return -}}
+{{- end -}}
 
-{{- if $debug }}{{ warnf "🐛 init.html: %d thumbs erzeugt" (len $thumbs) }}{{ end }}
+{{/* ---------- 2) Signatur berechnen (Cache-Busting) ---------- */}}
+{{- $names := slice -}}
+{{- range sort $images "Name" -}}
+  {{- $names = $names | append .Name -}}
+{{- end -}}
+{{- $sig := printf "%d-%d" (len $images) (hash.FNV32a (delimit $names "|")) -}}
+{{- $id  := printf "%s__%s" $baseID $sig | urlize -}}
 
-{{- $json := $thumbs | jsonify | resources.FromString (printf "%s-gallery.json" (md5 $id)) | resources.Minify }}
-{{- if not $json }}
-{{- if $debug }}{{ warnf "❌ init.html: Konnte JSON nicht erzeugen für ID=%s" $id }}{{ end }}
-{{- $scratch.Set "result" (dict "imageDataUrl" "") }}
-{{- return }}
-{{- end }}
+{{/* ---------- 3) Per-Page Scratch-Cache nutzen ---------- */}}
+{{- $cacheKey := printf "hgg-image-json-%s" $id -}}
+{{- with $scratch.Get $cacheKey -}}
+  {{- if $debug }}{{ warnf "🧷 init.html: Cache-Hit %s → %s" $cacheKey . }}{{ end -}}
+  {{- $scratch.Set "result" (dict "imageDataUrl" .) -}}
+  {{- return -}}
+{{- end -}}
 
-{{- $url := $json.RelPermalink }}
+{{/* ---------- 4) Thumbs erzeugen & JSON schreiben ---------- */}}
+{{- $thumbs := partial "gallery-grid/create-thumbs.html" (dict "images" $images) -}}
+{{- if $debug }}{{ warnf "🐛 init.html: %d thumbs erzeugt" (len $thumbs) }}{{ end -}}
 
-{{- if eq $url "" }}
-{{- if $debug }}{{ warnf "⚠️ init.html: JSON-URL ist leer für ID=%s" $id }}{{ end }}
-{{- end }}
+{{- $json := $thumbs | jsonify | resources.FromString (printf "%s-gallery.json" (md5 $id)) | resources.Minify -}}
+{{- if not $json -}}
+  {{- if $debug }}{{ warnf "❌ init.html: Konnte JSON nicht erzeugen für ID=%s" $id }}{{ end -}}
+  {{- $scratch.Set "result" (dict "imageDataUrl" "") -}}
+  {{- return -}}
+{{- end -}}
 
-{{- if $debug }}{{ warnf "✅ init.html liefert an list-gallery.html = %s" $url }}{{ end }}
+{{- $url := $json.RelPermalink -}}
+{{- if $debug }}{{ warnf "✅ init.html liefert an list-gallery.html = %s" $url }}{{ end -}}
 
-{{- $scratch.Set "result" (dict "imageDataUrl" $url) }}
+{{- $scratch.Set $cacheKey $url -}}
+{{- $scratch.Set "result" (dict "imageDataUrl" $url) -}}
