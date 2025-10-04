@@ -1,111 +1,36 @@
 {{/* ---------------------------------------------------------  */}}
-{{/*  list.html (Index-Listenansicht)                           */}}
-{{/*  - Wenn .Kind == taxonomy → Karten pro Term                */}}
-{{/*  - Sonst: Karten pro Seite in diesem Kontext               */}}
+{{/*  list.html – Karten-Index der direkten Kinder              */}}
+{{/*  Für Section-Seiten (Kind == "section")                    */}}
 {{/* ---------------------------------------------------------- */}}
 
+{{- $p := . -}}
 {{- $debug := (index site.Params "hugo-grid-gallery").debug | default false -}}
-{{- $galleryTypes := (index site.Params "hugo-grid-gallery").gallerySections | default (slice "hugo-grid-gallery") -}}
-{{- $coverfoto_identifier := (index site.Params "hugo-grid-gallery").coverfoto_identifier | default "cover" -}}
+
+{{ if ne $p.Kind "section" }}
+  {{ if $debug }}{{ warnf "⛔ list.html: Nur für Sections – %s (%s)" $p.Title $p.Kind }}{{ end }}
+  {{ return }}
+{{ end }}
 
 <div class="galleries" id="gallery-container">
-
-{{ if eq .Kind "taxonomy" }}
-
-  {{/* ---------- Terms-Seite (z. B. /categories/) ---------- */}}
-  {{ range sort .Pages "Title" }}
-    {{ $term := .Title }}
-    {{ $termURL := .RelPermalink }}
-
-    {{/* Alle Galerien mit diesem Term (per Type!) */}}
-    {{ $galleries := where site.RegularPages "Type" "in" $galleryTypes }}
-    {{ $matching := where $galleries "Params.categories" "intersect" (slice $term) }}
-
-    {{/* Kandidaten-Thumbs sammeln */}}
-    {{ $allThumbs := slice }}
-    {{ range $matching }}
-      {{ $images := partial "get-images.html" . }}
-      {{ $thumbs := partial "gallery-grid/get-gallery-index.html" (dict "images" $images "page" .) }}
-      {{ if gt (len $thumbs) 0 }}{{ $allThumbs = $allThumbs | append $thumbs }}{{ end }}
-    {{ end }}
-
-    {{/* Kategorie-Metadaten + optionales Cover-Resolve */}}
-    {{ $cat := index (where site.Data.games_categories "name" $term) 0 }}
-    {{ $resScratch := newScratch }}
-    {{ if $cat }}
-      {{ partial "helpers/resolve-category-cover.html" (dict
-          "term"     $term
-          "cat"      $cat
-          "matching" $matching
-          "crop"     ($cat.cover_crop | default "smart")
-          "scratch"  $resScratch
-      ) }}
-    {{ end }}
-
-    {{/* Finale Thumb-Auswahl */}}
-    {{ $thumb_final := dict }}
-    {{ $resolved := $resScratch.Get "resolved" }}
-    {{ if $resolved }}
-      {{ $thumb_final = $resolved }}
-    {{ else if gt (len $allThumbs) 0 }}
-      {{ $idx := mod (hash.FNV32a $term) (len $allThumbs) }}
-      {{ $thumb_final = index $allThumbs $idx }}
-    {{ end }}
-
-    {{ if $thumb_final }}
-      <div class="card" data-title="{{ $term }}" data-image-count="{{ len $matching }}">
-        <a class="card-img" href="{{ $termURL }}">
-          <img src="{{ $thumb_final.thumb }}" alt="{{ $term }}" width="{{ $thumb_final.width }}" height="{{ $thumb_final.height }}" />
-          {{ $imageCount := 0 }}
-          {{ range $matching }}
-            {{ $imageCount = add $imageCount (len (partial "get-images.html" .)) }}
-          {{ end }}
-          <span class="num-photos">{{ $imageCount }} {{ T "photo" $imageCount }}</span>
-        </a>
-        <div class="body">
-          <h2><a href="{{ $termURL }}">{{ $term }}</a></h2>
-          {{ with $cat }}<p class="category-description">{{ .description | markdownify }}</p>{{ end }}
-        </div>
-      </div>
-    {{ end }}
-  {{ end }}
-
-{{ else }}
-
-  {{/* ---------- Normale Listenansicht (z. B. /my-galleries/) ---------- */}}
-  {{ $pages := .Pages }}
-  {{ if .IsHome }}
-    {{/* Home → optional alle Galerien anzeigen */}}
-    {{ $pages = where site.RegularPages "Type" "in" $galleryTypes }}
-  {{ end }}
-
+  {{ $pages := $p.RegularPages }}
   {{ range sort $pages "Title" }}
     {{ $images := partial "get-images.html" . }}
     {{ $thumbs := partial "gallery-grid/get-gallery-index.html" (dict "images" $images "page" .) }}
-
     {{ if gt (len $thumbs) 0 }}
-      {{ $coverThumbs := slice }}
-      {{ range $thumbs }}{{ if findRE "(?i)cover" .title }}{{ $coverThumbs = $coverThumbs | append . }}{{ end }}{{ end }}
+      {{/* bevorzugt 'cover' im Namen */}}
+      {{ $coverThumbs := where $thumbs "title" "intersect" (slice "cover") }}
       {{ $thumb := cond (gt (len $coverThumbs) 0) (index $coverThumbs 0) (index $thumbs 0) }}
 
-      {{- $isNewSince := (index site.Params "hugo-grid-gallery").isNewSince | default -7 | int -}}
-      {{- $isNewSymbol := (index site.Params "hugo-grid-gallery").isNewSymbol | default "⭐" -}}
-      {{ $isNew := and (.Lastmod) (ge .Lastmod (now.AddDate 0 0 $isNewSince)) }}
-
-      <div class="card" data-title="{{ .LinkTitle }}" data-image-count="{{ len $thumbs }}" data-updated="{{ .Lastmod.Format "2006-01-02T15:04:05" }}">
+      <div class="card" data-title="{{ .LinkTitle }}" data-image-count="{{ len $thumbs }}">
         <a class="card-img" href="{{ .RelPermalink }}">
           <img src="{{ $thumb.thumb }}" alt="{{ $thumb.title }}" width="{{ $thumb.width }}" height="{{ $thumb.height }}" />
-          <span class="num-photos">
-            {{ len $thumbs }} {{ T "photo" (len $thumbs) }}{{ if $isNew }} {{ $isNewSymbol }}{{ end }}
-          </span>
+          <span class="num-photos">{{ len $thumbs }} photos</span>
         </a>
         <div class="body">
           <h2><a href="{{ .RelPermalink }}">{{ .LinkTitle }}</a></h2>
-          <p>{{ .Summary }}</p>
+          {{ with .Summary }}<p>{{ . }}</p>{{ end }}
         </div>
       </div>
     {{ end }}
   {{ end }}
-
-{{ end }}
 </div>
