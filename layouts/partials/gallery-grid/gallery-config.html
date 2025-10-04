@@ -1,26 +1,126 @@
-{{/* layouts/partials/hugogridgallery/gallery-grid/header.html.html */}}
-{{/* Stellt die Gallerie Configuration (data/gallery/config.json) im Web zur verfügung */}}
-<script id="gd-config" type="application/json">
-  {{ index site.Data.gallery.config  | jsonify | safeJS  }}
-</script>
+{{/* layouts/partials/gallery-grid/gallery-config.html
+     Einmalige Einbindung aller Gallery-Assets (CSS/JS) + optionaler Config-JSON.
+     Aufruf:
+       - lazy:  aus list-gallery.html UND list-taxonomy-index.html
+       - oder:  global in baseof.html (dann kannst du den Aufruf in list-gallery.html weglassen)
 
+       Variante „lazy“: 
+       In list-gallery.html und in deinem Taxonomie-Index-Partial grid-index/list-taxonomy-index.html einmal
+       {{ partial "gallery-grid/gallery-config.html" . }} aufrufen. 
+       Das Scratch-Flag sorgt dafür, dass die Assets nur einmal eingebunden werden, 
+       selbst wenn beide Partials auf einer Seite landen.
 
-{{/*
-  einmal pro Seite einbinden.
-  TODO NEW - oben ist die alte Lösung
-      Dieses Partial aus list-gallery.html heraus aufrufen
-      dann sind Assets immer da, egal ob Page, Term oder Taxonomy.
+	     Variante „global“:
+       In layouts/_default/baseof.html in <head> oder kurz vor </body> einbauen. 
+        Dann nicht mehr aus list-gallery.html aufrufen (um Doppel-Calls zu vermeiden).
+
+        Also:
+        - „Nur laden, wenn tatsächlich ein Grid da ist“ → lazy (Partial in den Grid-Partials).
+        - „Immer verfügbar“ → global (Partial in baseof.html).
+*/}}
 
 {{ $k := "hgg-assets-loaded" }}
 {{ if not (.Scratch.Get $k) }}
   {{ .Scratch.Set $k true }}
 
-  {{ $js := resources.Get "js/gallery/index.js" | js.Build | fingerprint }}
-  <script defer src="{{ $js.RelPermalink }}"></script>
+  {{/* ---------- CONFIG-JSON (optional, wie früher) ---------- */}}
+  {{/* Wenn du data/gallery/config.json hast: */}}
+  {{ with site.Data.gallery.config }}
+    <script id="gd-config" type="application/json">
+      {{ . | jsonify | safeJS }}
+    </script>
+  {{ else }}
+    {{ warnf "⚠️ data/gallery/config.json nicht gefunden. Standardwerte werden verwendet." }}
+  {{ end }}
 
-  {{ $css := resources.Get "css/gallery/styles.css" | minify | fingerprint }}
-  <link rel="stylesheet" href="{{ $css.RelPermalink }}">
+  {{/* ---------- CSS ---------- */}}
+
+  {{/* SCSS deines Moduls (du hattest: modules/hugo-grid-gallery/scss/styles.scss) */}}
+  {{ $sassOpts := dict "enableSourceMap" (not hugo.IsProduction) "transpiler" "dartsass" "includePaths" (slice "node_modules") }}
+  {{ if hugo.IsProduction }}{{ $sassOpts = merge $sassOpts (dict "enableSourceMap" false "outputStyle" "compressed") }}{{ end }}
+
+  {{ $hggScss := resources.Get "modules/hugo-grid-gallery/scss/styles.scss" }}
+  {{ if $hggScss }}
+    {{ $hggCss := $hggScss | css.Sass $sassOpts }}
+    {{ if hugo.IsProduction }}{{ $hggCss = $hggCss | fingerprint }}{{ end }}
+    <link rel="stylesheet" href="{{ $hggCss.RelPermalink }}">
+  {{ end }}
+
+  {{/* Pig CSS */}}
+  {{ with resources.Get "ext/pig/pig.css" }}
+    {{ $pigcss := . }}
+    {{ if hugo.IsProduction }}{{ $pigcss = $pigcss | resources.Minify }}{{ end }}
+    <link rel="stylesheet" href="{{ $pigcss.RelPermalink }}">
+  {{ else }}
+    {{ warnf "ext/pig/pig.css nicht gefunden" }}
+  {{ end }}
+
+  {{/* FS Lightbox CSS */}}
+  {{ with resources.Get "ext/fslightbox/fslightbox.css" }}
+    {{ $fslCss := . }}
+    {{ if hugo.IsProduction }}{{ $fslCss = $fslCss | resources.Minify }}{{ end }}
+    <link rel="stylesheet" href="{{ $fslCss.RelPermalink }}">
+  {{ end }}
+
+  {{/* DearFlip CSS (optional & conditional) */}}
+  {{ if .Param "use_flipbook" }}
+    {{ with resources.Get "ext/dflip/css/dflip.css" }}
+      {{ $dflipCss := . }}
+      {{ if hugo.IsProduction }}{{ $dflipCss = $dflipCss | minify }}{{ end }}
+      <link rel="stylesheet" href="{{ $dflipCss.RelPermalink }}" media="screen">
+    {{ else }}
+      {{ warnf "ext/dflip/css/dflip.css nicht gefunden" }}
+    {{ end }}
+  {{ end }}
+
+  {{/* ---------- JS ---------- */}}
+
+  {{/* Main JS deines Projekts (initialisiert HGG; importiert Wrapper + Helpers) */}}
+  {{ with resources.Get "js/main.js" }}
+    {{ $main := . | js.Build (dict "target" "es2018" "minify" hugo.IsProduction "sourceMap" (cond hugo.IsProduction "external" "inline")) }}
+    <script defer src="{{ $main.RelPermalink }}" {{ if hugo.IsProduction }}integrity="{{ $main.Data.Integrity }}"{{ end }}></script>
+  {{ else }}
+    {{ warnf "js/main.js nicht gefunden" }}
+  {{ end }}
+
+  {{/* Pig JS (nicht bundlen, global) */}}
+  {{ with resources.Get "ext/pig/pig.js" }}
+    {{ $pig := . }}
+    {{ if hugo.IsProduction }}{{ $pig = $pig | resources.Minify }}{{ end }}
+    {{ $pig = $pig | fingerprint }}
+    <script src="{{ $pig.RelPermalink }}" integrity="{{ $pig.Data.Integrity }}"></script>
+  {{ else }}
+    {{ warnf "ext/pig/pig.js nicht gefunden" }}
+  {{ end }}
+
+  {{/* FS Lightbox JS */}}
+  {{ with resources.Get "ext/fslightbox/fslightbox.js" }}
+    {{ $fsl := . }}
+    {{ if hugo.IsProduction }}{{ $fsl = $fsl | resources.Minify }}{{ end }}
+    {{ $fsl = $fsl | fingerprint }}
+    <script src="{{ $fsl.RelPermalink }}" integrity="{{ $fsl.Data.Integrity }}"></script>
+  {{ else }}
+    {{ warnf "ext/fslightbox/fslightbox.jsnicht gefunden" }}
+  {{ end }}
+
+  {{/* DearFlip / Dflip (optional & conditional) */}}
+  {{ if .Param "use_flipbook" }}
+    {{ with resources.Get "ext/dflip/js/libs/jquery.min.js" }}
+      <script src="{{ .RelPermalink }}"></script>
+    {{ else }}
+      {{ warnf "ext/dflip/js/libs/jquery.min.js nicht gefunden" }}
+    {{ end }}
+    {{ with resources.Get "ext/dflip/js/dflip.min.js" }}
+      <script async data-cfasync="false" src="{{ .RelPermalink }}"></script>
+    {{ else }}
+      {{ warnf "ext/dflip/js/dflip.min.js nicht gefunden" }}
+    {{ end }}
+  {{ end }}
+
+  {{/* Optional: eigenes Gallery-Init (separat von main.js, wenn du willst) */}}
+  {{ with resources.Get "js/gallery/index.js" }}
+    {{ $gj := . | js.Build | fingerprint }}
+    <script defer src="{{ $gj.RelPermalink }}"></script>
+  {{ end }}
+
 {{ end }}
-
-
-*/}}

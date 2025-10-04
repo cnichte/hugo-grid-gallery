@@ -1,4 +1,6 @@
 {{/* 
+  layouts/partials/gallery-grid/list-taxonomy-index.html
+
   Zeigt Karten für alle Terms einer Taxonomie (z. B. categories).
   Erwartet ctx: { page: .Page, taxonomy: "categories" | "tags" }
 */}}
@@ -7,6 +9,9 @@
 {{ $page      := $ctx.page }}
 {{ $taxonomy  := $ctx.taxonomy | default "categories" }}
 {{ $debug     := (index site.Params "hugo-grid-gallery").debug | default false }}
+
+{{/* ▲ Assets 1x laden (lazy). Verwende $page als Kontext für Scratch etc. */}}
+{{ partial "gallery-grid/gallery-config.html" $page }}
 
 {{ if $debug }}{{ warnf "🧭 list-taxonomy-index: taxonomy=%s on %s" $taxonomy $page.RelPermalink }}{{ end }}
 
