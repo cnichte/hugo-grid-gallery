@@ -1,9 +1,9 @@
 {{/* ---------------------------------------------------------
    layouts/partials/get-images.html
    Liefert IMMER ein Slice von Image-Resources (lokale Dateien)
-   oder ein leeres Slice, ohne Exceptions.
+   oder ein leeres Slice – ohne Exceptions.
 
-   Akzeptiert als Input:
+   Akzeptiert:
      1) dict { "resources": []Resource }  -> direkt verwenden
      2) dict { "page": <Page> }           -> .Resources.ByType "image"
      3) <Page> (pageState / pageForShortcode / ...) -> .Resources.ByType "image"
