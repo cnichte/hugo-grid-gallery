@@ -1,9 +1,8 @@
 {{/* layouts/shortcodes/gallery-index.html
-     Beispiel_ {{< gallery-index taxonomy="categories" >}}
-*/}}
-{{/* {{< gallery-index taxonomy="categories" >}} */}}
+  Beispiele:
+  {{< gallery-index taxonomy="tags" >}}
+  {{< gallery-index taxonomy="categories" >}}
+  {{< gallery-index >}} (default: categories)
+ */}}
 {{ $taxonomy := .Get "taxonomy" | default "categories" }}
-{{ partial "gallery-grid/list-taxonomy-index.html" (dict
-  "page" .Page
-  "taxonomy" $taxonomy
-) }}
+{{ partial "gallery-grid/list-taxonomy-index.html" (dict "page" .Page "taxonomy" $taxonomy) }}

@@ -1,31 +1,30 @@
 {{/* ---------------------------------------------------------  */}}
-{{/*  layouts/partials/gallery-grid/list-gallery.html           */}}
+{{/*  list-gallery.html                                         */}}
 {{/*  Rendert ein Grid für:                                     */}}
 {{/*   - eine einzelne Galerie-Seite (.IsPage)                  */}}
 {{/*   - eine Term/Taxonomie-Seite (.Kind == term/taxonomy)     */}}
 {{/*                                                            */}}
-{{/*  Hinweis:                                                  */}}
-{{/*   - gallerySections aus params.hugo-grid-gallery.gallerySections */}}
-{{/*     erlaubt dir andere Sektionen als "galleries", z.B.     */}}
-{{/*     ["galleries","my-galleries"]                           */}}
-{{/*   - Bitte dieses Partial NICHT mit anderen Partials        */}}
-{{/*     zusammenmischen (sauber getrennt halten).              */}}
+{{/*  Steuerung:                                                */}}
+{{/*   - gallerySections = ["hugo-grid-gallery"]  (TYPEN!)      */}}
+{{/*   - tagCloudGalleriesLabel = "Galleries"                   */}}
 {{/* ---------------------------------------------------------- */}}
 
+{{- $p := . -}}
 {{- $debug := (index site.Params "hugo-grid-gallery").debug | default false -}}
-{{- $gallerySections := (index site.Params "hugo-grid-gallery").gallerySections | default (slice "galleries") -}}
+{{- $galleryTypes := (index site.Params "hugo-grid-gallery").gallerySections | default (slice "hugo-grid-gallery") -}}
+{{- $cloudLabel := (index site.Params "hugo-grid-gallery").tagCloudGalleriesLabel | default "Galleries" -}}
 
-{{ if $debug }}{{ warnf "🧪 CONTEXT: Kind=%s | Type=%s | Section=%s | IsPage=%v | Permalink=%s" .Kind .Type .Section .IsPage .Permalink }}{{ end }}
+{{ if $debug }}{{ warnf "🧪 CONTEXT: Kind=%s | Type=%s | Section=%s | IsPage=%v | Permalink=%s" $p.Kind $p.Type $p.Section $p.IsPage $p.Permalink }}{{ end }}
 
 {{/* -------- Schutz: nur Page oder Term/Taxonomy zulassen ---- */}}
-{{ if and (not .IsPage) (and (ne .Kind "taxonomy") (ne .Kind "term")) }}
-  {{ if $debug }}{{ warnf "⛔ list-gallery.html: Ungültiger Kontext – %s (%T)" .Title . }}{{ end }}
+{{ if and (not $p.IsPage) (and (ne $p.Kind "taxonomy") (ne $p.Kind "term")) }}
+  {{ if $debug }}{{ warnf "⛔ list-gallery.html: Ungültiger Kontext – %s (%T)" $p.Title $p }}{{ end }}
   {{ return }}
 {{ end }}
 
 {{/* ---------- optionale Beschreibung aus data/*.json ---------- */}}
-{{ if eq .Section "galleries" }}
-  {{ $entry := index (where site.Data.games "title" .Title) 0 }}
+{{ if eq $p.Type "hugo-grid-gallery" }}
+  {{ $entry := index (where site.Data.games "title" $p.Title) 0 }}
   {{ if $entry }}
     <div class="description-container">
       <p>{{ $entry.description }}
@@ -47,20 +46,14 @@
        </p>
        <p>{{ partial "count-images-page-partial.html" (dict "path" $entry.galleryLink "prefix" "This Gallery contains " "suffix" " virtual Photographs.") }}</p>
     </div>
-  {{ else }}
-    <div class="description-container">
-      <p style="color:red">Kein Eintrag in games.json für: {{ .Title }}</p>
-    </div>
   {{ end }}
-{{ else if eq .Section "stories" }}
-  {{ $entry := index (where site.Data.stories "title" .Title) 0 }}
+{{ else if eq $p.Section "stories" }}
+  {{ $entry := index (where site.Data.stories "title" $p.Title) 0 }}
   {{ if $entry }}
-     <div class="description-container">
-      {{ if $entry.subtitle }}{{ $entry.subtitle | markdownify }}{{ end }}
+    <div class="description-container">
+      {{ with $entry.subtitle }}{{ . | markdownify }}{{ end }}
       {{ $entry.description | markdownify }}
     </div>
-  {{ else }}
-    <p style="color:red">Kein Eintrag in stories.json für: {{ .Title }}</p>
   {{ end }}
 {{ end }}
 
@@ -69,15 +62,15 @@
 {{ $galleryID := "" }}
 {{ $matching := slice }}
 
-{{ if .IsPage }}
+{{ if $p.IsPage }}
   {{/* Leaf Page: Bilder aus Ordner laden */}}
-  {{ $galleryID = .File.Path | default (.Title | urlize) }}
-  {{ $images = partial "get-images.html" . }}
+  {{ $galleryID = (or $p.File.Path ($p.Title | urlize)) }}
+  {{ $images = partial "get-images.html" $p }}
 
-{{ else if or (eq .Kind "taxonomy") (eq .Kind "term") }}
-  {{ if $debug }}{{ warnf "🔍 Taxonomie: %s – Bilder werden aus passenden Galerien geladen…" .Title }}{{ end }}
-  {{ $term := .Title }}
-  {{ $galleries := where site.RegularPages "Section" "in" $gallerySections }}
+{{ else if or (eq $p.Kind "taxonomy") (eq $p.Kind "term") }}
+  {{ if $debug }}{{ warnf "🔍 Taxonomie: %s – Bilder werden aus passenden Galerien geladen…" $p.Title }}{{ end }}
+  {{ $term := $p.Title }}
+  {{ $galleries := where site.RegularPages "Type" "in" $galleryTypes }}
   {{ $matching = where $galleries "Params.categories" "intersect" (slice $term) }}
 
   {{ if $debug }}{{ warnf "🧪 Taxonomie-Matching: %d Treffer für '%s'" (len $matching) $term }}{{ end }}
@@ -91,16 +84,16 @@
   {{ $galleryID = printf "taxonomy-%s" ($term | urlize) }}
 {{ end }}
 
-{{ if or (eq .Kind "taxonomy") (eq .Kind "term") }}
+{{ if or (eq $p.Kind "taxonomy") (eq $p.Kind "term") }}
   <div class="description-container">
-    {{ $cat := index (where site.Data.games_categories "name" .Title) 0 }}
-    {{ if $cat }}<p class="category-description">{{ $cat.description | markdownify }}</p>{{ end }}
-    <p>The Category ‘{{ .Title }}’ shows {{ len $images }} virtual Photographs from {{ len $matching }} computergames.</p>
+    {{ $cat := index (where site.Data.games_categories "name" $p.Title) 0 }}
+    {{ with $cat }}<p class="category-description">{{ .description | markdownify }}</p>{{ end }}
+    <p>The Category ‘{{ $p.Title }}’ shows {{ len $images }} virtual Photographs from {{ len $matching }} computergames.</p>
   </div>
 {{ end }}
 
-{{ if not (gt (len $images) 0) }}
-  {{ if $debug }}{{ warnf "⚠️ list-gallery.html: Keine Bilder gefunden für %s" .Title }}{{ end }}
+{{ if le (len $images) 0 }}
+  {{ if $debug }}{{ warnf "⚠️ list-gallery.html: Keine Bilder gefunden für %s" $p.Title }}{{ end }}
   <div class="description-container">
     <p>💔 Sorry, there are currently no images.</p>
   </div>
@@ -109,68 +102,66 @@
 
 {{/* ---------- Galerie initialisieren + Assets laden ---------- */}}
 {{ $scratch := newScratch }}
-{{ $ctx := dict "images" $images "id" $galleryID "Scratch" $scratch "page" . }}
+{{ $ctx := dict "images" $images "id" $galleryID "Scratch" $scratch "page" $p }}
 {{ partial "gallery-grid/init.html" $ctx }}
 {{ $gallery := $scratch.Get "result" }}
 {{ if $debug }}{{ warnf "📎 Gallery object: %#v" $gallery }}{{ end }}
 
 {{/* Assets (CSS/JS) nur 1x je Seite laden */}}
-{{ partial "gallery-grid/gallery-config.html" . }}
+{{ partial "gallery-grid/gallery-config.html" $p }}
 
 {{/* ---------- Galerie-Container ---------- */}}
 <div id="hugogridgallery" data-gd-image-data-url="{{ $gallery.imageDataUrl }}"></div>
 
 {{/* ===== Navigation (Page↔Page bzw. Term↔Pages der Term-Menge) ===== */}}
-{{ $type  := .Type }}
-{{ $label := cond (eq $type "stories") "Story" (cond (eq $type "galleries") "Game" "") }}
 {{ $pages := slice }}
-
-{{ if .IsPage }}
-  {{ $pages = sort (where site.RegularPages "Section" .Section) "Title" }}
-{{ else if or (eq .Kind "term") (eq .Kind "taxonomy") }}
-  {{ $term := .Title }}
-  {{ $gals := where site.RegularPages "Section" "in" $gallerySections }}
+{{ if $p.IsPage }}
+  {{/* Alle Galerien (egal wo) – nach Title sortiert */}}
+  {{ $pages = sort (where site.RegularPages "Type" "in" $galleryTypes) "Title" }}
+{{ else if or (eq $p.Kind "term") (eq $p.Kind "taxonomy") }}
+  {{ $term := $p.Title }}
+  {{ $gals := where site.RegularPages "Type" "in" $galleryTypes }}
   {{ $match := where $gals "Params.categories" "intersect" (slice $term) }}
   {{ $pages = sort $match "Title" }}
 {{ end }}
 
 {{ $currentIndex := -1 }}
-{{ if $debug }}{{ warnf "🧭 NAVIGATION START: .Title=%s .Section=%s .Kind=%s .IsPage=%v .RelPermalink=%s" .Title .Section .Kind .IsPage .RelPermalink }}{{ end }}
+{{ if $debug }}{{ warnf "🧭 NAV START: Title=%s Kind=%s IsPage=%v RelPermalink=%s" $p.Title $p.Kind $p.IsPage $p.RelPermalink }}{{ end }}
 
-{{ range $i, $p := $pages }}
-  {{ $match := false }}
-  {{ with $p.File }}{{ with $.File }}{{ if eq .Path $.Path }}{{ $match = true }}{{ end }}{{ end }}{{ end }}
-  {{ if and (not $match) (eq $p.RelPermalink $.RelPermalink) }}{{ $match = true }}{{ end }}
-  {{ if $match }}{{ $currentIndex = $i }}{{ if $debug }}{{ warnf "✅ MATCH bei Index %d: %s" $i $p.Title }}{{ end }}{{ end }}
+{{ range $i, $pg := $pages }}
+  {{ $isMatch := false }}
+  {{ with $pg.File }}{{ with $p.File }}{{ if eq .Path $p.File.Path }}{{ $isMatch = true }}{{ end }}{{ end }}{{ end }}
+  {{ if and (not $isMatch) (eq $pg.RelPermalink $p.RelPermalink) }}{{ $isMatch = true }}{{ end }}
+  {{ if $isMatch }}{{ $currentIndex = $i }}{{ if $debug }}{{ warnf "✅ MATCH Index %d: %s" $i $pg.Title }}{{ end }}{{ end }}
 {{ end }}
 
 {{ if ge $currentIndex 0 }}
   <div class="nav-container">
     {{ if lt (add $currentIndex 1) (len $pages) }}
       {{ $next := index $pages (add $currentIndex 1) }}
-      <div class="nav-container-next">Next {{ $label }}: <a href="{{ $next.RelPermalink }}">{{ $next.Title }}</a></div>
+      <div class="nav-container-next">Next: <a href="{{ $next.RelPermalink }}">{{ $next.Title }}</a></div>
     {{ end }}
     {{ if gt $currentIndex 0 }}
       {{ $prev := index $pages (sub $currentIndex 1) }}
-      <div class="nav-container-prev">Previous {{ $label }}: <a href="{{ $prev.RelPermalink }}">{{ $prev.Title }}</a></div>
+      <div class="nav-container-prev">Previous: <a href="{{ $prev.RelPermalink }}">{{ $prev.Title }}</a></div>
     {{ end }}
   </div>
 {{ else if $debug }}
   {{ warnf "❌ Kein MATCH gefunden – %d Seiten durchsucht" (len $pages) }}
 {{ end }}
 
-{{/* ===== Tag-Clouds (Sektionen via $gallerySections) ===== */}}
-{{ $games := sort (where site.RegularPages "Section" "in" $gallerySections) "Title" }}
+{{/* ===== Tag-Clouds ===== */}}
+{{ $gals := sort (where site.RegularPages "Type" "in" $galleryTypes) "Title" }}
 <div class="tag-cloud-container">
-  <p class="tag-cloud-container-headline">Games</p>
-  {{ range $games }}
-    {{ $mark := or (and (eq $type "galleries") (eq .Title $.Title)) (and (eq $type "categories") (in .Params.categories $.Title)) }}
+  <p class="tag-cloud-container-headline">{{ $cloudLabel }}</p>
+  {{ range $gals }}
+    {{ $mark := or (and (in $galleryTypes $.Type) (eq .Title $p.Title)) (and (eq $p.Type "categories") (in .Params.categories $p.Title)) }}
     <a class="{{ if $mark }}menu-selected{{ else }}menu-link{{ end }}" href="{{ .RelPermalink }}">{{ .Title }}</a>
   {{ end }}
 </div>
 
 {{ $categories := slice }}
-{{ range where site.RegularPages "Section" "in" $gallerySections }}
+{{ range where site.RegularPages "Type" "in" $galleryTypes }}
   {{ $categories = $categories | append .Params.categories }}
 {{ end }}
 {{ $categories = $categories | uniq | sort }}
@@ -179,16 +170,19 @@
   <p class="tag-cloud-container-headline">Categories</p>
   {{ range $categories }}
     {{ $cat := . }}
-    {{ $mark := or (and (eq $type "categories") (eq $.Title $cat)) (and (eq $type "galleries") (in $.Params.categories $cat)) }}
+    {{ $mark := or (and (eq $p.Type "categories") (eq $p.Title $cat)) (and (in $galleryTypes $p.Type) (in $p.Params.categories $cat)) }}
     <a class="{{ if $mark }}menu-selected{{ else }}menu-link{{ end }}" href="/categories/{{ urlize $cat }}/">{{ $cat }}</a>
   {{ end }}
 </div>
 
-<div class="tag-cloud-container">
-  <p style="padding-bottom: 10px;">Stories</p>
-  {{ range where site.RegularPages "Section" "stories" }}
-    <a class="{{ if eq .RelPermalink $.RelPermalink }}menu-selected{{ else }}menu-link{{ end }}" href="{{ .RelPermalink }}">{{ .Title }}</a>
-  {{ end }}
-</div>
+{{ $stories := where site.RegularPages "Section" "stories" }}
+{{ if gt (len $stories) 0 }}
+  <div class="tag-cloud-container">
+    <p style="padding-bottom: 10px;">Stories</p>
+    {{ range $stories }}
+      <a class="{{ if eq .RelPermalink $p.RelPermalink }}menu-selected{{ else }}menu-link{{ end }}" href="{{ .RelPermalink }}">{{ .Title }}</a>
+    {{ end }}
+  </div>
+{{ end }}
 
-{{ if $debug }}{{ warnf "✅ LIST-GALLERY END for %s (%d Bilder)" .Title (len $images) }}{{ end }}
+{{ if $debug }}{{ warnf "✅ LIST-GALLERY END for %s (%d Bilder)" $p.Title (len $images) }}{{ end }}

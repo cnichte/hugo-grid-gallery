@@ -1,5 +1,11 @@
 {{/* layouts/shortcodes/gallery-grid.html 
       Beispiel: {{< gallery-grid >}} rendert Grid für aktuelle Seite ODER Term/Taxonomie 
 */}}
-{{ $ctx := .Page }}
-{{ partial "gallery-grid/list-gallery.html" $ctx }}
+{{ $t := .Page.Type }}
+{{ if eq $t "hugo-grid-gallery-index" }}
+  {{ partial "gallery-grid/list-taxonomy-index.html" (dict "page" .Page "taxonomy" "categories") }}
+{{ else if eq $t "hugo-grid-gallery" }}
+  {{ partial "gallery-grid/list-gallery.html" .Page }}
+{{ else }}
+  {{ partial "gallery-grid/list-gallery.html" .Page }}
+{{ end }}
