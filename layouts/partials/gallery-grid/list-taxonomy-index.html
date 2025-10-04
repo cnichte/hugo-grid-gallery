@@ -1,23 +1,22 @@
-{{/* 
-  layouts/partials/gallery-grid/list-taxonomy-index.html
-
-  Zeigt Karten für alle Terms einer Taxonomie (z. B. categories).
-  Erwartet ctx: { page: .Page, taxonomy: "categories" | "tags" }
-*/}}
+{{/* ---------------------------------------------------------  */}}
+{{/*  layouts/partials/gallery-grid/list-taxonomy-index.html    */}}
+{{/*  Zeigt Karten für alle Terms einer Taxonomie (z. B.       */}}
+{{/*  categories, tags).                                       */}}
+{{/*  Erwartet: dict { page: .Page, taxonomy: "categories"|... } */}}
+{{/* ---------------------------------------------------------- */}}
 
 {{ $ctx       := . }}
 {{ $page      := $ctx.page }}
 {{ $taxonomy  := $ctx.taxonomy | default "categories" }}
 {{ $debug     := (index site.Params "hugo-grid-gallery").debug | default false }}
-
 {{- $gallerySections := (index site.Params "hugo-grid-gallery").gallerySections | default (slice "galleries") -}}
 
-{{/* ▲ Assets 1x laden (lazy). Verwende $page als Kontext für Scratch etc. */}}
+{{/* Assets einmalig laden (lazy) */}}
 {{ partial "gallery-grid/gallery-config.html" $page }}
 
 {{ if $debug }}{{ warnf "🧭 list-taxonomy-index: taxonomy=%s on %s" $taxonomy $page.RelPermalink }}{{ end }}
 
-{{/* Terms holen (als Seiten-Objekte, damit .Title/.RelPermalink funktionieren) */}}
+{{/* Terms-Containerseite holen (z. B. /categories/) */}}
 {{ $termsPage := site.GetPage (printf "/%s" $taxonomy) }}
 {{ if not $termsPage }}
   {{ if $debug }}{{ warnf "⛔ Keine Taxonomie-Seite für '%s' gefunden" $taxonomy }}{{ end }}
@@ -30,7 +29,7 @@
     {{ $term    := .Title }}
     {{ $termURL := .RelPermalink }}
 
-    {{/* alle Galerien mit diesem Term finden */}}
+    {{/* alle Galerien (aus konfigurierten Sektionen) mit diesem Term */}}
     {{ $galleries := where site.RegularPages "Section" "in" $gallerySections }}
     {{ $matching  := where $galleries "Params.categories" "intersect" (slice $term) }}
 
@@ -44,11 +43,11 @@
       {{ end }}
     {{ end }}
 
-    {{/* Kategorie-Info aus data/games_categories.json (optional) */}}
+    {{/* optionale Kategorie-Infos */}}
     {{ $cat     := index (where site.Data.games_categories "name" $term) 0 }}
     {{ $catCrop := cond $cat ($cat.cover_crop | default "smart") "smart" }}
 
-    {{/* Cover-Resolver (optional): schreibt "resolved" ins Scratch */}}
+    {{/* Cover-Resolver (schreibt "resolved" ins Scratch) */}}
     {{ $resScratch := newScratch }}
     {{ if $cat }}
       {{ partial "helpers/resolve-category-cover.html" (dict
@@ -96,8 +95,8 @@
           {{ end }}
         </div>
       </div>
-    {{ else }}
-      {{ if $debug }}{{ warnf "⚠️ Kein Thumb für Term '%s' (matching=%d)" $term (len $matching) }}{{ end }}
+    {{ else if $debug }}
+      {{ warnf "⚠️ Kein Thumb für Term '%s' (matching=%d)" $term (len $matching) }}
     {{ end }}
   {{ end }}
 </div>
