@@ -1,3 +1,0 @@
-[[module.mounts]]
-    source = "shell-scripts"
-    target = "shell-scripts"
