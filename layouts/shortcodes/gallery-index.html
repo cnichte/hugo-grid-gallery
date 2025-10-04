@@ -2,8 +2,6 @@
   Beispiele:
  */}}
 {{/* Zeigt Karten für alle Terms einer Taxonomie (z. B. categories, tags). */}}
+{{/* {{< gallery-index taxonomy="categories" >}} */}}
 {{ $taxonomy := .Get "taxonomy" | default "categories" }}
-{{ partial "gallery-grid/list-taxonomy-index.html" (dict
-  "page" .Page
-  "taxonomy" $taxonomy
-) }}
+{{ partial "gallery-grid/list-taxonomy-index.html" (dict "page" .Page "taxonomy" $taxonomy) }}
