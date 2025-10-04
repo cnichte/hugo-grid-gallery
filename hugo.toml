@@ -5,3 +5,4 @@
     isNewSince = -7              # Tage
     isNewSymbol = "⭐"           # Gallery is new or updated
     coverfoto_identifier="cover" # kann irgendwo im Dateinamen stecken
+    gallerySections = ["galleries", "my-galleries"] # Hier die Sections mit Galerien angeben

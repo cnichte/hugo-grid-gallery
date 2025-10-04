@@ -7,6 +7,7 @@
   <div class="tag-cloud-container">The structuring according to (mostly) game categories serves to <b>rearrange</b> the virtual Photographs of the individual games <b>randomly</b> in a different context. Enjoy :-)</div>
 {{ end }}
 
+{{- $gallerySections := (index site.Params "hugo-grid-gallery").gallerySections | default (slice "galleries") -}}
 {{- $coverfoto_identifier := (index site.Params "hugo-grid-gallery").coverfoto_identifier | default "cover" }}
 
 <div class="galleries" id="gallery-container"> {{/* TODO: bootstrap */}}
@@ -19,7 +20,7 @@
     {{ $termURL := .RelPermalink }}
 
     {{/* Alle Galerien (Pages) ermitteln, die diese Kategorie tragen */}}
-    {{ $galleries := where site.RegularPages "Section" "galleries" }}
+    {{ $galleries := where site.RegularPages "Section" "in" $gallerySections }}
     {{ $matching := where $galleries "Params.categories" "intersect" (slice $term) }}
 
     {{/* ---------- 1) Alle Kandidaten-Thumbs sammeln (wie gehabt) ---------- */}}

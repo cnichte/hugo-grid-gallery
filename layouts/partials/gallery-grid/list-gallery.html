@@ -1,10 +1,14 @@
-{{/* Description Section from data/games.json. Only for Game-Titles, not for Category-Titles */}}
-{{/* layouts/partials/gallery-grid/list-gallery.html */}}
-
 {{/* ---------------------------------------------------------  */}}
-{{/*  layouts/partials/gallery-grid/list-gallery.html */}}
+{{/*  layouts/partials/gallery-grid/list-gallery.html           */}}
 {{/*  Anzeige einer Galerie oder Kategorie.                     */}}
+{{/*  Description Section from data/games.json. 
+      Only for Game-Titles, not for Category-Titles             */}}
+{{/*                                                            */}}
+{{/*  Autor: Christian Nichte                                   */}}
+{{/*  https://www.webentwicklung-aktuell.de                     */}}
 {{/* ---------------------------------------------------------- */}}
+
+{{- $gallerySections := (index site.Params "hugo-grid-gallery").gallerySections | default (slice "galleries") -}}
 
 {{/* layouts/partials/gallery-grid/list-gallery.html */}}
 {{- $debug := (index site.Params "hugo-grid-gallery").debug | default false }}
@@ -76,7 +80,7 @@
 {{ else if or (eq .Kind "taxonomy") (eq .Kind "term") }}
   {{ if $debug }}{{ warnf "🔍 Taxonomie: %s – Bilder werden aus passenden Galerien geladen…" .Title }}{{ end }}
   {{ $term := .Title }}
-  {{ $galleries := where site.RegularPages "Section" "galleries" }}
+  {{ $galleries := where site.RegularPages "Section" "in" $gallerySections }}
   {{ $matching = where $galleries "Params.categories" "intersect" (slice $term) }}
   {{ if $debug }}{{ warnf "🧪 Taxonomie-Matching: %d Treffer für '%s'" (len $matching) $term }}{{ end }}
 
@@ -131,7 +135,7 @@
   {{ $pages = sort (where site.RegularPages "Section" .Section) "Title" }}
 {{ else if or (eq .Kind "term") (eq .Kind "taxonomy") }}
   {{ $term := .Title }}
-  {{ $galleries := where site.RegularPages "Section" "galleries" }}
+  {{ $galleries := where site.RegularPages "Section" "in" $gallerySections }}
   {{ $matching := where $galleries "Params.categories" "intersect" (slice $term) }}
   {{ $pages = sort $matching "Title" }}
 {{ end }}

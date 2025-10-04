@@ -10,6 +10,8 @@
 {{ $taxonomy  := $ctx.taxonomy | default "categories" }}
 {{ $debug     := (index site.Params "hugo-grid-gallery").debug | default false }}
 
+{{- $gallerySections := (index site.Params "hugo-grid-gallery").gallerySections | default (slice "galleries") -}}
+
 {{/* ▲ Assets 1x laden (lazy). Verwende $page als Kontext für Scratch etc. */}}
 {{ partial "gallery-grid/gallery-config.html" $page }}
 
@@ -29,7 +31,7 @@
     {{ $termURL := .RelPermalink }}
 
     {{/* alle Galerien mit diesem Term finden */}}
-    {{ $galleries := where site.RegularPages "Section" "galleries" }}
+    {{ $galleries := where site.RegularPages "Section" "in" $gallerySections }}
     {{ $matching  := where $galleries "Params.categories" "intersect" (slice $term) }}
 
     {{/* Thumbs aus allen passenden Galerien sammeln */}}
