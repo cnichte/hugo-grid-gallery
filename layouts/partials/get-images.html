@@ -1,47 +1,48 @@
-{{/* layouts/partials/get-images.html */}}
-{{/* get-images.html: Gibt ein valides Slice von Image-Resources zurück, aus .Resources oder direkt als Übergabe */}}
-{{/* get-images.html – gibt .Resources-Bilder zurück 
-
-     Liefert IMMER ein Slice von Image-Resources zurück.
-     Akzeptiert:
-       - . (Page-Kontext)
-       - dict {"page": <Page>}
-       - dict {"resources": <[]Resource>}
-*/}}
+{{/* ---------------------------------------------------------
+   layouts/partials/get-images.html
+   Liefert IMMER ein Slice von Image-Resources zurück (oder leer).
+   - . kann eine Page sein
+   - oder dict {"page": <Page>}
+   - oder dict {"resources": <[]Resource>}
+---------------------------------------------------------- */}}
 
 {{- $debug := (index site.Params "hugo-grid-gallery").debug | default false -}}
 
-{{/* 1) Eingabe normalisieren */}}
 {{- $in := . -}}
-{{- $page := nil -}}
-{{- $resources := slice -}}
-
-{{/* dict {"resources": ...} hat Vorrang */}}
-{{- if and (reflect.IsMap $in) (isset $in "resources") -}}
-  {{- $resources = (index $in "resources") -}}
-  {{- if $debug }}{{ warnf "get-images: .resources direkt übergeben (%d)" (len $resources) }}{{ end -}}
-{{- else -}}
-  {{/* dict {"page": ...} oder direkt Page */}}
-  {{- if and (reflect.IsMap $in) (isset $in "page") -}}
-    {{- $page = (index $in "page") -}}
-  {{- else -}}
-    {{- $page = $in -}}
-  {{- end -}}
-  {{- if and $page $page.Resources -}}
-    {{- $resources = $page.Resources.ByType "image" -}}
-    {{- if $debug }}{{ warnf "get-images: .Resources direkt (%d)" (len $resources) }}{{ end -}}
-  {{- else -}}
-    {{- if $debug }}{{ warnf "get-images: Kein valider Page-Kontext, Typ=%T" $in }}{{ end -}}
-    {{- return (slice) -}}
-  {{- end -}}
-{{- end -}}
-
-{{/* 2) Nur Dateien (keine remote/leafless), optional: Filtern/Sortieren */}}
 {{- $images := slice -}}
-{{- range $resources }}
-  {{- if and .Name (ne .MediaType.SubType "svg") -}}
-    {{- $images = $images | append . -}}
+
+{{/* 1) Wenn dict{resources: ...} übergeben wurde -> direkt nehmen */}}
+{{- if and (reflect.IsMap $in) (isset $in "resources") -}}
+  {{- $res := (index $in "resources") -}}
+  {{- if $res -}}
+    {{- range $res }}
+      {{- if and .Name (ne .MediaType.SubType "svg") -}}
+        {{- $images = $images | append . -}}
+      {{- end -}}
+    {{- end -}}
   {{- end -}}
+  {{- if $debug }}{{ warnf "get-images: .resources (%d)" (len $images) }}{{ end -}}
+  {{- return $images -}}
 {{- end -}}
 
-{{ return $images }}
+{{/* 2) Sonst Page aus dict{page: ...} oder direkt .  */}}
+{{- $page := cond (and (reflect.IsMap $in) (isset $in "page")) (index $in "page") $in -}}
+
+{{/* 3) Verschachtelte with-Blöcke -> kein .Resources auf nil! */}}
+{{ with $page }}
+  {{ with .Resources }}
+    {{- $res := .ByType "image" -}}
+    {{- range $res -}}
+      {{- if and .Name (ne .MediaType.SubType "svg") -}}
+        {{- $images = $images | append . -}}
+      {{- end -}}
+    {{- end -}}
+    {{- if $debug }}{{ warnf "get-images: .Resources (%d) für %s" (len $images) $.RelPermalink }}{{ end -}}
+  {{ else }}
+    {{- if $debug }}{{ warnf "get-images: Keine .Resources auf %s" $.RelPermalink }}{{ end -}}
+  {{ end }}
+{{ else }}
+  {{- if $debug }}{{ warnf "get-images: Kein valider Page-Kontext (Typ=%T)" $in }}{{ end -}}
+{{ end }}
+
+{{- return $images -}}

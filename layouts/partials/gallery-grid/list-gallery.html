@@ -1,29 +1,30 @@
 {{/* ---------------------------------------------------------
    layouts/partials/gallery-grid/list-gallery.html
    Rendert ein Grid für:
-    - Single-Gallery-Page (.IsPage)
-    - Term/Taxonomy (.Kind == term|taxonomy)
+   - Single-Gallery-Seiten (.IsPage)
+   - Term/Taxonomy (.Kind == term/taxonomy)
 
-   Steuerung über params.hugo-grid-gallery:
-     - galleryTypes = ["hugo-grid-gallery", "my-galleries"]
-     - galleryIndexType = "hugo-grid-gallery-index" (nur Info für andere Templates)
-     - gamesLabel / categoriesLabel (Beschriftungen der Tag-Clouds)
+   Nutzt params.hugo-grid-gallery.gallerySections als Liste von
+   Type/Section-Namen (z. B. ["hugo-grid-gallery","my-galleries"]).
+
+   Erwartet, dass get-images.html "leer" zurückgibt, wenn keine
+   Resources vorhanden sind, statt zu crashen.
 ---------------------------------------------------------- */}}
 
 {{- $p := . -}}
 {{- $cfg := (index site.Params "hugo-grid-gallery") | default dict -}}
 {{- $debug := $cfg.debug | default false -}}
-{{- $galleryTypes := $cfg.galleryTypes | default (slice "hugo-grid-gallery") -}}
+{{- $gallerySections := $cfg.gallerySections | default (slice "galleries") -}}
 
-{{ if $debug }}{{ warnf "🧪 CONTEXT: Kind=%s | Type=%s | Section=%s | IsPage=%v | Permalink=%s" $p.Kind $p.Type $p.Section $p.IsPage $p.RelPermalink }}{{ end }}
+{{ if $debug }}{{ warnf "🧪 list-gallery: Kind=%s | Type=%s | Section=%s | IsPage=%v | Permalink=%s" $p.Kind $p.Type $p.Section $p.IsPage $p.RelPermalink }}{{ end }}
 
-{{/* Nur für Single-Page oder Term/Taxonomy */}}
+{{/* Nur Single Page ODER Term/Taxonomy zulassen */}}
 {{ if and (not $p.IsPage) (and (ne $p.Kind "taxonomy") (ne $p.Kind "term")) }}
   {{ if $debug }}{{ warnf "⛔ list-gallery: Ungültiger Kontext – %s (%T)" $p.Title $p }}{{ end }}
   {{ return }}
 {{ end }}
 
-{{/* ---------- (Optional) Intro aus data/*.json für Games/Stories ---------- */}}
+{{/* ---- (Optional) Beschreibung für bestimmte Sections ---- */}}
 {{ if eq $p.Section "galleries" }}
   {{ $entry := index (where site.Data.games "title" $p.Title) 0 }}
   {{ if $entry }}
@@ -35,13 +36,13 @@
             <a href="{{ $entry.developer.link }}" target="_blank" rel="noopener">{{ $entry.developer.name }}</a>
           {{ else }}{{ $entry.developer.name }}{{ end }}
         </strong>
-        {{ with $entry.publisher.name }}
+        {{ if $entry.publisher.name }}
           ,&nbsp;Publisher:
           {{ if $entry.publisher.link }}
             <a href="{{ $entry.publisher.link }}" target="_blank" rel="noopener">{{ $entry.publisher.name }}</a>
           {{ else }}{{ $entry.publisher.name }}{{ end }}
         {{ end }}
-      </p>
+       </p>
     </div>
   {{ end }}
 {{ else if eq $p.Section "stories" }}
@@ -54,31 +55,31 @@
   {{ end }}
 {{ end }}
 
-{{/* ---------- Bilder sammeln ---------- */}}
+{{/* ---- Bilder sammeln ---- */}}
 {{- $images := slice -}}
 {{- $galleryID := "" -}}
 {{- $matching := slice -}}
 
 {{ if $p.IsPage }}
-  {{/* Leaf-Bundle: Bilder direkt aus dem Bundle */}}
-  {{ $galleryID = or $p.File.Path ($p.Title | urlize) }}
+  {{/* Leaf/Branch Bundle: Bilder direkt aus der Seite laden */}}
+  {{ $galleryID = or (and $p.File $p.File.Path) ($p.Title | urlize) }}
   {{ $images = partial "get-images.html" $p }}
 
 {{ else if or (eq $p.Kind "taxonomy") (eq $p.Kind "term") }}
+  {{ if $debug }}{{ warnf "🔍 Taxonomie: %s – passende Galerien werden gesucht…" $p.Title }}{{ end }}
   {{ $term := $p.Title }}
-  {{ if $debug }}{{ warnf "🔍 Taxonomie: %s – passende Galerien werden gesucht…" $term }}{{ end }}
 
-  {{/* Kandidaten: nach Type (empfohlen) */}}
-  {{ $candidates := where site.RegularPages "Type" "in" $galleryTypes }}
+  {{/* Kandidaten nach Type ODER Section sammeln */}}
+  {{ $byType := where site.RegularPages "Type" "in" $gallerySections }}
+  {{ $bySect := where site.RegularPages "Section" "in" $gallerySections }}
+  {{ $candidates := uniq (union $byType $bySect) }}
 
-  {{/* Alle Galerien, die den Term tragen */}}
   {{ $matching = where $candidates "Params.categories" "intersect" (slice $term) }}
   {{ if $debug }}{{ warnf "🧪 Matching: %d Treffer für '%s'" (len $matching) $term }}{{ end }}
 
-  {{/* Bilder aus allen passenden Galerien flach einsammeln */}}
   {{ range $matching }}
     {{ $img := partial "get-images.html" . }}
-    {{ range $img }}{{ $images = $images | append . }}{{ end }}
+    {{ $images = union $images $img }}
   {{ end }}
 
   {{ $galleryID = printf "taxonomy-%s" ($term | urlize) }}
@@ -88,7 +89,7 @@
   <div class="description-container">
     {{ $cat := index (where site.Data.games_categories "name" $p.Title) 0 }}
     {{ with $cat }}<p class="category-description">{{ .description | markdownify }}</p>{{ end }}
-    <p>The Category ‘{{ $p.Title }}’ shows {{ len $images }} virtual photographs from {{ len $matching }} computergames.</p>
+    <p>The Category ‘{{ $p.Title }}’ shows {{ len $images }} virtual Photographs from {{ len $matching }} computergames.</p>
   </div>
 {{ end }}
 
@@ -98,29 +99,31 @@
   {{ return }}
 {{ end }}
 
-{{/* ---------- Init + Assets ---------- */}}
+{{/* ---- Init + Assets ---- */}}
 {{ $scratch := newScratch }}
 {{ $ctx := dict "images" $images "id" $galleryID "Scratch" $scratch "page" $p }}
 {{ partial "gallery-grid/init.html" $ctx }}
 {{ $gallery := $scratch.Get "result" }}
 {{ if $debug }}{{ warnf "📎 Gallery object: %#v" $gallery }}{{ end }}
 
-{{/* CSS/JS nur 1x je Seite */}}
 {{ partial "gallery-grid/gallery-config.html" $p }}
 
-{{/* ---------- Grid-Container ---------- */}}
 <div id="hugogridgallery" data-gd-image-data-url="{{ $gallery.imageDataUrl }}"></div>
 
-{{/* ---------- Navigation ---------- */}}
-{{ $label := cond (eq $p.Type "stories") "Story" (cond (in $galleryTypes $p.Type) "Gallery" "") }}
-{{ $pages := slice }}
+{{/* ---- Navigation (einfach & defensiv) ---- */}}
+{{ $type := $p.Type }}
+{{ $label := cond (eq $type "stories") "Story" (cond (in $gallerySections $type) "Gallery" "") }}
 
+{{ $pages := slice }}
 {{ if $p.IsPage }}
-  {{/* Navigation unter Galerien desselben Typs (stabiler als Section) */}}
-  {{ $pages = sort (where site.RegularPages "Type" $p.Type) "Title" }}
+  {{/* innerhalb gleicher Section/Type navigieren */}}
+  {{ $sameType := where site.RegularPages "Type" $p.Type }}
+  {{ $sameSect := where site.RegularPages "Section" $p.Section }}
+  {{ $pages = sort (uniq (union $sameType $sameSect)) "Title" }}
 {{ else if or (eq $p.Kind "term") (eq $p.Kind "taxonomy") }}
   {{ $term := $p.Title }}
-  {{ $pages = sort (where (where site.RegularPages "Type" "in" $galleryTypes) "Params.categories" "intersect" (slice $term)) "Title" }}
+  {{ $pool := uniq (union (where site.RegularPages "Type" "in" $gallerySections) (where site.RegularPages "Section" "in" $gallerySections)) }}
+  {{ $pages = sort (where $pool "Params.categories" "intersect" (slice $term)) "Title" }}
 {{ end }}
 
 {{ $currentIndex := -1 }}
@@ -144,12 +147,10 @@
   </div>
 {{ end }}
 
-{{/* ---------- Tag-Clouds ---------- */}}
+{{/* ---- Tag-Clouds ---- */}}
 {{ $gamesLabel := $cfg.gamesLabel | default "Galleries" }}
-{{ $categoriesLabel := $cfg.categoriesLabel | default "Categories" }}
 
-{{/* Alle Galerie-Seiten (nur Type-Filter) */}}
-{{ $gamePages := sort (where site.RegularPages "Type" "in" $galleryTypes) "Title" }}
+{{ $gamePages := sort (uniq (union (where site.RegularPages "Type" "in" $gallerySections) (where site.RegularPages "Section" "in" $gallerySections))) "Title" }}
 
 <div class="tag-cloud-container">
   <p class="tag-cloud-container-headline">{{ $gamesLabel }}</p>
@@ -162,14 +163,13 @@
 {{/* Kategorien FLACH einsammeln */}}
 {{ $categories := slice }}
 {{ range $gamePages }}
-  {{ with .Params.categories }}
-    {{ range . }}{{ $categories = $categories | append . }}{{ end }}
-  {{ end }}
+  {{ $cats := .Params.categories | default (slice) }}
+  {{ range $cats }}{{ $categories = $categories | append . }}{{ end }}
 {{ end }}
 {{ $categories = $categories | uniq | sort }}
 
 <div class="tag-cloud-container">
-  <p class="tag-cloud-container-headline">{{ $categoriesLabel }}</p>
+  <p class="tag-cloud-container-headline">Categories</p>
   {{ range $categories }}
     {{ $cat := . }}
     {{ $mark := or (and (eq $p.Kind "term") (eq $p.Title $cat)) (and $p.IsPage (in $p.Params.categories $cat)) }}
