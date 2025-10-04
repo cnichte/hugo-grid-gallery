@@ -1,14 +1,5 @@
 {{/* Modul: layouts/categories/terms.html (Taxonomie-Index /categories/) */}}
-{{- $cfg := (index site.Params "hugo-grid-gallery") | default dict -}}
-{{- $takeover := $cfg.takeoverTerms | default false -}}
-
-{{ if $takeover }}
-  {{ partial "gallery-grid/list-taxonomy-index.html" (dict "page" . "taxonomy" "categories") }}
-{{ else }}
-  <h1>{{ .Title }}</h1>
-  <ul>
-    {{ range .Data.Terms.Alphabetical }}
-      <li><a href="{{ .Page.RelPermalink }}">{{ .Page.Title }}</a> ({{ .Count }})</li>
-    {{ end }}
-  </ul>
-{{ end }}
+{{/* Modul: Kategorien-Index (alle Terms) -> Karten-Ansicht */}}
+{{- $p := . -}}
+{{- $taxonomy := or .Data.Plural .Type | default "categories" -}}
+{{ partial "gallery-grid/list-taxonomy-index.html" (dict "page" $p "taxonomy" $taxonomy) }}
