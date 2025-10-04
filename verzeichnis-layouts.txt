@@ -1,0 +1,48 @@
+./layouts
+├── partials
+│   ├── count-images-page-partial.html
+│   ├── filter-image-resources.html
+│   ├── gallery-grid
+│   │   ├── create-thumbs.html
+│   │   ├── gallery-config.html
+│   │   ├── get-gallery-index.html
+│   │   ├── init.html
+│   │   ├── list-gallery.html
+│   │   ├── list-taxonomy-index.html
+│   │   └── list.html
+│   ├── game-description-teaser.html
+│   ├── get-images.html
+│   ├── get-story-description.html
+│   ├── helpers
+│   │   ├── crop-anchor.html
+│   │   ├── resolve-category-cover.html
+│   │   └── truncate-words.html
+│   ├── link.html
+│   ├── platform-title-counts.html
+│   ├── progress-bar-svg-stacked.html
+│   ├── progress-bar-svg.html
+│   ├── recently-updated.html
+│   ├── star-rating.html
+│   ├── state-title-counts.html
+│   └── sum-played-hours.html
+└── shortcodes
+    ├── count-folders.html
+    ├── count-images-all.html
+    ├── count-images-page.html
+    ├── flipbook-shelf.html
+    ├── flipbook.html
+    ├── gallery-grid.html
+    ├── gallery-index.html
+    ├── gallery-list.html
+    ├── game-description-list.html
+    ├── game-description-teaser.html
+    ├── get-game-categories.html
+    ├── platform-title-counts.html
+    ├── progress-bar-svg-stacked.html
+    ├── progress-bar-svg.html
+    ├── state-title-counts.html
+    ├── story-description.html
+    ├── sum-played-hours.html
+    └── truncate-words.html
+
+5 directories, 41 files

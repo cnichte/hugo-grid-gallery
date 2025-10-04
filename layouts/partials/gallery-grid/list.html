@@ -54,7 +54,7 @@
     <div class="galleries" id="gallery-container">
       {{ range sort $children "Title" }}
         {{/* Thumbs aus den Ressourcen der Child-Page bestimmen */}}
-        {{ $images := partial "get-images.html" . }}
+        {{ $images := partial "get-images.html" (dict "page" .) }}
         {{ $thumbs := partial "gallery-grid/get-gallery-index.html" (dict "images" $images "page" .) }}
 
         {{ if gt (len $thumbs) 0 }}
