@@ -1,5 +1,9 @@
 {{/* layouts/shortcodes/gallery-index.html
   Beispiele:
  */}}
-{{ $ctx := .Page }}
-{{ partial "gallery-grid/list-gallery.html" $ctx }}
+{{/* Zeigt Karten für alle Terms einer Taxonomie (z. B. categories, tags). */}}
+{{ $taxonomy := .Get "taxonomy" | default "categories" }}
+{{ partial "gallery-grid/list-taxonomy-index.html" (dict
+  "page" .Page
+  "taxonomy" $taxonomy
+) }}

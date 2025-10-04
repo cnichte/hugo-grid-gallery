@@ -146,7 +146,9 @@
 {{/* ---- Tag-Clouds ---- */}}
 {{ $gamesLabel := (index site.Params "hugo-grid-gallery").gamesLabel | default "Galleries" }}
 
+{{/* Kandidaten für Galleries (nach Type oder Section) */}}
 {{ $gamePages := sort (union (where site.RegularPages "Type" "in" $gallerySections) (where site.RegularPages "Section" "in" $gallerySections) | uniq) "Title" }}
+
 <div class="tag-cloud-container">
   <p class="tag-cloud-container-headline">{{ $gamesLabel }}</p>
   {{ range $gamePages }}
@@ -155,9 +157,16 @@
   {{ end }}
 </div>
 
+{{/* Kategorien FLACH einsammeln */}}
 {{ $categories := slice }}
-{{ range $gamePages }}{{ $categories = $categories | append .Params.categories }}{{ end }}
+{{ range $gamePages }}
+  {{ $cats := .Params.categories | default (slice) }}
+  {{ range $cats }}
+    {{ $categories = $categories | append . }}
+  {{ end }}
+{{ end }}
 {{ $categories = $categories | uniq | sort }}
+
 <div class="tag-cloud-container">
   <p class="tag-cloud-container-headline">Categories</p>
   {{ range $categories }}
