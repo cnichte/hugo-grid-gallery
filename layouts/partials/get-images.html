@@ -1,6 +1,7 @@
 {{/* ---------------------------------------------------------
    layouts/partials/get-images.html
-   Liefert IMMER ein Slice von Image-Resources zurück (oder leer).
+   Liefert IMMER ein Slice von Image-Resources (lokale Dateien)
+   oder ein leeres Slice, ohne Exceptions.
 
    Akzeptiert als Input:
      1) dict { "resources": []Resource }  -> direkt verwenden
@@ -9,7 +10,7 @@
 
    Filter:
      - nur lokale Dateien (haben .Name)
-     - SVGs werden ausgeschlossen
+     - SVGs ausschließen
 ---------------------------------------------------------- */}}
 
 {{- $debug := (index site.Params "hugo-grid-gallery").debug | default false -}}
@@ -17,7 +18,7 @@
 {{- $in := . -}}
 {{- $images := slice -}}
 
-{{/* 1) Explizit übergebene Resources */}}
+{{/* 1) Explizit übergebene Resources haben Vorrang */}}
 {{- if and (reflect.IsMap $in) (isset $in "resources") -}}
   {{- $res := (index $in "resources") -}}
   {{- range $res -}}
@@ -29,20 +30,19 @@
   {{- return $images -}}
 {{- end -}}
 
-{{/* 2) Page aus dict{page: ...} ODER direkt .  */}}
+{{/* 2) Page besorgen: dict{page: ...} oder direkt . */}}
 {{- $page := cond (and (reflect.IsMap $in) (isset $in "page")) (index $in "page") $in -}}
 
 {{ with $page }}
   {{ with .Resources }}
-    {{- $res := .ByType "image" -}}
-    {{- range $res -}}
+    {{- range .ByType "image" -}}
       {{- if and .Name (ne .MediaType.SubType "svg") -}}
         {{- $images = $images | append . -}}
       {{- end -}}
     {{- end -}}
-    {{- if $debug }}{{ warnf "get-images: from .Resources (%d) – %s" (len $images) (or $.RelPermalink $.Permalink) }}{{ end -}}
+    {{- if $debug }}{{ warnf "get-images: from .Resources (%d)" (len $images) }}{{ end -}}
   {{ else }}
-    {{- if $debug }}{{ warnf "get-images: no .Resources on %T – %s" $page (or $.RelPermalink $.Permalink) }}{{ end -}}
+    {{- if $debug }}{{ warnf "get-images: page has no .Resources" }}{{ end -}}
   {{ end }}
 {{ else }}
   {{- if $debug }}{{ warnf "get-images: invalid input type %T (no page/map)" $in }}{{ end -}}
