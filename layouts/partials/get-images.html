@@ -1,9 +1,15 @@
 {{/* ---------------------------------------------------------
    layouts/partials/get-images.html
    Liefert IMMER ein Slice von Image-Resources zurück (oder leer).
-   - . kann eine Page sein
-   - oder dict {"page": <Page>}
-   - oder dict {"resources": <[]Resource>}
+
+   Akzeptiert als Input:
+     1) dict { "resources": []Resource }  -> direkt verwenden
+     2) dict { "page": <Page> }           -> .Resources.ByType "image"
+     3) <Page> (pageState / pageForShortcode / ...) -> .Resources.ByType "image"
+
+   Filter:
+     - nur lokale Dateien (haben .Name)
+     - SVGs werden ausgeschlossen
 ---------------------------------------------------------- */}}
 
 {{- $debug := (index site.Params "hugo-grid-gallery").debug | default false -}}
@@ -11,24 +17,21 @@
 {{- $in := . -}}
 {{- $images := slice -}}
 
-{{/* 1) Wenn dict{resources: ...} übergeben wurde -> direkt nehmen */}}
+{{/* 1) Explizit übergebene Resources */}}
 {{- if and (reflect.IsMap $in) (isset $in "resources") -}}
   {{- $res := (index $in "resources") -}}
-  {{- if $res -}}
-    {{- range $res }}
-      {{- if and .Name (ne .MediaType.SubType "svg") -}}
-        {{- $images = $images | append . -}}
-      {{- end -}}
+  {{- range $res -}}
+    {{- if and .Name (ne .MediaType.SubType "svg") -}}
+      {{- $images = $images | append . -}}
     {{- end -}}
   {{- end -}}
-  {{- if $debug }}{{ warnf "get-images: .resources (%d)" (len $images) }}{{ end -}}
+  {{- if $debug }}{{ warnf "get-images: via .resources (%d)" (len $images) }}{{ end -}}
   {{- return $images -}}
 {{- end -}}
 
-{{/* 2) Sonst Page aus dict{page: ...} oder direkt .  */}}
+{{/* 2) Page aus dict{page: ...} ODER direkt .  */}}
 {{- $page := cond (and (reflect.IsMap $in) (isset $in "page")) (index $in "page") $in -}}
 
-{{/* 3) Verschachtelte with-Blöcke -> kein .Resources auf nil! */}}
 {{ with $page }}
   {{ with .Resources }}
     {{- $res := .ByType "image" -}}
@@ -37,12 +40,12 @@
         {{- $images = $images | append . -}}
       {{- end -}}
     {{- end -}}
-    {{- if $debug }}{{ warnf "get-images: .Resources (%d) für %s" (len $images) $.RelPermalink }}{{ end -}}
+    {{- if $debug }}{{ warnf "get-images: from .Resources (%d) – %s" (len $images) (or $.RelPermalink $.Permalink) }}{{ end -}}
   {{ else }}
-    {{- if $debug }}{{ warnf "get-images: Keine .Resources auf %s" $.RelPermalink }}{{ end -}}
+    {{- if $debug }}{{ warnf "get-images: no .Resources on %T – %s" $page (or $.RelPermalink $.Permalink) }}{{ end -}}
   {{ end }}
 {{ else }}
-  {{- if $debug }}{{ warnf "get-images: Kein valider Page-Kontext (Typ=%T)" $in }}{{ end -}}
+  {{- if $debug }}{{ warnf "get-images: invalid input type %T (no page/map)" $in }}{{ end -}}
 {{ end }}
 
 {{- return $images -}}
