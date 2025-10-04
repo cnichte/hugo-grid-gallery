@@ -1,17 +1,14 @@
-{{/* layouts/categories/terms.html (Modul) */}}
+{{/* Modul: layouts/categories/terms.html (Taxonomie-Index /categories/) */}}
 {{- $cfg := (index site.Params "hugo-grid-gallery") | default dict -}}
 {{- $takeover := $cfg.takeoverTerms | default false -}}
 
 {{ if $takeover }}
   {{ partial "gallery-grid/list-taxonomy-index.html" (dict "page" . "taxonomy" "categories") }}
 {{ else }}
-  {{/* Fallback: nutze das Theme-Default-Template */}}
-  {{ define "main" }}
-    <h1>{{ .Title }}</h1>
-    <ul>
-      {{ range .Data.Terms.Alphabetical }}
-        <li><a href="{{ .Page.RelPermalink }}">{{ .Page.Title }}</a> ({{ .Count }})</li>
-      {{ end }}
-    </ul>
-  {{ end }}
+  <h1>{{ .Title }}</h1>
+  <ul>
+    {{ range .Data.Terms.Alphabetical }}
+      <li><a href="{{ .Page.RelPermalink }}">{{ .Page.Title }}</a> ({{ .Count }})</li>
+    {{ end }}
+  </ul>
 {{ end }}

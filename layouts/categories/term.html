@@ -1,19 +1,15 @@
-{{/* layouts/categories/term.html (Modul) */}}
+{{/* Modul: layouts/categories/term.html */}}
 {{- $cfg := (index site.Params "hugo-grid-gallery") | default dict -}}
 {{- $takeover := $cfg.takeoverTerms | default false -}}
 
 {{ if $takeover }}
-  {{ define "main" }}
-    <h1>{{ .Title }}</h1>
-    {{ partial "gallery-grid/list-gallery.html" . }}
-  {{ end }}
+  <h1>{{ .Title }}</h1>
+  {{ partial "gallery-grid/list-gallery.html" . }}
 {{ else }}
-  {{ define "main" }}
-    <h1>{{ .Title }}</h1>
-    <ul>
-      {{ range .Pages }}
-        <li><a href="{{ .RelPermalink }}">{{ .Title }}</a></li>
-      {{ end }}
-    </ul>
-  {{ end }}
+  <h1>{{ .Title }}</h1>
+  <ul>
+    {{ range .Pages }}
+      <li><a href="{{ .RelPermalink }}">{{ .Title }}</a></li>
+    {{ end }}
+  </ul>
 {{ end }}
