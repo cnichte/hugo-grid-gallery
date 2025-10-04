@@ -6,3 +6,6 @@
     isNewSymbol = "⭐"           # Gallery is new or updated
     coverfoto_identifier="cover" # kann irgendwo im Dateinamen stecken
 
+[[module.mounts]]
+    source = "shell-scripts"
+    target = "shell-scripts"
