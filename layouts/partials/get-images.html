@@ -1,57 +1,47 @@
 {{/* layouts/partials/get-images.html */}}
 {{/* get-images.html: Gibt ein valides Slice von Image-Resources zurück, aus .Resources oder direkt als Übergabe */}}
-{{/* get-images.html – gibt .Resources-Bilder zurück */}}
+{{/* get-images.html – gibt .Resources-Bilder zurück 
 
-{{/* layouts/partials/get-images.html */}}
+     Liefert IMMER ein Slice von Image-Resources zurück.
+     Akzeptiert:
+       - . (Page-Kontext)
+       - dict {"page": <Page>}
+       - dict {"resources": <[]Resource>}
+*/}}
 
 {{- $debug := (index site.Params "hugo-grid-gallery").debug | default false -}}
 
-{{- $logPrefix := "get-images" -}}
-{{- $source := . -}}
-{{- $images := slice -}}
+{{/* 1) Eingabe normalisieren */}}
+{{- $in := . -}}
+{{- $page := nil -}}
+{{- $resources := slice -}}
 
-{{/* ✅ Verhindere Endlosschleife durch zu frühes Aufrufen mit .Resources
-     Nur Maps mit "images"/"Resources" ODER Pages sind valide Kontexte.
-     Wichtig: isset NUR auf Maps anwenden, sonst gibt's Warnungen. */ -}}
-{{- $isMap := reflect.IsMap $source -}}
-{{- $t := printf "%T" $source -}}
-{{- $isPage := or (eq $t "*hugolib.pageState") (eq $t "hugolib.pageState") -}}
-
-{{- $hasImages := false -}}
-{{- $hasResources := false -}}
-{{- if $isMap -}}
-  {{- $hasImages = isset $source "images" -}}
-  {{- $hasResources = isset $source "Resources" -}}
-{{- end -}}
-
-{{- if not (or $isPage (or $hasImages $hasResources)) -}}
-  {{- if $debug }}{{ warnf "⛔️ %s: Aufruf ignoriert – kein valider Kontext (%T)" $logPrefix $source }}{{ end -}}
-  {{- return -}}
-{{- end -}}
-
-{{- if $isMap -}}
-  {{- with index $source "images" -}}
-    {{- if and (reflect.IsSlice .) (gt (len .) 0) -}}
-      {{- $images = . -}}
-      {{- if $debug }}{{ warnf "%s: .images direkt übergeben (%d)" $logPrefix (len $images) }}{{ end -}}
-    {{- else -}}
-      {{- if $debug }}{{ warnf "%s: .images vorhanden aber leer oder kein Slice (%T)" $logPrefix . }}{{ end -}}
-    {{- end -}}
-  {{- else -}}
-    {{- with index $source "Resources" -}}
-      {{- $images = .ByType "image" -}}
-      {{- if $debug }}{{ warnf "%s: Resources im Map (%d)" $logPrefix (len $images) }}{{ end -}}
-    {{- end -}}
-  {{- end -}}
-{{- else if $isPage -}}
-  {{- with $source.Resources -}}
-    {{- $images = .ByType "image" -}}
-    {{- if $debug }}{{ warnf "%s: .Resources direkt (%d)" $logPrefix (len $images) }}{{ end -}}
-  {{- else -}}
-    {{- if $debug }}{{ warnf "%s: Keine .Resources auf Page %s" $logPrefix $source.Path }}{{ end -}}
-  {{- end -}}
+{{/* dict {"resources": ...} hat Vorrang */}}
+{{- if and (reflect.IsMap $in) (isset $in "resources") -}}
+  {{- $resources = (index $in "resources") -}}
+  {{- if $debug }}{{ warnf "get-images: .resources direkt übergeben (%d)" (len $resources) }}{{ end -}}
 {{- else -}}
-  {{- if $debug }}{{ warnf "❌ %s: Kein valider Typ (Typ: %T)" $logPrefix $source }}{{ end -}}
+  {{/* dict {"page": ...} oder direkt Page */}}
+  {{- if and (reflect.IsMap $in) (isset $in "page") -}}
+    {{- $page = (index $in "page") -}}
+  {{- else -}}
+    {{- $page = $in -}}
+  {{- end -}}
+  {{- if and $page $page.Resources -}}
+    {{- $resources = $page.Resources.ByType "image" -}}
+    {{- if $debug }}{{ warnf "get-images: .Resources direkt (%d)" (len $resources) }}{{ end -}}
+  {{- else -}}
+    {{- if $debug }}{{ warnf "get-images: Kein valider Page-Kontext, Typ=%T" $in }}{{ end -}}
+    {{- return (slice) -}}
+  {{- end -}}
 {{- end -}}
 
-{{- return $images -}}
+{{/* 2) Nur Dateien (keine remote/leafless), optional: Filtern/Sortieren */}}
+{{- $images := slice -}}
+{{- range $resources }}
+  {{- if and .Name (ne .MediaType.SubType "svg") -}}
+    {{- $images = $images | append . -}}
+  {{- end -}}
+{{- end -}}
+
+{{ return $images }}
