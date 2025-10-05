@@ -25,67 +25,68 @@
 {{- if not (.Scratch.Get $flag) -}}
   {{- .Scratch.Set $flag true -}}
 
-  {{/* Optionales Config-JSON (für Gallery-Verhalten, Shuffle etc.) */}}
+  {{/* Config-JSON (neu: hgg-config; Fallback: global window.configObj) */}}
   {{- with site.Data.gallery.config -}}
-    <script id="hgg-config" type="application/json">
-      {{ . | jsonify | safeHTML }}
-    </script>
+    <script id="hgg-config" type="application/json">{{ . | jsonify | safeHTML }}</script>
   {{- else -}}
-    {{/* Fallback, damit alte Scripte nicht sterben */}}
     <script>window.configObj = window.configObj || {};</script>
   {{- end -}}
 
   {{/* ---------- CSS ---------- */}}
-  {{ with resources.Get "ext/pig/pig.css" }}
-    {{ $pigcss := . }}
-    {{ if hugo.IsProduction }}{{ $pigcss = $pigcss | resources.Minify | fingerprint }}{{ end }}
-    <link rel="stylesheet" href="{{ $pigcss.RelPermalink }}"{{ with $pigcss.Data.Integrity }} integrity="{{ . }}"{{ end }}>
-  {{ end }}
+  {{- with resources.Get "ext/pig/pig.css" -}}
+    {{- $r := . -}}
+    {{- if hugo.IsProduction -}}{{- $r = resources.Minify $r | resources.Fingerprint -}}{{- end -}}
+    <link rel="stylesheet" href="{{ $r.RelPermalink }}"{{ with $r.Data.Integrity }} integrity="{{ . }}"{{ end }}>
+  {{- end -}}
 
-  {{ with resources.Get "ext/fslightbox/fslightbox.css" }}
-    {{ $fslCss := . }}
-    {{ if hugo.IsProduction }}{{ $fslCss = $fslCss | resources.Minify | fingerprint }}{{ end }}
-    <link rel="stylesheet" href="{{ $fslCss.RelPermalink }}"{{ with $fslCss.Data.Integrity }} integrity="{{ . }}"{{ end }}>
-  {{ end }}
+  {{- with resources.Get "ext/fslightbox/fslightbox.css" -}}
+    {{- $r := . -}}
+    {{- if hugo.IsProduction -}}{{- $r = resources.Minify $r | resources.Fingerprint -}}{{- end -}}
+    <link rel="stylesheet" href="{{ $r.RelPermalink }}"{{ with $r.Data.Integrity }} integrity="{{ . }}"{{ end }}>
+  {{- end -}}
 
-  {{/* Dein modul-eigenes CSS (leichtgewichtig, nur Layout) */}}
-  {{ with resources.Get "hugo-grid-gallery/css/hugg.css" }}
-    {{ $hugg := . }}
-    {{ if hugo.IsProduction }}{{ $hugg = $hugg | resources.Minify | fingerprint }}{{ end }}
-    <link rel="stylesheet" href="{{ $hugg.RelPermalink }}"{{ with $hugg.Data.Integrity }} integrity="{{ . }}"{{ end }}>
-  {{ end }}
+  {{- with resources.Get "hugo-grid-gallery/css/hugg.css" -}}
+    {{- $r := . -}}
+    {{- if hugo.IsProduction -}}{{- $r = resources.Minify $r | resources.Fingerprint -}}{{- end -}}
+    <link rel="stylesheet" href="{{ $r.RelPermalink }}"{{ with $r.Data.Integrity }} integrity="{{ . }}"{{ end }}>
+  {{- end -}}
 
   {{/* ---------- JS: Libs zuerst ---------- */}}
-  {{ with resources.Get "ext/pig/pig.js" }}
-    {{ $pig := . }}
-    {{ if hugo.IsProduction }}{{ $pig = $pig | resources.Minify | fingerprint }}{{ end }}
-    <script src="{{ $pig.RelPermalink }}"{{ with $pig.Data.Integrity }} integrity="{{ . }}"{{ end }}></script>
-  {{ end }}
+  {{- with resources.Get "ext/pig/pig.js" -}}
+    {{- $r := . -}}
+    {{- if hugo.IsProduction -}}{{- $r = resources.Minify $r | resources.Fingerprint -}}{{- end -}}
+    <script src="{{ $r.RelPermalink }}"{{ with $r.Data.Integrity }} integrity="{{ . }}"{{ end }}></script>
+  {{- end -}}
 
-  {{ with resources.Get "ext/fslightbox/fslightbox.js" }}
-    {{ $fsl := . }}
-    {{ if hugo.IsProduction }}{{ $fsl = $fsl | resources.Minify | fingerprint }}{{ end }}
-    <script src="{{ $fsl.RelPermalink }}"{{ with $fsl.Data.Integrity }} integrity="{{ . }}"{{ end }}></script>
-  {{ end }}
+  {{- with resources.Get "ext/fslightbox/fslightbox.js" -}}
+    {{- $r := . -}}
+    {{- if hugo.IsProduction -}}{{- $r = resources.Minify $r | resources.Fingerprint -}}{{- end -}}
+    <script src="{{ $r.RelPermalink }}"{{ with $r.Data.Integrity }} integrity="{{ . }}"{{ end }}></script>
+  {{- end -}}
 
-  {{/* ---------- JS: dein App-Entry (importiert alles weitere) ---------- */}}
-  {{ with resources.Get "hugo-grid-gallery/js/main.js" }}
-    {{ $main := . | js.Build (dict "target" "es2018" "minify" hugo.IsProduction "sourceMap" (cond hugo.IsProduction "external" "inline")) }}
-    {{ if hugo.IsProduction }}{{ $main = $main | fingerprint }}{{ end }}
-    <script defer src="{{ $main.RelPermalink }}"{{ with $main.Data.Integrity }} integrity="{{ . }}"{{ end }}></script>
-  {{ else }}
-    {{ warnf "assets/js/main.js nicht gefunden" }}
-  {{ end }}
+  {{/* ---------- JS: App-Entry ---------- */}}
+  {{- with resources.Get "hugo-grid-gallery/js/main.js" -}}
+    {{- $opts := dict "target" "es2018" "minify" hugo.IsProduction "sourceMap" (cond hugo.IsProduction "external" "inline") -}}
+    {{- $r := js.Build . $opts -}}
+    {{- if hugo.IsProduction -}}{{- $r = resources.Fingerprint $r -}}{{- end -}}
+    <script defer src="{{ $r.RelPermalink }}"{{ with $r.Data.Integrity }} integrity="{{ . }}"{{ end }}></script>
+  {{- else -}}
+    {{- warnf "hugo-grid-gallery/js/main.js nicht gefunden" -}}
+  {{- end -}}
 
-  {{/* ---------- (Optional) DearFlip ---------- */}}
-  {{ if .Param "use_flipbook" }}
-    {{ with resources.Get "ext/dflip/js/libs/jquery.min.js" }}<script src="{{ .RelPermalink }}"></script>{{ end }}
-    {{ with resources.Get "ext/dflip/js/dflip.min.js" }}<script async data-cfasync="false" src="{{ .RelPermalink }}"></script>{{ end }}
-    {{ with resources.Get "ext/dflip/css/dflip.css" }}
-      {{ $dflip := . }}
-      {{ if hugo.IsProduction }}{{ $dflip = $dflip | resources.Minify | fingerprint }}{{ end }}
-      <link rel="stylesheet" href="{{ $dflip.RelPermalink }}"{{ with $dflip.Data.Integrity }} integrity="{{ . }}"{{ end }}>
-    {{ end }}
-  {{ end }}
+  {{/* ---------- Optional: DearFlip ---------- */}}
+  {{- if .Param "use_flipbook" -}}
+    {{- with resources.Get "ext/dflip/js/libs/jquery.min.js" -}}
+      <script src="{{ .RelPermalink }}"></script>
+    {{- end -}}
+    {{- with resources.Get "ext/dflip/js/dflip.min.js" -}}
+      <script async data-cfasync="false" src="{{ .RelPermalink }}"></script>
+    {{- end -}}
+    {{- with resources.Get "ext/dflip/css/dflip.css" -}}
+      {{- $r := . -}}
+      {{- if hugo.IsProduction -}}{{- $r = resources.Minify $r | resources.Fingerprint -}}{{- end -}}
+      <link rel="stylesheet" href="{{ $r.RelPermalink }}"{{ with $r.Data.Integrity }} integrity="{{ . }}"{{ end }}>
+    {{- end -}}
+  {{- end -}}
 
 {{- end -}}
