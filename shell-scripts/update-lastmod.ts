@@ -1,6 +1,42 @@
 #!/usr/bin/env tsx
 /* eslint-disable no-console */
 
+/**
+ * Hugo Grid Gallery – update-lastmod.ts
+ *
+ * Zweck
+ * -----
+ * - Durchsucht /content rekursiv nach Leaf-Bundles (Ordner mit index.md),
+ * - berücksichtigt nur Bundles mit Frontmatter `type: "hugo-grid-gallery"`,
+ * - sammelt ALLE Bilder (rekursiv) unterhalb dieses Bundles,
+ * - ermittelt das jüngste Änderungsdatum über `git log -1 --format=%cI -- <alle Bilder>`,
+ *   Fallback: jüngste mtime,
+ * - setzt/aktualisiert `lastmod` im Frontmatter (YAML `---` oder TOML `+++`).
+ *
+ * Aufruf
+ * ------
+ *   npx tsx shell-scripts/hgg-ts/update-lastmod.ts [--dry-run] [--stage]
+ *
+ * Optionen / ENV
+ * --------------
+ *   --dry-run           : schreibt nichts zurück (nur Logging)
+ *   --stage             : führt nach Update `git add index.md` aus
+ *
+ *   CONTENT_DIR=content : Root des Content-Verzeichnisses
+ *   EXT=jpg,jpeg,png,...: Bildendungen (Kommasepariert, alles lower-case)
+ *   MAX_DEPTH=0         : 0 = unbegrenzt, sonst Tiefe der Bundle-Suche
+ *
+ * Rückgabewerte
+ * -------------
+ *   Exit-Code 0 bei Erfolg, !=0 bei Fehler.
+ *
+ * Hinweise
+ * --------
+ * - Funktioniert auf macOS, Linux, Windows (git erforderlich für Git-Timestamp).
+ * - Frontmatter wird robust geparst (YAML/TOML Delimiter).
+ * - `lastmod` wird als ISO-8601 geschrieben (z. B. 2025-01-31T12:34:56+01:00).
+ */
+
 import { promises as fs } from "node:fs";
 import { join, resolve, sep } from "node:path";
 import { execFile } from "node:child_process";
@@ -8,7 +44,8 @@ import { promisify } from "node:util";
 
 const execFileAsync = promisify(execFile);
 
-/* ========== Konfiguration (per ENV oder CLI) ========== */
+/* ===================== Konfiguration ===================== */
+
 const CONTENT_DIR = resolve(process.env.CONTENT_DIR ?? "content");
 const EXTENSIONS = (process.env.EXT ?? "jpg,jpeg,png,webp,avif")
   .split(",")
@@ -16,89 +53,106 @@ const EXTENSIONS = (process.env.EXT ?? "jpg,jpeg,png,webp,avif")
   .filter(Boolean);
 
 const DRY_RUN = process.argv.includes("--dry-run");
-const STAGE   = process.argv.includes("--stage"); // git add index.md
+const STAGE = process.argv.includes("--stage"); // git add index.md
+const MAX_DEPTH = Number(process.env.MAX_DEPTH ?? "0"); // 0 = unbegrenzt
 
-// Bei sehr großen Repos kann man das einschränken (0 = unendlich)
-const MAX_DEPTH = Number(process.env.MAX_DEPTH ?? "0"); // 0 = unlimited
+const REQUIRED_TYPE = "hugo-grid-gallery";
 
-/* ========== Hilfsfunktionen ========== */
+/* ===================== Hilfsfunktionen ===================== */
 
 type FrontmatterInfo = {
   delimiter: "---" | "+++";
-  start: number;
-  end: number;
-  head: string; // Inhalt zwischen den Delimitern (ohne Delimiter)
-  body: string; // Rest der Datei nach dem 2. Delimiter
-  original: string; // vollständiger Inhalt
+  endOffset: number; // Byte-Offset direkt NACH der FM-Schließzeile
+  head: string; // FM-Header ohne Delimiter
+  body: string; // Inhalt nach dem Frontmatter
+  original: string; // vollständiger Dateiinhalt
 };
 
+/** Prüft Dateiendung gegen zugelassene Bildformate */
 function isImage(name: string): boolean {
-  const idx = name.lastIndexOf(".");
-  if (idx < 0) return false;
-  const ext = name.slice(idx + 1).toLowerCase();
+  const dot = name.lastIndexOf(".");
+  if (dot < 0) return false;
+  const ext = name.slice(dot + 1).toLowerCase();
   return EXTENSIONS.includes(ext);
 }
 
 async function statSafe(p: string) {
-  try { return await fs.stat(p); } catch { return null; }
+  try {
+    return await fs.stat(p);
+  } catch {
+    return null;
+  }
 }
 
 async function readDirSafe(p: string) {
-  try { return await fs.readdir(p, { withFileTypes: true }); } catch { return []; }
+  try {
+    return await fs.readdir(p, { withFileTypes: true });
+  } catch {
+    return [];
+  }
 }
 
+/**
+ * Ermittelt Frontmatter (YAML '---' oder TOML '+++').
+ * Gibt den reinen FM-Text, den Body und den Delimiter zurück.
+ */
 function detectFrontmatter(text: string): FrontmatterInfo | null {
-  // Akzeptiert:
-  // ---\n ... \n---\n
-  // +++\n ... \n+++\n
+  // Frontmatter muss direkt am Anfang der Datei stehen
   const firstLineEnd = text.indexOf("\n");
   if (firstLineEnd < 0) return null;
 
-  const firstLine = text.slice(0, firstLineEnd).trim();
-  if (firstLine !== "---" && firstLine !== "+++") return null;
+  const first = text.slice(0, firstLineEnd).trim();
+  if (first !== "---" && first !== "+++") return null;
 
-  const delimiter = firstLine as "---" | "+++";
-  const endIdx = text.indexOf(`\n${delimiter}`, firstLineEnd);
-  if (endIdx < 0) return null;
+  const delimiter = first as "---" | "+++";
+  // Finde die Zeile mit dem schließenden Delimiter
+  const closeIdx = text.indexOf(`\n${delimiter}`, firstLineEnd);
+  if (closeIdx < 0) return null;
 
-  const fmHead = text.slice(firstLineEnd + 1, endIdx).replace(/^\n+|\n+$/g, "");
-  const after = text.slice(endIdx + delimiter.length + 1); // + newline
-  const fmCloseLineEnd = after.indexOf("\n");
-  const body = fmCloseLineEnd >= 0 ? after.slice(fmCloseLineEnd + 1) : "";
+  // Head ist zwischen erster und schließender Delimiter-Zeile (ohne beide Delimiter)
+  const head = text.slice(firstLineEnd + 1, closeIdx).replace(/^\n+|\n+$/g, "");
+  // Nach dem schließenden Delimiter folgt noch ein '\n' und dann die nächste Zeile -> Body ab nachfolgender Zeile
+  const after = text.slice(closeIdx + 1 + delimiter.length); // steht auf '\n'
+  const nextNL = after.indexOf("\n");
+  const body = nextNL >= 0 ? after.slice(nextNL + 1) : "";
 
-  return {
-    delimiter,
-    start: 0,
-    end: endIdx + delimiter.length + 1 + (fmCloseLineEnd >= 0 ? fmCloseLineEnd + 1 : 0),
-    head: fmHead,
-    body,
-    original: text,
-  };
+  const endOffset = closeIdx + 1 + delimiter.length + 1 + (nextNL >= 0 ? nextNL + 1 : 0);
+  return { delimiter, endOffset, head, body, original: text };
 }
 
+/**
+ * Liest `type` aus dem Frontmatter-Head. Akzeptiert:
+ *   type: "hugo-grid-gallery"
+ *   type: 'hugo-grid-gallery'
+ *   type = "hugo-grid-gallery"
+ *   type = 'hugo-grid-gallery'
+ */
+function extractTypeFromFMHead(head: string): string | null {
+  const m = head.match(/^\s*type\s*[:=]\s*("?|'?)([^"'\n]+)\1\s*$/im);
+  return m ? m[2].trim() : null;
+}
+
+/** Fügt/aktualisiert lastmod im Frontmatter-Head (YAML/TOML-tolerant) */
 function upsertLastmod(fm: FrontmatterInfo, isoDate: string): string {
   const lines = fm.head.split(/\r?\n/);
   let found = false;
-  const updated = lines.map((l) => {
-    // YAML/TOML tolerant: "lastmod: ..." oder "lastmod = ..."
-    if (/^\s*lastmod\s*[:=]\s*/i.test(l)) {
+
+  const patched = lines.map((line) => {
+    if (/^\s*lastmod\s*[:=]\s*/i.test(line)) {
       found = true;
-      // Einheitlich in Anführungszeichen
-      const sep = l.includes("=") ? "=" : ":";
+      const sep = line.includes("=") ? "=" : ":";
       return `lastmod ${sep} "${isoDate}"`;
     }
-    return l;
+    return line;
   });
-  if (!found) {
-    updated.push(`lastmod: "${isoDate}"`);
-  }
 
-  const rebuilt =
-    `${fm.delimiter}\n${updated.join("\n")}\n${fm.delimiter}\n` +
-    (fm.body.startsWith("\n") ? fm.body : `\n${fm.body}`);
-  return rebuilt;
+  if (!found) patched.push(`lastmod: "${isoDate}"`);
+
+  // Datei neu zusammensetzen (Delimiter bleiben erhalten)
+  return `${fm.delimiter}\n${patched.join("\n")}\n${fm.delimiter}\n${fm.body}`;
 }
 
+/** Jüngstes Git-Commit-Datum (ISO-8601) über eine Dateiliste */
 async function getGitLastCommitISO(files: string[]): Promise<string | null> {
   if (files.length === 0) return null;
   try {
@@ -113,63 +167,92 @@ async function getGitLastCommitISO(files: string[]): Promise<string | null> {
   }
 }
 
+/** Fallback: jüngste mtime über eine Dateiliste (ISO-8601) */
 async function getLatestMTimeISO(files: string[]): Promise<string | null> {
   let latest = 0;
   for (const f of files) {
-    const s = await statSafe(f);
-    if (s && s.isFile()) {
-      const t = s.mtimeMs;
-      if (t > latest) latest = t;
+    const st = await statSafe(f);
+    if (st?.isFile()) {
+      if (st.mtimeMs > latest) latest = st.mtimeMs;
     }
   }
   return latest ? new Date(latest).toISOString() : null;
 }
 
-// depth: 0 = unlimited
+/** Relativer, hübscher Pfad fürs Logging */
+function rel(p: string) {
+  const cwd = process.cwd();
+  const r = p.startsWith(cwd) ? p.slice(cwd.length + 1) : p;
+  return r.split(sep).join("/");
+}
+
+/**
+ * Durchläuft /content rekursiv, findet **alle** Ordner mit index.md
+ * (Leaf-Bundles) – bricht NICHT an einem gefundenen Bundle ab, d. h.
+ * geht „bis in den letzten Winkel“.
+ * depth: 0=Root, MAX_DEPTH=0 bedeutet unbegrenzt
+ */
 async function* walkBundles(root: string, depth = 0): AsyncGenerator<string> {
+  if (MAX_DEPTH > 0 && depth > MAX_DEPTH) return;
+
   const entries = await readDirSafe(root);
   const hasIndex = entries.some((d) => d.isFile() && d.name.toLowerCase() === "index.md");
+  if (hasIndex) yield root;
 
-  if (hasIndex) {
-    yield root;
-    // In Leaf-Bundles typischerweise keine weiteren Bundles tiefer
+  for (const e of entries) {
+    if (!e.isDirectory()) continue;
+    if (e.name.startsWith(".")) continue;
+    yield* walkBundles(join(root, e.name), depth + 1);
+  }
+}
+
+/** Sammelt **rekursiv** alle Bilddateien unterhalb des Bundle-Verzeichnisses. */
+async function collectImagesRecursive(dir: string): Promise<string[]> {
+  const out: string[] = [];
+  async function walk(d: string) {
+    const entries = await readDirSafe(d);
+    for (const e of entries) {
+      const p = join(d, e.name);
+      if (e.isDirectory()) {
+        if (e.name.startsWith(".")) continue;
+        await walk(p);
+      } else if (e.isFile()) {
+        if (isImage(e.name)) out.push(p);
+      }
+    }
+  }
+  await walk(dir);
+  return out;
+}
+
+/** Verarbeitet ein einzelnes Bundle-Verzeichnis (nur wenn type=="hugo-grid-gallery"). */
+async function updateBundle(dir: string): Promise<void> {
+  const indexPath = join(dir, "index.md");
+  const st = await statSafe(indexPath);
+  if (!st) return;
+
+  // Frontmatter einlesen & type prüfen
+  const original = await fs.readFile(indexPath, "utf8");
+  const fm = detectFrontmatter(original);
+  if (!fm) {
+    console.log(`❌ Kein gültiges Frontmatter in ${rel(indexPath)} – überspringe`);
+    return;
+  }
+  const pageType = extractTypeFromFMHead(fm.head);
+  if (pageType !== REQUIRED_TYPE) {
+    // bewusst still: nur kurze Info, um Log nicht zu fluten
+    console.log(`↪︎ Skip (type=${pageType ?? "∅"}): ${rel(dir)}`);
     return;
   }
 
-  if (depth > 0 && MAX_DEPTH > 0 && depth > MAX_DEPTH) return;
-
-  for (const e of entries) {
-    if (e.isDirectory()) {
-      // skip dot folders
-      if (e.name.startsWith(".")) continue;
-      const sub = join(root, e.name);
-      yield* walkBundles(sub, depth + 1);
-    }
-  }
-}
-
-async function collectBundleImages(dir: string): Promise<string[]> {
-  const entries = await readDirSafe(dir);
-  const list: string[] = [];
-  for (const e of entries) {
-    if (!e.isFile()) continue;
-    if (isImage(e.name)) list.push(join(dir, e.name));
-  }
-  return list;
-}
-
-async function updateBundle(dir: string): Promise<void> {
-  const indexPath = join(dir, "index.md");
-  const hasIndex = await statSafe(indexPath);
-  if (!hasIndex) return;
-
-  const images = await collectBundleImages(dir);
+  // Bilder rekursiv sammeln
+  const images = await collectImagesRecursive(dir);
   if (images.length === 0) {
     console.log(`⚠️  Keine Bilder in ${rel(dir)} – überspringe`);
     return;
   }
 
-  // 1) Git-Datum, sonst mtime-Fallback
+  // Git-Timestamp, Fallback mtime
   const gitISO = await getGitLastCommitISO(images);
   const lastmodISO = gitISO ?? (await getLatestMTimeISO(images));
   if (!lastmodISO) {
@@ -177,15 +260,8 @@ async function updateBundle(dir: string): Promise<void> {
     return;
   }
 
-  const original = await fs.readFile(indexPath, "utf8");
-  const fm = detectFrontmatter(original);
-  if (!fm) {
-    console.log(`❌ Kein gültiges Frontmatter in ${rel(indexPath)} – überspringe`);
-    return;
-  }
-
-  // vorhandenen lastmod extrahieren
-  const m = fm.head.match(/^\s*lastmod\s*[:=]\s*("?)([^"\n]+)\1\s*$/im);
+  // aktuelles lastmod vergleichen
+  const m = fm.head.match(/^\s*lastmod\s*[:=]\s*("?|'?)([^"'\n]+)\1\s*$/im);
   const current = m ? m[2].trim() : null;
 
   if (current === lastmodISO) {
@@ -195,31 +271,26 @@ async function updateBundle(dir: string): Promise<void> {
 
   console.log(`📝 ${rel(indexPath)} → lastmod: ${current ?? "<leer>"} → ${lastmodISO}`);
 
-  const updated = upsertLastmod(fm, lastmodISO);
   if (DRY_RUN) return;
 
+  const updated = upsertLastmod(fm, lastmodISO);
   await fs.writeFile(indexPath, updated, "utf8");
 
   if (STAGE) {
     try {
       await execFileAsync("git", ["add", indexPath], { windowsHide: true });
     } catch {
-      // non-fatal
+      /* non-fatal */
     }
   }
 }
 
-function rel(p: string) {
-  const r = p.startsWith(process.cwd()) ? p.slice(process.cwd().length + 1) : p;
-  return r.split(sep).join("/");
-}
-
-/* ========== Main ========== */
+/* ===================== Main ===================== */
 
 (async () => {
-  console.log("🔍 Prüfe Bundle-Änderungen und aktualisiere lastmod (nur Bilder) …");
-  const contentExists = await statSafe(CONTENT_DIR);
-  if (!contentExists) {
+  console.log("🔍 Prüfe Bundles (type: \"hugo-grid-gallery\") und aktualisiere lastmod …");
+  const exists = await statSafe(CONTENT_DIR);
+  if (!exists) {
     console.error(`❌ CONTENT_DIR nicht gefunden: ${CONTENT_DIR}`);
     process.exit(1);
   }
@@ -231,7 +302,7 @@ function rel(p: string) {
   }
 
   if (found === 0) {
-    console.log("ℹ️  Keine Leaf-Bundles gefunden (Ordner mit index.md).");
+    console.log("ℹ️  Keine Bundles (Ordner mit index.md) gefunden.");
   }
 
   console.log("✅ Fertig.");

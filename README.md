@@ -1,5 +1,5 @@
 
-# Hugo Grid Gallery aus binary-voids.de als Hugo Modul
+# HUGG - Die Grid Gallery aus binary-voids.de als Hugo Modul
 
 ## git
 
