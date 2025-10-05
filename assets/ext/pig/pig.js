@@ -1003,6 +1003,7 @@ ProgressiveImage.prototype.hide = function () {
    * Updates the style attribute to reflect this style property on this object.
    */
   ProgressiveImage.prototype._updateStyles = function () {
+    if (!this.style) return; // Noch kein Layout berechnet – später erneut gesetzt
     this.getElement().style.transition = this.style.transition;
     this.getElement().style.width = this.style.width + "px";
     this.getElement().style.height = this.style.height + "px";

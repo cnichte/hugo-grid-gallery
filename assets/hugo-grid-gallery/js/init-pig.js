@@ -139,7 +139,7 @@ let HugoGridGallery = {
 
     console.log(
       "🐷 Visible count (nach enable):",
-      document.querySelectorAll("figure.gd-figure").length
+      document.querySelectorAll("figure.hugg-figure").length
     );
 
     setTimeout(() => {
