@@ -37,47 +37,27 @@
 
 {{/* 2) SECTION-INDEX (z. B. /my-galleries/) */}}
 {{ if eq $p.Kind "section" }}
-  {{ if $debug }}{{ warnf "🗂️  Section-Index: %s" $p.RelPermalink }}{{ end }}
-
-  {{/* zuerst optionalen Section-Content rendern */}}
-  {{ with $p.Content }}
-    <div class="section-content">
-      {{ . }}
-    </div>
-  {{ end }}
+  {{ with $p.Content }}<div class="section-content">{{ . }}</div>{{ end }}
 
   {{ partial "gallery-grid/sort-toolbar.html" . }}
 
-  {{/* Karten-Grid der DIREKTEN Kinder (keine Rekursion) */}}
   {{- $children := $p.RegularPages -}}
-  {{ if not $children }}
-    {{ if $debug }}{{ warnf "ℹ️ list.html: Keine direkten Kinder unter %s" $p.RelPermalink }}{{ end }}
-  {{ else }}
+  {{ if $children }}
     <div class="hugg-cards" id="gallery-container">
       {{ range sort $children "Title" }}
-        {{/* Thumbs aus den Ressourcen der Child-Page bestimmen */}}
         {{ $images := partial "get-images.html" (dict "page" .) }}
         {{ $thumbs := partial "gallery-grid/get-gallery-index.html" (dict "images" $images "page" .) }}
-
         {{ if gt (len $thumbs) 0 }}
-          {{/* "cover" im Dateinamen bevorzugen (case-insensitive) */}}
           {{ $cover := dict }}
-          {{ range $thumbs }}
-            {{ if findRE "(?i)cover" .title }}
-              {{ $cover = . }}
-              {{ break }}
-            {{ end }}
-          {{ end }}
+          {{ range $thumbs }}{{ if findRE "(?i)cover" .title }}{{ $cover = . }}{{ break }}{{ end }}{{ end }}
           {{ $thumb := cond (ne (len $cover) 0) $cover (index $thumbs 0) }}
 
-          <div class="hugg-card" data-title="{{ .LinkTitle }}" data-image-count="{{ len $thumbs }}" data-updated='{{ or .Lastmod .Date | time.Format "2006-01-02T15:04:05Z07:00" }}'>
+          <div class="hugg-card"
+               data-title="{{ .LinkTitle }}"
+               data-image-count="{{ len $thumbs }}"
+               data-updated='{{ (or .Lastmod .Date) | time.Format "2006-01-02T15:04:05Z07:00" }}'>
             <a class="hugg-card-img" href="{{ .RelPermalink }}">
-              <img
-                src="{{ $thumb.thumb }}"
-                alt="{{ $thumb.title }}"
-                width="{{ $thumb.width }}"
-                height="{{ $thumb.height }}"
-              />
+              <img src="{{ $thumb.thumb }}" alt="{{ $thumb.title }}" width="{{ $thumb.width }}" height="{{ $thumb.height }}" />
               <span class="hugg-num-photos">{{ len $thumbs }} photos</span>
             </a>
             <div class="hugg-card-body">
@@ -85,11 +65,11 @@
               {{ with .Summary }}<p>{{ . }}</p>{{ end }}
             </div>
           </div>
-        {{ else if $debug }}
-          {{ warnf "ℹ️ list.html: Keine Thumbs für %s" .RelPermalink }}
         {{ end }}
       {{ end }}
     </div>
+  {{ else if $debug }}
+    {{ warnf "ℹ️ list.html: Keine direkten Kinder unter %s" $p.RelPermalink }}
   {{ end }}
 
   {{ return }}
