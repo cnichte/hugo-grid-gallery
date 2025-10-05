@@ -33,64 +33,70 @@
   {{- end -}}
 
   {{/* ---------- CSS ---------- */}}
-  {{- with resources.Get "ext/pig/pig.css" -}}
-    {{- $r := . -}}
-    {{- if hugo.IsProduction -}}{{- $r = resources.Minify $r | resources.Fingerprint -}}{{- end -}}
-    <link rel="stylesheet" href="{{ $r.RelPermalink }}"{{ with $r.Data.Integrity }} integrity="{{ . }}"{{ end }}>
-  {{- end -}}
+{{ with resources.Get "ext/pig/pig.css" }}
+  {{ $r := . }}
+  {{ if hugo.IsProduction }}{{ $r = $r | resources.Minify | resources.Fingerprint }}{{ end }}
+  <link rel="stylesheet" href="{{ $r.RelPermalink }}"{{ with $r.Data.Integrity }} integrity="{{ . }}"{{ end }}>
+{{ end }}
 
-  {{- with resources.Get "ext/fslightbox/fslightbox.css" -}}
-    {{- $r := . -}}
-    {{- if hugo.IsProduction -}}{{- $r = resources.Minify $r | resources.Fingerprint -}}{{- end -}}
-    <link rel="stylesheet" href="{{ $r.RelPermalink }}"{{ with $r.Data.Integrity }} integrity="{{ . }}"{{ end }}>
-  {{- end -}}
+{{ with resources.Get "ext/fslightbox/fslightbox.js" }}
+  {{ $r := . }}
+  {{ if hugo.IsProduction }}{{ $r = $r | resources.Minify | resources.Fingerprint }}{{ end }}
+  <script src="{{ $r.RelPermalink }}"{{ with $r.Data.Integrity }} integrity="{{ . }}"{{ end }}></script>
+{{ end }}
 
-  {{- with resources.Get "hugo-grid-gallery/css/hugg.css" -}}
-    {{- $r := . -}}
-    {{- if hugo.IsProduction -}}{{- $r = resources.Minify $r | resources.Fingerprint -}}{{- end -}}
-    <link rel="stylesheet" href="{{ $r.RelPermalink }}"{{ with $r.Data.Integrity }} integrity="{{ . }}"{{ end }}>
-  {{- end -}}
+{{ with resources.Get "hugo-grid-gallery/css/hugg.css" }}
+  {{ $r := . }}
+  {{ if hugo.IsProduction }}{{ $r = $r | resources.Minify | resources.Fingerprint }}{{ end }}
+  <link rel="stylesheet" href="{{ $r.RelPermalink }}"{{ with $r.Data.Integrity }} integrity="{{ . }}"{{ end }}>
+{{ end }}
 
   {{/* ---------- JS: Libs zuerst ---------- */}}
-  {{- with resources.Get "ext/pig/pig.js" -}}
-    {{- $r := . -}}
-    {{- if hugo.IsProduction -}}{{- $r = resources.Minify $r | resources.Fingerprint -}}{{- end -}}
-    <script src="{{ $r.RelPermalink }}"{{ with $r.Data.Integrity }} integrity="{{ . }}"{{ end }}></script>
-  {{- end -}}
+{{ $pigRes := resources.Get "ext/pig/pig.js" }}
+{{ if $pigRes }}
+  {{ if hugo.IsProduction }}{{ $pigRes = $pigRes | resources.Minify | fingerprint }}{{ end }}
+  <script src="{{ $pigRes.RelPermalink }}"{{ with $pigRes.Data.Integrity }} integrity="{{ . }}"{{ end }}></script>
+{{ else }}
+  {{ warnf "ext/pig/pig.js nicht gefunden" }}
+{{ end }}
 
-  {{- with resources.Get "ext/fslightbox/fslightbox.js" -}}
-    {{- $r := . -}}
-    {{- if hugo.IsProduction -}}{{- $r = resources.Minify $r | resources.Fingerprint -}}{{- end -}}
-    <script src="{{ $r.RelPermalink }}"{{ with $r.Data.Integrity }} integrity="{{ . }}"{{ end }}></script>
-  {{- end -}}
+{{ $fslRes := resources.Get "ext/fslightbox/fslightbox.js" }}
+{{ if $fslRes }}
+  {{ if hugo.IsProduction }}{{ $fslRes = $fslRes | resources.Minify | fingerprint }}{{ end }}
+  <script src="{{ $fslRes.RelPermalink }}"{{ with $fslRes.Data.Integrity }} integrity="{{ . }}"{{ end }}></script>
+{{ else }}
+  {{ warnf "ext/fslightbox/fslightbox.js nicht gefunden" }}
+{{ end }}
 
-{{/* ---------- JS: der App-Entry (importiert alles weitere) ---------- */}}
-{{ with resources.Get "hugo-grid-gallery/js/main.js" }}
-  {{ $opts := dict
-      "target"    "es2018"
-      "minify"    hugo.IsProduction
-      "sourceMap" (cond hugo.IsProduction "external" "inline")
-  }}
-  {{ $built := . | js.Build $opts }}
-  {{ if hugo.IsProduction }}{{ $built = $built | resources.Fingerprint }}{{ end }}
-  <script defer src="{{ $built.RelPermalink }}"{{ with $built.Data.Integrity }} integrity="{{ . }}"{{ end }}></script>
+{{/* ---------- JS: App-Entry (immer über js.Build) ---------- */}}
+{{ $opts := dict
+    "target"    "es2018"
+    "minify"    hugo.IsProduction
+    "sourceMap" (cond hugo.IsProduction "external" "inline")
+}}
+
+{{ $mainRes := resources.Get "hugo-grid-gallery/js/main.js" }}
+{{ if $mainRes }}
+  {{ $mainBuilt := $mainRes | js.Build $opts }}
+  {{ if hugo.IsProduction }}{{ $mainBuilt = $mainBuilt | fingerprint }}{{ end }}
+  <script defer src="{{ $mainBuilt.RelPermalink }}"{{ with $mainBuilt.Data.Integrity }} integrity="{{ . }}"{{ end }}></script>
 {{ else }}
   {{ warnf "hugo-grid-gallery/js/main.js nicht gefunden" }}
 {{ end }}
 
   {{/* ---------- Optional: DearFlip ---------- */}}
-  {{- if .Param "use_flipbook" -}}
-    {{- with resources.Get "ext/dflip/js/libs/jquery.min.js" -}}
-      <script src="{{ .RelPermalink }}"></script>
-    {{- end -}}
-    {{- with resources.Get "ext/dflip/js/dflip.min.js" -}}
-      <script async data-cfasync="false" src="{{ .RelPermalink }}"></script>
-    {{- end -}}
-    {{- with resources.Get "ext/dflip/css/dflip.css" -}}
-      {{- $r := . -}}
-      {{- if hugo.IsProduction -}}{{- $r = resources.Minify $r | resources.Fingerprint -}}{{- end -}}
-      <link rel="stylesheet" href="{{ $r.RelPermalink }}"{{ with $r.Data.Integrity }} integrity="{{ . }}"{{ end }}>
-    {{- end -}}
-  {{- end -}}
+{{ if .Param "use_flipbook" }}
+  {{ with resources.Get "ext/dflip/js/libs/jquery.min.js" }}
+    {{ $r := . }}<script src="{{ $r.RelPermalink }}"></script>
+  {{ end }}
+  {{ with resources.Get "ext/dflip/js/dflip.min.js" }}
+    {{ $r := . }}<script async data-cfasync="false" src="{{ $r.RelPermalink }}"></script>
+  {{ end }}
+  {{ with resources.Get "ext/dflip/css/dflip.css" }}
+    {{ $r := . }}
+    {{ if hugo.IsProduction }}{{ $r = $r | resources.Minify | resources.Fingerprint }}{{ end }}
+    <link rel="stylesheet" href="{{ $r.RelPermalink }}"{{ with $r.Data.Integrity }} integrity="{{ . }}"{{ end }}>
+  {{ end }}
+{{ end }}
 
 {{- end -}}
