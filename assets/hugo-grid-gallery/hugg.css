@@ -115,3 +115,68 @@
 .hugg-grid-host {
   margin-block: 1rem;
 }
+
+
+
+/* Additiona stuff */
+
+
+/* ---- Badges auf Karten (Index / Taxonomy) ---- */
+.hugg .num-photos {
+  position: absolute;
+  top: .5rem;
+  right: .5rem;
+  padding: .15rem .4rem;
+  font-size: .75rem;
+  line-height: 1;
+  background: rgba(0,0,0,.55);
+  color: #fff;
+  border-radius: .25rem;
+  z-index: 2;
+}
+.hugg .card {
+  position: relative;
+}
+.hugg .card .card-img {
+  position: relative;
+  display: block;
+}
+
+/* ---- Bildnummer im Grid (unten rechts) ---- */
+.hugg .hugg-imgtag {
+  position: absolute;
+  right: .35rem;
+  bottom: .35rem;
+  font-size: .75rem;
+  line-height: 1;
+  padding: .15rem .35rem;
+  background: rgba(0,0,0,.55);
+  color: #fff;
+  border-radius: .25rem;
+  z-index: 3;
+}
+
+/* Stelle sicher, dass Grid-Thumb-Container relativ sind */
+.hugg .hugg-thumb,
+.hugg .pig__item,
+.hugg .pig__item a {
+  position: relative;
+}
+
+/* ---- Sortier-Toolbar ---- */
+.hugg .hugg-sort {
+  display: flex; gap: .5rem; align-items: baseline; flex-wrap: wrap;
+  margin: .25rem 0 1rem;
+}
+.hugg .hugg-sort a { text-decoration: none; }
+.hugg .hugg-sort .active { font-weight: 700; text-decoration: underline; }
+
+/* ---- Kleinigkeit für den Recently-Updated-Block ---- */
+.hugg .hugg-updated {
+  margin: 1rem 0 1.25rem;
+}
+.hugg .hugg-updated .cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px,1fr));
+  gap: .75rem;
+}

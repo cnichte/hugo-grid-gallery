@@ -3,6 +3,8 @@
   {{- $cfg := (index site.Params "hugo-grid-gallery") | default dict -}}
   {{- $debug := $cfg.debug | default false -}}
 
+  <div class="hugg">
+
   {{ with .Content }}
     <div class="section-content">
       {{ . }}
@@ -40,5 +42,6 @@
         {{ warnf "ℹ️ gallery-index: Keine Thumbs für %s" .RelPermalink }}
       {{ end }}
     {{ end }}
+  </div>
   </div>
 {{ end }}

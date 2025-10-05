@@ -1,5 +1,7 @@
 {{ define "main" }}
+<div class="hugg">
   <h1>{{ .Title }}</h1>
   {{/* Volles Karten-Index der Kategorien (mit Covers + Zählern) */}}
   {{ partial "gallery-grid/list-taxonomy-index.html" (dict "page" . "taxonomy" .Type) }}
+</div>
 {{ end }}

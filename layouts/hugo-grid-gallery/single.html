@@ -2,11 +2,12 @@
 {{ define "main" }}
 {{- $cfg := (index site.Params "hugo-grid-gallery") | default dict -}}
 {{- $gallerySections := $cfg.gallerySections | default (slice "galleries" "my-galleries" "hugo-grid-gallery") -}}
-
+<div class="hugg">
 <article class="single">
   <header class="page-header">
     <h1>{{ .Title }}</h1>
   </header>
   {{ partial "gallery-grid/list-gallery.html" . }}
 </article>
+</div>
 {{ end }}
