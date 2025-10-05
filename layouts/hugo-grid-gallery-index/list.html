@@ -1,4 +1,10 @@
 {{/* Module: layouts/hugo-grid-gallery-index/list.html */}}
+
+{{/* TODO: migrieren nach layouts/partials/gallery-grid/list.html (wird bisher nur für shortcode genutzt) 
+{{ define "main" }}
+  {{ partial "gallery-grid/list.html" . }}
+{{ end }}
+*/}}
 {{ define "main" }}
   {{- $cfg := (index site.Params "hugo-grid-gallery") | default dict -}}
   {{- $debug := $cfg.debug | default false -}}
