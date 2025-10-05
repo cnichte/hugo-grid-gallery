@@ -28,13 +28,6 @@
 
 {{ if $debug }}{{ warnf "📃 list.html: Kind=%s | Type=%s | Section=%s | IsHome=%v | Permalink=%s" $p.Kind $p.Type $p.Section $p.IsHome $p.RelPermalink }}{{ end }}
 
-<h2>TOOLBAR</h2>
-<div class="hugg-toolbar">
-  <a id="sort-title"   class="menu-link" href="#">Title</a>
-  <a id="sort-count"   class="menu-link" href="#"># Photos</a>
-  <a id="sort-updated" class="menu-link" href="#">Updated</a>
-</div>
-
 {{/* 1) TAXONOMIE-INDEX (z. B. /categories/) */}}
 {{ if eq $p.Kind "taxonomy" }}
   {{ if $debug }}{{ warnf "➡️ list.html -> list-taxonomy-index (taxonomy=%s)" $p.Type }}{{ end }}
@@ -52,6 +45,12 @@
       {{ . }}
     </div>
   {{ end }}
+
+  <div class="hugg-toolbar">
+    <a id="sort-title"   class="menu-link" href="#">Title</a>
+    <a id="sort-count"   class="menu-link" href="#"># Photos</a>
+    <a id="sort-updated" class="menu-link" href="#">Updated</a>
+  </div>
 
   {{/* Karten-Grid der DIREKTEN Kinder (keine Rekursion) */}}
   {{- $children := $p.RegularPages -}}
