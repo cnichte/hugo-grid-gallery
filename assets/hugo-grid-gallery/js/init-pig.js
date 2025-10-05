@@ -15,7 +15,7 @@ var debug = 0 ? console.log.bind(console, "[hugo-grid-gallery]") : function () {
 let params = {};
 
 try {
-  const paramScript = document.getElementById("gd-config");
+  const paramScript = document.getElementById("hugg-config");
   if (paramScript?.textContent) {
     params = JSON.parse(paramScript.textContent);
   }

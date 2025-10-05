@@ -25,9 +25,9 @@
 {{- if not (.Scratch.Get $flag) -}}
   {{- .Scratch.Set $flag true -}}
 
-  {{/* Config-JSON (neu: hgg-config; Fallback: global window.configObj) */}}
+  {{/* Config-JSON (neu: hugg-config; Fallback: global window.configObj) */}}
   {{- with site.Data.gallery.config -}}
-    <script id="hgg-config" type="application/json">{{ . | jsonify | safeHTML }}</script>
+    <script id="hugg-config" type="application/json">{{ . | jsonify | safeHTML }}</script>
   {{- else -}}
     <script>window.configObj = window.configObj || {};</script>
   {{- end -}}
