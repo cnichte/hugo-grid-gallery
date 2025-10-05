@@ -1,7 +1,39 @@
 {{/* layouts/shortcodes/gallery-index.html
-  Beispiele:
- */}}
-{{/* Zeigt Karten für alle Terms einer Taxonomie (z. B. categories, tags). */}}
-{{/* {{< gallery-index taxonomy="categories" >}} */}}
-{{ $taxonomy := .Get "taxonomy" | default "categories" }}
-{{ partial "gallery-grid/list-taxonomy-index.html" (dict "page" .Page "taxonomy" $taxonomy) }}
+
+Benutzung (Beispiele):
+  {{< gallery-index taxonomy="categories" types="hugo-grid-gallery,my-galleries" >}}
+  {{< gallery-index taxonomy="categories" sections="my-galleries" >}}
+  {{< gallery-index taxonomy="categories" under="/my-galleries/" >}}
+  {{< gallery-index taxonomy="categories" categoriesData="games" sections="my-galleries" >}}
+
+Wenn nichts angegeben ist:
+  - taxonomy = "categories"
+  - types = site.Params.hugo-grid-gallery.gallerySections (Fallback: ["hugo-grid-gallery"])
+*/}}
+
+{{- $taxonomy      := .Get "taxonomy"      | default "categories" -}}
+{{- $typesArg      := .Get "types"         | default "" -}}
+{{- $sectionsArg   := .Get "sections"      | default "" -}}
+{{- $under         := .Get "under"         | default "" -}}  {{/* z.B. "/my-galleries/" */}}
+{{- $categoriesData:= .Get "categoriesData"| default (.Page.Params.categoriesData | default "") -}}
+
+{{- $types    := slice -}}
+{{- if $typesArg -}}    {{- $types    = split $typesArg "," | apply "strings.TrimSpace" "." -}}{{- end -}}
+
+{{- $sections := slice -}}
+{{- if $sectionsArg -}} {{- $sections = split $sectionsArg "," | apply "strings.TrimSpace" "." -}}{{- end -}}
+
+{{/* Fallback: aus params.hugo-grid-gallery.gallerySections, sonst "hugo-grid-gallery" */}}
+{{- if eq (len $types) 0 -}}
+  {{- $cfg := (index site.Params "hugo-grid-gallery") | default dict -}}
+  {{- $types = $cfg.gallerySections | default (slice "hugo-grid-gallery") -}}
+{{- end -}}
+
+{{ partial "gallery-grid/list-taxonomy-index.html" (dict
+  "page"          .Page
+  "taxonomy"      $taxonomy
+  "types"         $types
+  "sections"      $sections
+  "under"         $under
+  "categoriesData"$categoriesData
+) }}
