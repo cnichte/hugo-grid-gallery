@@ -6,34 +6,42 @@ Benutzung (Beispiele):
   {{< gallery-index taxonomy="categories" under="/my-galleries/" >}}
   {{< gallery-index taxonomy="categories" categoriesData="games" sections="my-galleries" >}}
 
-Wenn nichts angegeben ist:
+Defaults:
   - taxonomy = "categories"
-  - types = site.Params.hugo-grid-gallery.gallerySections (Fallback: ["hugo-grid-gallery"])
+  - types    = site.Params.hugo-grid-gallery.gallerySections (Fallback: ["hugo-grid-gallery"])
 */}}
 
-{{- $taxonomy      := .Get "taxonomy"      | default "categories" -}}
-{{- $typesArg      := .Get "types"         | default "" -}}
-{{- $sectionsArg   := .Get "sections"      | default "" -}}
-{{- $under         := .Get "under"         | default "" -}}  {{/* z.B. "/my-galleries/" */}}
-{{- $categoriesData:= .Get "categoriesData"| default (.Page.Params.categoriesData | default "") -}}
+{{- $taxonomy       := .Get "taxonomy"       | default "categories" -}}
+{{- $typesArg       := .Get "types"          | default "" -}}
+{{- $sectionsArg    := .Get "sections"       | default "" -}}
+{{- $under          := .Get "under"          | default "" -}}
+{{- $categoriesData := .Get "categoriesData" | default (.Page.Params.categoriesData | default "") -}}
 
-{{- $types    := slice -}}
-{{- if $typesArg -}}    {{- $types    = split $typesArg "," | apply "strings.TrimSpace" "." -}}{{- end -}}
+{{/* types parsen & trimmen */}}
+{{- $types := slice -}}
+{{- if $typesArg -}}
+  {{- $types = split $typesArg "," -}}
+  {{- $types = apply $types "strings.TrimSpace" "." -}}
+{{- end -}}
 
+{{/* sections parsen & trimmen (optional) */}}
 {{- $sections := slice -}}
-{{- if $sectionsArg -}} {{- $sections = split $sectionsArg "," | apply "strings.TrimSpace" "." -}}{{- end -}}
+{{- if $sectionsArg -}}
+  {{- $sections = split $sectionsArg "," -}}
+  {{- $sections = apply $sections "strings.TrimSpace" "." -}}
+{{- end -}}
 
-{{/* Fallback: aus params.hugo-grid-gallery.gallerySections, sonst "hugo-grid-gallery" */}}
+{{/* Fallback: types aus params.hugo-grid-gallery.gallerySections, sonst ["hugo-grid-gallery"] */}}
 {{- if eq (len $types) 0 -}}
   {{- $cfg := (index site.Params "hugo-grid-gallery") | default dict -}}
   {{- $types = $cfg.gallerySections | default (slice "hugo-grid-gallery") -}}
 {{- end -}}
 
 {{ partial "gallery-grid/list-taxonomy-index.html" (dict
-  "page"          .Page
-  "taxonomy"      $taxonomy
-  "types"         $types
-  "sections"      $sections
-  "under"         $under
-  "categoriesData"$categoriesData
+  "page"           .Page
+  "taxonomy"       $taxonomy
+  "types"          $types
+  "sections"       $sections
+  "under"          $under
+  "categoriesData" $categoriesData
 ) }}
