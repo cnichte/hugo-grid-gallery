@@ -143,17 +143,21 @@
 }
 
 /* ---- Bildnummer im Grid (unten rechts) ---- */
-.hugg .hugg-imgtag {
+
+/* Tag-Overlay im Grid-Tumbnail - rechts unten */
+.hugg .hugg-image-tag {
   position: absolute;
-  right: .35rem;
-  bottom: .35rem;
-  font-size: .75rem;
+  bottom: 6px;
+  right: 6px;
+  padding: 2px 6px;
+  background-color: rgba(0, 0, 0, 0.6);
+  color: silver;
+  font-size: 0.7rem;
+  font-family: system-ui, sans-serif;
+  border-radius: 4px;
   line-height: 1;
-  padding: .15rem .35rem;
-  background: rgba(0,0,0,.55);
-  color: #fff;
-  border-radius: .25rem;
-  z-index: 3;
+  pointer-events: none;
+  z-index: 10;
 }
 
 /* Stelle sicher, dass Grid-Thumb-Container relativ sind */

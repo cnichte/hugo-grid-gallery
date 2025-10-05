@@ -16,7 +16,7 @@
    * added by Carsten Nichte <https://carsten-nichte.de>:
    * - sfLighbox-Support
    * - Ein Tag als Oberlay über das Thumbnail.
-   * - Konfiguration siehe: assets/modules/hugo-grid-gallery/js/index.js
+   * - Konfiguration siehe: assets/hugo-grid-gallery/index.js
    * 
    * Um die modifikationen zu finden, suche nach //!
    */
@@ -982,7 +982,7 @@ ProgressiveImage.prototype.hide = function () {
       //! Tag-Overlay im Grid-Tumbnail erzeugen
       if (this.imageTag != null) {
         const tag = document.createElement("div");
-        tag.className = `${this.pig.settings.classPrefix}-image-tag`; // .gd-image-tag
+        tag.className = `${this.pig.settings.classPrefix}-image-tag`; // .hugg-image-tag
         tag.textContent = "" + this.imageTag;
 
         // this.element.style.position = "relative"; // <--- warum machen wir das)

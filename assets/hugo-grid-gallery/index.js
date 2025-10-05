@@ -1,4 +1,4 @@
-// assets/js/hugo-grid-gallery/index.js
+// assets/hugo-grid-gallery/index.js
 // Hier wird assets/ext/pig/pig.js initialisiert und konfiguriert.
 // Der Ursprüngliche Code stammt von Gallery-Deluxe,
 // wurde aber stark angepasst und erweitert:
@@ -74,7 +74,7 @@ let HugoGridGallery = {
     var options = {
       containerId: galleryId,
       spaceBetweenImages: 10,
-      classPrefix: "gd",
+      classPrefix: "hugg",
       /*
       onClickHandler: function (filename) { /// ← wichtig: wird aufgerufen, wenn ein Bild angeklickt wird
         console.log("⏩ Öffne fslightbox für", filename);
