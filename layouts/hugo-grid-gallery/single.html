@@ -1,56 +1,12 @@
 {{/* Module: layouts/hugo-grid-gallery/single.html */}}
 {{ define "main" }}
-  {{- $cfg := (index site.Params "hugo-grid-gallery") | default dict -}}
-  {{- $gallerySections := $cfg.gallerySections | default (slice "galleries" "my-galleries" "hugo-grid-gallery") -}}
+{{- $cfg := (index site.Params "hugo-grid-gallery") | default dict -}}
+{{- $gallerySections := $cfg.gallerySections | default (slice "galleries" "my-galleries" "hugo-grid-gallery") -}}
 
-  <article class="single">
-    <header class="page-header">
-      <h1>{{ .Title }}</h1>
-    </header>
-
-    {{/* Teaser aus data/games*.json (nur für Gallery-Seiten) */}}
-    {{ if or (eq .Type "hugo-grid-gallery") (in $gallerySections .Section) }}
-      {{- $entry := index (where site.Data.games "title" .Title) 0 -}}
-      {{- if $entry -}}
-        <div class="description-container">
-          {{ with $entry.description }}<p>{{ . | markdownify }}</p>{{ end }}
-          <p>
-            <strong>Developer:</strong>
-            {{- if $entry.developer.link -}}
-              <a href="{{ $entry.developer.link }}" target="_blank" rel="noopener">{{ $entry.developer.name }}</a>
-            {{- else -}}
-              {{ $entry.developer.name }}
-            {{- end -}}
-            {{- with $entry.publisher }}
-              {{- if .name }}
-                , <strong>Publisher:</strong>
-                {{- if .link -}}
-                  <a href="{{ .link }}" target="_blank" rel="noopener">{{ .name }}</a>
-                {{- else -}}
-                  {{ .name }}
-                {{- end -}}
-              {{- end -}}
-            {{- end }}
-          </p>
-        </div>
-      {{- end -}}
-    {{ end }}
-
-    {{/* Grid + Tag-Cloud (ohne Shortcode) */}}
-    {{ partial "gallery-grid/list-gallery.html" . }}
-
-    {{/* Prev / Next innerhalb der Section (optional) */}}
-    <nav class="prev-next">
-      <div class="prev">
-        {{ with .PrevInSection }}
-          <a href="{{ .RelPermalink }}">&larr; {{ .LinkTitle }}</a>
-        {{ end }}
-      </div>
-      <div class="next">
-        {{ with .NextInSection }}
-          <a href="{{ .RelPermalink }}">{{ .LinkTitle }} &rarr;</a>
-        {{ end }}
-      </div>
-    </nav>
-  </article>
+<article class="single">
+  <header class="page-header">
+    <h1>{{ .Title }}</h1>
+  </header>
+  {{ partial "gallery-grid/list-gallery.html" . }}
+</article>
 {{ end }}

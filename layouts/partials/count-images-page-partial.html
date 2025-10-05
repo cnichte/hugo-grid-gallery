@@ -8,6 +8,8 @@
      componentTag (string)   – optional (wrappt die gesamte Ausgabe inkl. prefix/suffix)
 */}}
 
+{{/* Partial: count-images-page-partial.html (sanfter Fallback) */}}
+
 {{- $path         := .path -}}
 {{- $prefix       := default "" .prefix -}}
 {{- $suffix       := default "" .suffix -}}
@@ -15,6 +17,13 @@
 {{- $componentTag := default "" .componentTag -}}
 
 {{- $page := site.GetPage $path -}}
+{{- if not $page -}}
+  {{/* 2. Versuch: Slash am Ende abschneiden */}}
+  {{- if hasSuffix $path "/" -}}
+    {{- $page = site.GetPage (chomp $path) -}}
+  {{- end -}}
+{{- end -}}
+
 {{- if $page -}}
   {{- $images := len ($page.Resources.ByType "image") -}}
 
@@ -25,5 +34,6 @@
 
   {{- printf "%s%s%s%d%s%s%s" $compOpen $prefix $numOpen $images $numClose $suffix $compClose | safeHTML -}}
 {{- else -}}
-  {{- printf "%s%s0%s%s" "" "(" ")" "" -}}
+  {{/* still bleiben; optional debug:
+      {{ warnf "count-images: page not found for path=%q" $path }} */}}
 {{- end -}}
