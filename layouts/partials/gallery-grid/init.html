@@ -1,10 +1,11 @@
-{{/* layouts/partials/gallery-grid/init.html */}}
+{{/* layouts/partials/gallery-grid/init.html
 
-{{/* takes either a slice of .images or a .sourcePath that points to a bundle with images. 
-An .id will be calculated if not provided. This will be used to create the URL to the data file. */}}
-
-{{/*
 Erzeugt strukturierte Bilddaten (JSON) aus einer Bildquelle.
+Baut die JSON-Daten (Thumbnails) und cached die URL im Page-Scratch.
+
+Takes either a slice of .images or a .sourcePath that points to a bundle with images. 
+An .id will be calculated if not provided. This will be used to create the URL to the data file.
+
 Funktioniert sowohl mit:
 – .images (Slice of Resources)
 – .sourcePath (z. B. "galleries/a-plague-tale")
@@ -31,26 +32,21 @@ Funktioniert sowohl mit:
 
 {{- if $debug }}{{ warnf "🌀 init.html called by %s – ID: %s" ($page.Title | default "<?>") $baseID }}{{ end -}}
 
-{{/* ---------- 1) Bilderquelle robust auflösen ---------- */}}
+{{/* 1) Bildquelle robust ermitteln */}}
 {{- $images := slice -}}
-
 {{- if reflect.IsMap $in -}}
   {{- if isset $in "images" -}}
     {{- $images = (index $in "images") | default (slice) -}}
   {{- else if isset $in "resources" -}}
-    {{- $resources := (index $in "resources") | default (slice) -}}
-    {{- range $resources -}}
+    {{- range (index $in "resources") -}}
       {{- if and .Name (ne .MediaType.SubType "svg") -}}
         {{- $images = $images | append . -}}
       {{- end -}}
     {{- end -}}
   {{- else if isset $in "page" -}}
     {{- $images = partial "get-images.html" (dict "page" (index $in "page")) -}}
-  {{- else -}}
-    {{- /* Fallback: ganze Map klappt nicht -> leer */ -}}
   {{- end -}}
 {{- else -}}
-  {{- /* Fallback: Parameter ist eine Page */ -}}
   {{- $images = partial "get-images.html" (dict "page" $in) -}}
 {{- end -}}
 
@@ -60,7 +56,7 @@ Funktioniert sowohl mit:
   {{- return -}}
 {{- end -}}
 
-{{/* ---------- 2) Signatur berechnen (Cache-Busting) ---------- */}}
+{{/* 2) Signatur (Cache-Busting) */}}
 {{- $names := slice -}}
 {{- range sort $images "Name" -}}
   {{- $names = $names | append .Name -}}
@@ -68,15 +64,15 @@ Funktioniert sowohl mit:
 {{- $sig := printf "%d-%d" (len $images) (hash.FNV32a (delimit $names "|")) -}}
 {{- $id  := printf "%s__%s" $baseID $sig | urlize -}}
 
-{{/* ---------- 3) Per-Page Scratch-Cache nutzen ---------- */}}
-{{- $cacheKey := printf "hgg-image-json-%s" $id -}}
+{{/* 3) Scratch-Cache (seitenlokal) */}}
+{{- $cacheKey := printf "hugg-image-json-%s" $id -}}
 {{- with $scratch.Get $cacheKey -}}
   {{- if $debug }}{{ warnf "🧷 init.html: Cache-Hit %s → %s" $cacheKey . }}{{ end -}}
   {{- $scratch.Set "result" (dict "imageDataUrl" .) -}}
   {{- return -}}
 {{- end -}}
 
-{{/* ---------- 4) Thumbs erzeugen & JSON schreiben ---------- */}}
+{{/* 4) Thumbs bauen + JSON schreiben */}}
 {{- $thumbs := partial "gallery-grid/create-thumbs.html" (dict "images" $images) -}}
 {{- if $debug }}{{ warnf "🐛 init.html: %d thumbs erzeugt" (len $thumbs) }}{{ end -}}
 

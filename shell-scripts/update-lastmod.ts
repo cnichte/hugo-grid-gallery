@@ -15,7 +15,7 @@
  *
  * Aufruf
  * ------
- *   npx tsx shell-scripts/hgg-ts/update-lastmod.ts [--dry-run] [--stage]
+ *   npx tsx shell-scripts/hugg-ts/update-lastmod.ts [--dry-run] [--stage]
  *
  * Optionen / ENV
  * --------------

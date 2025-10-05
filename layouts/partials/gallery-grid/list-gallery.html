@@ -165,9 +165,9 @@
 {{ partial "gallery-grid/init.html" $ctx }}
 {{- $gallery := $scratch.Get "result" -}}
 
-{{ if not ($p.Scratch.Get "hgg-assets-loaded") }}
+{{ if not ($p.Scratch.Get "hugg-assets-loaded") }}
   {{ partial "gallery-grid/gallery-config.html" $p }}
-  {{ $p.Scratch.Set "hgg-assets-loaded" true }}
+  {{ $p.Scratch.Set "hugg-assets-loaded" true }}
 {{ end }}
 
 <div id="hugogridgallery" data-gd-image-data-url="{{ $gallery.imageDataUrl }}"></div>
