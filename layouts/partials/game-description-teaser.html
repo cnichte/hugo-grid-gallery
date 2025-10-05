@@ -16,7 +16,7 @@
 {{- $entry    := cond $data (index (where $data $keyField $title) 0) nil -}}
 
 {{- if $entry }}
-  <div class="description-container">
+  <div class="hugg-desc">
     {{ with $entry.subtitle }}
       <p style="font-weight: bold;">{{ . | markdownify }}</p>
     {{ end }}
@@ -60,7 +60,7 @@
     {{- end }}
   </div>
 {{- else }}
-  <div class="description-container">
+  <div class="hugg-desc">
     <p style="color:red">No meta entry in data/{{ $source }}.json for: {{ $title }}</p>
   </div>
 {{- end }}

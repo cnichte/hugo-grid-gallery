@@ -6,7 +6,7 @@
 // - Nummern der Bilder aus dem Dateinamen extrahieren und als Tag-Overlay im Grid-Tumbnail anzeigen.
 "use strict";
 
-import { Pig } from "../../../ext/pig/pig-wrapper";
+import { Pig } from "../ext/pig/pig-wrapper";
 
 var debug = 0 ? console.log.bind(console, "[hugo-grid-gallery]") : function () {};
 

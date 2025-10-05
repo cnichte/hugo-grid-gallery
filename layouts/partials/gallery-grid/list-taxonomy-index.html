@@ -92,7 +92,7 @@
   {{- end -}}
 {{- end -}}
 
-<div class="galleries" id="gallery-container">
+<div class="hugg-cards" id="gallery-container">
   {{- range sort $termsPage.Pages "Title" -}}
     {{- $term := .Title -}}
     {{- $termURL := .RelPermalink -}}
@@ -141,12 +141,12 @@
     {{- end -}}
 
     {{- if $thumb_final -}}
-      <div class="card" data-title="{{ $term }}" data-image-count="{{ len $matching }}">
-        <a class="card-img" href="{{ $termURL }}">
+      <div class="hugg-card" data-title="{{ $term }}" data-image-count="{{ len $matching }}">
+        <a class="hugg-card-img" href="{{ $termURL }}">
           <img src="{{ $thumb_final.thumb }}" alt="{{ $term }}" width="{{ $thumb_final.width }}" height="{{ $thumb_final.height }}" />
-          <span class="num-photos">{{ $imageCount }} {{ T "photo" $imageCount }}</span>
+          <span class="hugg-num-photos">{{ $imageCount }} {{ T "photo" $imageCount }}</span>
         </a>
-        <div class="body">
+        <div class="hugg-card-body">
           <h2><a href="{{ $termURL }}">{{ $term }}</a></h2>
           {{- with $cat }}<p class="category-description">{{ .description | markdownify }}</p>{{ end -}}
         </div>

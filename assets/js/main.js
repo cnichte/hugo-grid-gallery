@@ -1,7 +1,7 @@
 // assets/js/main.js
 // Die Einbindung erfolgt in der baseof.html (im header)
 
-import HugoGridGallery from '../modules/hugo-grid-gallery/js/index';
+import HugoGridGallery from '../hugo-grid-gallery/index';
 window.addEventListener('DOMContentLoaded', () => {
 	HugoGridGallery.init().catch(console.error);
 });

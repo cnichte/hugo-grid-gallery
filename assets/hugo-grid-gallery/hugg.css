@@ -1,0 +1,117 @@
+/* ─────────────────────────────────────────────────────────────
+   HUGO GRID GALLERY – MINIMAL, THEME-SAFE CSS (namespaced)
+   Only layout & spacing. No colors, no fonts, no shadows.
+   Prefix: hugg-
+───────────────────────────────────────────────────────────── */
+
+/* Root wrapper (optional utility for spacing with themes) */
+.hugg-root {
+  display: block;
+}
+
+/* Cards grid used for taxonomy index or section lists */
+.hugg-cards {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+}
+
+@media (min-width: 480px) {
+  .hugg-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (min-width: 768px) {
+  .hugg-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (min-width: 1024px) {
+  .hugg-cards { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+/* Single card */
+.hugg-card {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: .5rem;
+}
+
+/* Clickable image area */
+.hugg-card-img {
+  display: block;
+  position: relative;
+  overflow: hidden;
+  border-radius: .25rem;      /* slight rounding; safe default */
+}
+
+/* The thumb inside card */
+.hugg-card-img > img {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: cover;          /* keep crop consistent */
+  aspect-ratio: 16 / 9;       /* prevents CLS; theme can override */
+}
+
+/* Small badge for counts (let theme style colors) */
+.hugg-num-photos {
+  position: absolute;
+  inset-block-end: .5rem;
+  inset-inline-end: .5rem;
+  padding: .25rem .5rem;
+  font-size: .875em;
+  line-height: 1;
+  background: color-mix(in oklab, currentColor 12%, transparent);
+  /* Above line is very subtle; ok to remove if you want 100% neutral */
+  border-radius: .25rem;
+}
+
+/* Card body */
+.hugg-card-body {
+  display: grid;
+  gap: .25rem;
+}
+.hugg-card-body h2 {
+  margin: 0;
+  font-size: inherit;         /* inherit theme’s sizes */
+  line-height: inherit;
+}
+
+/* Description/intro blocks above/below the grid */
+.hugg-desc {
+  margin-block: 1rem;
+}
+
+/* Prev/Next navigation (bottom) */
+.hugg-nav {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .5rem;
+  align-items: start;
+  margin-block: 1.5rem;
+}
+.hugg-nav .hugg-nav-prev { justify-self: start; }
+.hugg-nav .hugg-nav-next { justify-self: end; }
+
+/* Tag clouds */
+.hugg-tags {
+  margin-block: 1.5rem;
+}
+.hugg-tags .hugg-tags-title {
+  margin: 0 0 .5rem 0;
+  font-weight: inherit;
+}
+.hugg-tags a {
+  display: inline-block;
+  margin: .25rem .5rem .25rem 0;
+  text-decoration: none;      /* let theme set hover color */
+  border: 1px solid currentColor;
+  padding: .25rem .5rem;
+  border-radius: .25rem;
+  line-height: 1.2;
+}
+.hugg-tags a.hugg-selected {
+  outline: 2px solid currentColor; /* neutral “selected” */
+}
+
+/* Container around the JS grid target so themes can space it */
+.hugg-grid-host {
+  margin-block: 1rem;
+}

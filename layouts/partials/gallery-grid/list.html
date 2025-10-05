@@ -51,7 +51,7 @@
   {{ if not $children }}
     {{ if $debug }}{{ warnf "ℹ️ list.html: Keine direkten Kinder unter %s" $p.RelPermalink }}{{ end }}
   {{ else }}
-    <div class="galleries" id="gallery-container">
+    <div class="hugg-cards" id="gallery-container">
       {{ range sort $children "Title" }}
         {{/* Thumbs aus den Ressourcen der Child-Page bestimmen */}}
         {{ $images := partial "get-images.html" (dict "page" .) }}
@@ -68,17 +68,17 @@
           {{ end }}
           {{ $thumb := cond (ne (len $cover) 0) $cover (index $thumbs 0) }}
 
-          <div class="card" data-title="{{ .LinkTitle }}" data-image-count="{{ len $thumbs }}">
-            <a class="card-img" href="{{ .RelPermalink }}">
+          <div class="hugg-card" data-title="{{ .LinkTitle }}" data-image-count="{{ len $thumbs }}">
+            <a class="hugg-card-img" href="{{ .RelPermalink }}">
               <img
                 src="{{ $thumb.thumb }}"
                 alt="{{ $thumb.title }}"
                 width="{{ $thumb.width }}"
                 height="{{ $thumb.height }}"
               />
-              <span class="num-photos">{{ len $thumbs }} photos</span>
+              <span class="hugg-num-photos">{{ len $thumbs }} photos</span>
             </a>
-            <div class="body">
+            <div class="hugg-card-body">
               <h2><a href="{{ .RelPermalink }}">{{ .LinkTitle }}</a></h2>
               {{ with .Summary }}<p>{{ . }}</p>{{ end }}
             </div>

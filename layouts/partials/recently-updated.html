@@ -22,10 +22,10 @@ Rest siehe: update-lastmod.sh
 {{ $sorted := sort $pages ".Params.lastmod" "desc" }}
 {{ $recent := first $limit $sorted }}
 
-<div class="tag-cloud-container">
-  <p class="tag-cloud-container-headline">Recently Updated ⭐</p>
+<div class="hugg-tags">
+  <p class="hugg-tags-headline">Recently Updated ⭐</p>
   {{ range $recent }}
-    <a class="menu-link" href="{{ .RelPermalink }}">{{ .Title }}</a>
+    <a class="hugg-link" href="{{ .RelPermalink }}">{{ .Title }}</a>
     {{/* Optional: <span class="date">({{ .Params.lastmod }})</span> */}}
   {{ end }}
 </div>

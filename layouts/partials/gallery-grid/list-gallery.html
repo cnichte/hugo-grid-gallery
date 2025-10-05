@@ -53,7 +53,7 @@
 {{ if and $p.IsPage (in $gallerySections $p.Section) }}
   {{- $entry := index (where site.Data.games "title" $p.Title) 0 -}}
   {{ if $entry }}
-    <div class="description-container">
+    <div class="hugg-desc">
       <p>
         {{ $entry.description | markdownify }}
         <strong>Developer:</strong>
@@ -82,7 +82,7 @@
       </p>
     </div>
   {{ else if $debug }}
-    <div class="description-container">
+    <div class="hugg-desc">
       <p style="color:red">Kein Eintrag in games.json für: {{ $p.Title }}</p>
     </div>
   {{ end }}
@@ -91,7 +91,7 @@
 {{ else if and $p.IsPage (eq $p.Section "stories") }}
   {{- $s := index (where site.Data.stories "title" $p.Title) 0 -}}
   {{ if $s }}
-    <div class="description-container">
+    <div class="hugg-desc">
       {{ with $s.subtitle }}{{ . | markdownify }}{{ end }}
       {{ $s.description | markdownify }}
     </div>
@@ -135,7 +135,7 @@
 
 {{/* Optionaler Info-Block auf Term-Seiten */}}
 {{ if or (eq $p.Kind "taxonomy") (eq $p.Kind "term") }}
-  <div class="description-container">
+  <div class="hugg-desc">
     {{- $cat := index (where $catsData "name" $p.Title) 0 -}}
     {{ with $cat }}<p class="category-description">{{ .description | markdownify }}</p>{{ end }}
     <p>The Category ‘{{ $p.Title }}’ shows {{ len $images }} virtual Photographs from {{ len $matching }} computergames.</p>
@@ -144,7 +144,7 @@
 
 {{ if eq (len $images) 0 }}
   {{ if $debug }}{{ warnf "⚠️ list-gallery: Keine Bilder gefunden für %s" $p.Title }}{{ end }}
-  <div class="description-container"><p>💔 Sorry, there are currently no images.</p></div>
+  <div class="hugg-desc"><p>💔 Sorry, there are currently no images.</p></div>
   {{ return }}
 {{ end }}
 
@@ -201,15 +201,15 @@
     {{- end -}}
 
     {{ if ge $idx 0 }}
-      <nav class="nav-container">
-        <div class="nav-container-prev">
+      <nav class="hugg-nav">
+        <div class="hugg-nav-prev">
           {{ if gt $idx 0 }}
             {{- $prev := index $pages (sub $idx 1) -}}
             Previous Gallery:
             <a href="{{ $prev.RelPermalink }}">{{ $prev.Title }}</a>
           {{ end }}
         </div>
-        <div class="nav-container-next">
+        <div class="hugg-nav-next">
           {{ if lt (add $idx 1) (len $pages) }}
             {{- $next := index $pages (add $idx 1) -}}
             Next Gallery:
@@ -229,15 +229,15 @@
       {{- if eq $pg.RelPermalink $p.RelPermalink }}{{ $idx = $i }}{{ end -}}
     {{- end -}}
     {{ if ge $idx 0 }}
-      <nav class="nav-container">
-        <div class="nav-container-prev">
+      <nav class="hugg-nav">
+        <div class="hugg-nav-prev">
           {{ if gt $idx 0 }}
             {{- $prev := index $pages (sub $idx 1) -}}
             Previous Category Gallery:
             <a href="{{ $prev.RelPermalink }}">{{ $prev.Title }}</a>
           {{ end }}
         </div>
-        <div class="nav-container-next">
+        <div class="hugg-nav-next">
           {{ if lt (add $idx 1) (len $pages) }}
             {{- $next := index $pages (add $idx 1) -}}
             Next Category Gallery:
@@ -269,13 +269,13 @@
   {{- end -}}
 
   {{ if gt (len $gamePages) 0 }}
-    <div class="tag-cloud-container">
-      <p class="tag-cloud-container-headline">{{ $gamesLabel }}</p>
+    <div class="hugg-tags">
+      <p class="hugg-tags-headline">{{ $gamesLabel }}</p>
       {{- range $g := $gamePages -}}
         {{- $selected := or (eq $g.RelPermalink $p.RelPermalink)
                             (and (in ($g.Params.categories | default (slice)) $p.Title)
                                  (or (eq $p.Kind "term") (eq $p.Kind "taxonomy"))) -}}
-        <a class="{{ if $selected }}menu-selected{{ else }}menu-link{{ end }}" href="{{ $g.RelPermalink }}">{{ $g.Title }}</a>
+        <a class="{{ if $selected }}hugg-selected{{ else }}hugg-link{{ end }}" href="{{ $g.RelPermalink }}">{{ $g.Title }}</a>
       {{- end -}}
     </div>
 
@@ -292,12 +292,12 @@
       {{- $taxName := "categories" -}}
       {{- $taxRoot := site.GetPage (printf "/%s" $taxName) -}}
       {{- $taxBase := cond $taxRoot $taxRoot.RelPermalink (printf "/%s/" $taxName) -}}
-      <div class="tag-cloud-container">
-        <p class="tag-cloud-container-headline">Categories</p>
+      <div class="hugg-tags">
+        <p class="hugg-tags-headline">Categories</p>
         {{- range $cat := $categories -}}
           {{- $mark := or (and (eq $p.Kind "term") (eq $p.Title $cat))
                           (and $p.IsPage (in ($p.Params.categories | default (slice)) $cat)) -}}
-          <a class="{{ if $mark }}menu-selected{{ else }}menu-link{{ end }}"
+          <a class="{{ if $mark }}hugg-selected{{ else }}hugg-link{{ end }}"
              href="{{ printf "%s%s/" $taxBase (urlize $cat) }}">{{ $cat }}</a>
         {{- end -}}
       </div>

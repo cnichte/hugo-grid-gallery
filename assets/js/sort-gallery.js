@@ -10,7 +10,7 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   const clearMenuSelected = () => {
-    Object.values(sortLinks).forEach(link => link?.classList.remove("menu-selected-sek"));
+    Object.values(sortLinks).forEach(link => link?.classList.remove("hugg-selected-sek"));
   };
 
   const sortByTitle = (e) => {
@@ -19,7 +19,7 @@ document.addEventListener("DOMContentLoaded", () => {
       a.dataset.title.localeCompare(b.dataset.title, 'de', { sensitivity: 'base' })
     ).forEach(card => container.appendChild(card));
     clearMenuSelected();
-    sortLinks.title?.classList.add("menu-selected-sek");
+    sortLinks.title?.classList.add("hugg-selected-sek");
   };
 
   const sortByCount = (e) => {
@@ -28,7 +28,7 @@ document.addEventListener("DOMContentLoaded", () => {
       parseInt(b.dataset.imageCount) - parseInt(a.dataset.imageCount)
     ).forEach(card => container.appendChild(card));
     clearMenuSelected();
-    sortLinks.count?.classList.add("menu-selected-sek");
+    sortLinks.count?.classList.add("hugg-selected-sek");
   };
 
   const sortByLastUpdated = () => {
@@ -36,7 +36,7 @@ document.addEventListener("DOMContentLoaded", () => {
       new Date(b.dataset.updated) - new Date(a.dataset.updated)
     ).forEach(card => container.appendChild(card));
     clearMenuSelected();
-    sortLinks.updated?.classList.add("menu-selected-sek");
+    sortLinks.updated?.classList.add("hugg-selected-sek");
   };
 
   sortLinks.title?.addEventListener("click", sortByTitle);
