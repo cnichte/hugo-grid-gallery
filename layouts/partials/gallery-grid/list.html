@@ -22,75 +22,60 @@
    - params.hugo-grid-gallery.debug (bool)
 ---------------------------------------------------------- */}}
 
-{{- $p := . -}}
-{{- $cfg := (index site.Params "hugo-grid-gallery") | default dict -}}
-{{- $debug := $cfg.debug | default false -}}
+{{ define "main" }}
+  {{- $cfg := (index site.Params "hugo-grid-gallery") | default dict -}}
+  {{- $debug := $cfg.debug | default false -}}
 
-{{ if $debug }}{{ warnf "📃 list.html: Kind=%s | Type=%s | Section=%s | IsHome=%v | Permalink=%s" $p.Kind $p.Type $p.Section $p.IsHome $p.RelPermalink }}{{ end }}
+  <div class="hugg">
 
-{{/* 1) TAXONOMIE-INDEX (z. B. /categories/) */}}
-{{ if eq $p.Kind "taxonomy" }}
-  {{ if $debug }}{{ warnf "➡️ list.html -> list-taxonomy-index (taxonomy=%s)" $p.Type }}{{ end }}
-  {{ partial "gallery-grid/list-taxonomy-index.html" (dict "page" $p "taxonomy" $p.Type) }}
-  {{ return }}
-{{ end }}
-
-{{/* 2) SECTION-INDEX (z. B. /my-galleries/) */}}
-{{ if eq $p.Kind "section" }}
-  {{ with $p.Content }}<div class="section-content">{{ . }}</div>{{ end }}
-
-  {{ partial "gallery-grid/sort-toolbar.html" . }}
-
-  {{- $children := $p.RegularPages -}}
-  {{ if $children }}
-    <div class="hugg-cards" id="gallery-container">
-      {{ range sort $children "Title" }}
-        {{ $images := partial "get-images.html" (dict "page" .) }}
-        {{ $thumbs := partial "gallery-grid/get-gallery-index.html" (dict "images" $images "page" .) }}
-        {{ if gt (len $thumbs) 0 }}
-          {{ $cover := dict }}
-          {{ range $thumbs }}{{ if findRE "(?i)cover" .title }}{{ $cover = . }}{{ break }}{{ end }}{{ end }}
-          {{ $thumb := cond (ne (len $cover) 0) $cover (index $thumbs 0) }}
-
-          <div class="hugg-card"
-               data-title="{{ .LinkTitle }}"
-               data-image-count="{{ len $thumbs }}"
-               data-updated='{{ (or .Lastmod .Date) | time.Format "2006-01-02T15:04:05Z07:00" }}'>
-            <a class="hugg-card-img" href="{{ .RelPermalink }}">
-              <img src="{{ $thumb.thumb }}" alt="{{ $thumb.title }}" width="{{ $thumb.width }}" height="{{ $thumb.height }}" />
-              <span class="hugg-num-photos">{{ len $thumbs }} photos</span>
-            </a>
-            <div class="hugg-card-body">
-              <h2><a href="{{ .RelPermalink }}">{{ .LinkTitle }}</a></h2>
-              {{ with .Summary }}<p>{{ . }}</p>{{ end }}
-            </div>
-          </div>
-        {{ end }}
-      {{ end }}
-    </div>
-  {{ else if $debug }}
-    {{ warnf "ℹ️ list.html: Keine direkten Kinder unter %s" $p.RelPermalink }}
-  {{ end }}
-
-  {{ return }}
-{{ end }}
-
-{{/* 3) HOME (optional: Recently Updated, falls Partial existiert) */}}
-{{ if $p.IsHome }}
-  {{ if templates.Exists "partials/recently-updated.html" }}
-    {{ if $debug }}{{ warnf "🏠 Home: render recently-updated.html" }}{{ end }}
-    {{ partial "recently-updated.html" (dict "section" "galleries" "limit" 3) }}
-  {{ end }}
-  {{ with $p.Content }}
-    <div class="home-content">
+  {{ with .Content }}
+    <div class="section-content">
       {{ . }}
     </div>
   {{ end }}
-  {{ return }}
-{{ end }}
 
-{{/* 4) FALLBACK: Nur Content ausgeben (z. B. für andere Kinds) */}}
-{{ with $p.Content }}
-  {{ if $debug }}{{ warnf "↪️ Fallback: rendere nur .Content" }}{{ end }}
-  {{ . }}
+  {{/* 🔹 Toolbar für Sortierung */}}
+  <div class="hugg-toolbar" style="margin:.5rem 0 1rem; display:flex; gap:.75rem; flex-wrap:wrap; align-items:center;">
+    <strong style="opacity:.7">Sort:</strong>
+    <a id="sort-title"   class="menu-link" href="#">Title</a>
+    <a id="sort-count"   class="menu-link" href="#">Count</a>
+    <a id="sort-updated" class="menu-link" href="#">Updated</a>
+  </div>
+
+  {{- $children := .RegularPages -}}
+  {{ if not $children }}
+    {{ if $debug }}{{ warnf "ℹ️ gallery-index: Keine direkten Kinder unter %s" .RelPermalink }}{{ end }}
+    {{ return }}
+  {{ end }}
+
+  <div class="hugg-cards" id="gallery-container">
+    {{ range sort $children "Title" }}
+      {{ $images := partial "get-images.html" (dict "page" .) }}
+      {{ $thumbs := partial "gallery-grid/get-gallery-index.html" (dict "images" $images "page" .) }}
+
+      {{ if gt (len $thumbs) 0 }}
+        {{/* „cover“ bevorzugen, sonst erstes Thumb */}}
+        {{ $cover := dict }}
+        {{ range $thumbs }}{{ if findRE "(?i)cover" .title }}{{ $cover = . }}{{ break }}{{ end }}{{ end }}
+        {{ $thumb := cond (ne (len $cover) 0) $cover (index $thumbs 0) }}
+
+        <div class="hugg-card"
+             data-title="{{ .LinkTitle }}"
+             data-image-count="{{ len $thumbs }}"
+             data-updated='{{ (or .Lastmod .Date) | time.Format "2006-01-02T15:04:05Z07:00" }}'>
+          <a class="hugg-card-img" href="{{ .RelPermalink }}">
+            <img src="{{ $thumb.thumb }}" alt="{{ $thumb.title }}" width="{{ $thumb.width }}" height="{{ $thumb.height }}" />
+            <span class="hugg-num-photos">{{ len $thumbs }} photos</span>
+          </a>
+          <div class="hugg-card-body">
+            <h2><a href="{{ .RelPermalink }}">{{ .LinkTitle }}</a></h2>
+            {{ with .Summary }}<p>{{ . }}</p>{{ end }}
+          </div>
+        </div>
+      {{ else if $debug }}
+        {{ warnf "ℹ️ gallery-index: Keine Thumbs für %s" .RelPermalink }}
+      {{ end }}
+    {{ end }}
+  </div>
+  </div>
 {{ end }}
