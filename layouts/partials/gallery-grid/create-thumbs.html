@@ -1,79 +1,80 @@
-{{/* layouts/partials/gallery-grid/create-thumbs.html */}}
 {{/* Erzeugt strukturierte Thumbnail-Objekte aus übergebenen Images. */}}
+{{/* layouts/partials/gallery-grid/create-thumbs.html */}}
+{{- $debug := (index site.Params "hugo-grid-gallery").debug | default false -}}
 
-{{- $debug := (index site.Params "hugo-grid-gallery").debug | default false }}
+{{- $images := .images | default slice -}}
+{{- $thumbs := slice -}}
 
-{{ $images := .images | default slice }}
-{{ $thumbs := slice }}
-{{ if $debug }}{{ warnf "create-thumbs: Start processing %d images…" (len $images) }}{{ end }}
+{{- if eq (len $images) 0 -}}
+  {{- if $debug }}{{ warnf "⛔ create-thumbs: Keine Bilder – abgebrochen." }}{{ end -}}
+  {{- return -}}
+{{- end -}}
 
-{{ $re := `\d+` }}
+{{- $re := `\d+` -}}
 
-{{ if eq (len $images) 0 }}
-  {{ if $debug }}{{ warnf "⛔ create-thumbs: Keine Bilder – abgebrochen." }}{{ end }}
-  {{ return }}
-{{ end }}
+{{- range $index, $img := $images -}}
+  {{- with $img.RelPermalink -}}{{- else -}}
+    {{- if $debug }}{{ warnf "create-thumbs: [%d] missing RelPermalink – skipped" $index }}{{ end -}}
+    {{- continue -}}
+  {{- end -}}
 
-{{ range $index, $img := $images }}
-  {{ with $img.RelPermalink }}{{ else }}
-    {{ if $debug }}{{ warnf "create-thumbs: [%d] missing RelPermalink or not a resource: %v – skipped" $index $img }}{{ end }}
-    {{ continue }}
-  {{ end }}
+  {{- $title := $img.Name | default "" -}}
+  {{- if eq $title "" -}}
+    {{- if $debug }}{{ warnf "create-thumbs: [%d] missing Name – skipped" $index }}{{ end -}}
+    {{- continue -}}
+  {{- end -}}
 
-  {{ $title := $img.Name | default "" }}
-  {{ if eq $title "" }}
-    {{ if $debug }}{{ warnf "create-thumbs: [%d] missing Name – skipped" $index }}{{ end }}
-    {{ continue }}
-  {{ end }}
+  {{- $full := $img -}}
 
-  {{ $full := $img }}
-  {{ $match := findRE $re $title }}
-  {{ $number := cond (gt (len $match) 0) (index $match 0) "" }}
+  {{/* Optional: Wasserzeichen auf FULL anwenden */}}
+  {{- with site.Data.gallery.config.watermark -}}
+    {{- $wmConf := . -}}
+    {{- with resources.Get $wmConf.image -}}
+      {{- $wm := . -}}
+      {{- $fw := $full.Width -}}
+      {{- $wmMaxW := div $fw 6 -}}
+      {{- if gt $wm.Width $wmMaxW -}}
+        {{- $wm = $wm.Resize (printf "%dx" $wmMaxW) -}}
+      {{- end -}}
+      {{- $posx := $wmConf.posx | default "right" -}}
+      {{- $posy := $wmConf.posy | default "bottom" -}}
+      {{- $x := cond (eq $posx "center") (div (sub $fw $wm.Width) 2) (cond (eq $posx "left") 20 (sub $fw (add $wm.Width 20))) -}}
+      {{- $y := cond (eq $posy "center") (div (sub $full.Height $wm.Height) 2) (cond (eq $posy "top") 20 (sub $full.Height (add $wm.Height 20))) -}}
+      {{- $full = $full.Filter (images.Overlay $wm $x $y) -}}
+    {{- end -}}
+  {{- end -}}
 
-  {{/* Optional: Wasserzeichen */}}
-  {{ with site.Data.gallery.config.watermark }}
-    {{ $watermark := . }}
-    {{ with resources.Get $watermark.image }}
-      {{ $wm := . }}
-      {{ $fw := $full.Width }}
-      {{ $wmMaxW := div $fw 6 }}
-      {{ if gt $wm.Width $wmMaxW }}
-        {{ $wm = $wm.Resize (printf "%dx" $wmMaxW) }}
-      {{ end }}
+  {{/* Thumbs erzeugen – IMMER URLs ins JSON schreiben */}}
+  {{- $t20  := ($img.Resize "20x").RelPermalink -}}
+  {{- $t100 := ($img.Resize "100x").RelPermalink -}}
+  {{- $t250 := ($img.Resize "250x").RelPermalink -}}
+  {{- $t500 := ($img.Resize "500x").RelPermalink -}}
 
-      {{ $posx := $watermark.posx | default "right" }}
-      {{ $posy := $watermark.posy | default "bottom" }}
+  {{/* Nummer aus Dateiname */}}
+  {{- $match := findRE $re $title -}}
+  {{- $number := cond (gt (len $match) 0) (index $match 0) "" -}}
 
-      {{ $x := cond (eq $posx "center") (div (sub $fw $wm.Width) 2) (cond (eq $posx "left") 20 (sub $fw (add $wm.Width 20))) }}
-      {{ $y := cond (eq $posy "center") (div (sub $full.Height $wm.Height) 2) (cond (eq $posy "top") 20 (sub $full.Height (add $wm.Height 20))) }}
+  {{- /* Wenn du aspectRatio drinlassen willst, dann als Float: */ -}}
+  {{- $ratio := div (mul 1.0 ($img.Width)) ($img.Height) -}}
 
-      {{ $full = $full.Filter (images.Overlay $wm $x $y) }}
-    {{ end }}
-  {{ end }}
+  {{- $entry := dict
+    "title"       $title
+    "name"        $img.Name
+    "width"       $img.Width
+    "height"      $img.Height
+    "thumb"       $t500
+    "full"        $full.RelPermalink
+    "20"          $t20
+    "100"         $t100
+    "250"         $t250
+    "500"         $t500
+    "imageTag"    $number
+    "aspectRatio" $ratio
+  -}}
 
-  {{/* Verschiedene Thumbnails – mit Resize statt Fill für Seitenverhältnis */}}
-  {{ $thumb20 := $img.Resize "20x" }}
-  {{ $thumb100 := $img.Resize "100x" }}
-  {{ $thumb250 := $img.Resize "250x" }}
-  {{ $thumb500 := $img.Resize "500x" }}
+  {{- if $debug }}{{ warnf "create-thumbs: [%d] %q ok" $index $title }}{{ end -}}
+  {{- $thumbs = $thumbs | append $entry -}}
+{{- end -}}
 
-  {{ $entry := dict
-    "thumb" $thumb500.RelPermalink
-    "full" $full.RelPermalink
-    "width" $thumb500.Width
-    "height" $thumb500.Height
-    "aspectRatio" (div $thumb500.Width $thumb500.Height)
-    "title" $title
-    "imageTag" $number
-    "20" $thumb20
-    "100" $thumb100.RelPermalink
-    "250" $thumb250.RelPermalink
-    "500" $thumb500.RelPermalink
-  }}
-
-  {{ if $debug }}{{ warnf "create-thumbs: [%d] created thumb entry: %q" $index $title }}{{ end }}
-  {{ $thumbs = $thumbs | append $entry }}
-{{ end }}
-
-{{ if $debug }}{{ warnf "create-thumbs: Finished. %d thumbs generated." (len $thumbs) }}{{ end }}
-{{ return $thumbs }}
+{{- if $debug }}{{ warnf "create-thumbs: Finished. %d thumbs generated." (len $thumbs) }}{{ end -}}
+{{- return $thumbs -}}

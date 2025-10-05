@@ -26,7 +26,7 @@ try {
 let HugoGridGallery = {
   init: async function () {
     const galleryId = "hugogridgallery";
-    const dataAttributeName = "data-gd-image-data-url";
+    const dataAttributeName = "data-hugg-image-data-url";
     const container = document.getElementById(galleryId);
     if (!container) throw new Error(`No element with id ${galleryId} found.`);
 
