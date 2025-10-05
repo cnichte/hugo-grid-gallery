@@ -46,11 +46,7 @@
     </div>
   {{ end }}
 
-  <div class="hugg-toolbar">
-    <a id="sort-title"   class="menu-link" href="#">Title</a>
-    <a id="sort-count"   class="menu-link" href="#"># Photos</a>
-    <a id="sort-updated" class="menu-link" href="#">Updated</a>
-  </div>
+  {{ partial "gallery-grid/sort-toolbar.html" . }}
 
   {{/* Karten-Grid der DIREKTEN Kinder (keine Rekursion) */}}
   {{- $children := $p.RegularPages -}}
