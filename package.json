@@ -15,8 +15,13 @@
   "type": "commonjs",
   "main": "index.js",
   "scripts": {
-    "dev":"hugo server --disableFastRender --noHTTPCache",
+    "dev": "hugo server --disableFastRender --noHTTPCache",
     "test": "echo \"Error: no test specified\" && exit 1",
     "tree": "tree -a -L 5 ./layouts > verzeichnis-layouts.txt"
+  },
+  "devDependencies": {
+    "@types/node": "^24.6.2",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3"
   }
 }
