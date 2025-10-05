@@ -1,12 +1,14 @@
-// assets/hugo-grid-gallery/index.js
+// assets/hugo-grid-gallery/init-pig.js
+//
 // Hier wird assets/ext/pig/pig.js initialisiert und konfiguriert.
 // Der Ursprüngliche Code stammt von Gallery-Deluxe,
 // wurde aber stark angepasst und erweitert:
 // - sfLightbox support
 // - Nummern der Bilder aus dem Dateinamen extrahieren und als Tag-Overlay im Grid-Tumbnail anzeigen.
+//
 "use strict";
 
-import { Pig } from "../ext/pig/pig-wrapper";
+import { Pig } from "../../ext/pig/pig-wrapper";
 
 var debug = 0 ? console.log.bind(console, "[hugo-grid-gallery]") : function () {};
 

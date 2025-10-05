@@ -17,7 +17,7 @@
   "scripts": {
     "dev": "hugo server --disableFastRender --noHTTPCache",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "tree": "tree -a -L 5 ./layouts > verzeichnis-layouts.txt"
+    "tree": "tree -a -L 5 ./assets > verzeichnis-assets.txt"
   },
   "devDependencies": {
     "@types/node": "^24.6.2",

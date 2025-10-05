@@ -1,0 +1,18 @@
+./assets
+├── ext
+│   ├── dflip
+│   ├── fslightbox
+│   └── pig
+├── hugo-grid-gallery
+│   ├── css
+│   │   └── hugg.css
+│   └── js
+│       ├── init-pig.js
+│       ├── main.js
+│       ├── scroll-to-top.js
+│       └── sort-gallery.js
+└── images
+    ├── gopher-hero8-bird.png
+    └── gopher-hero8.png
+
+17 directories, 31 files
