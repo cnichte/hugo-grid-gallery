@@ -6,12 +6,18 @@
 // - sfLightbox support
 // - Nummern der Bilder aus dem Dateinamen extrahieren und als Tag-Overlay im Grid-Tumbnail anzeigen.
 //
+// assets/hugo-grid-gallery/js/init-pig.js
+//
+// Initialisiert die Pig-Gallery (assets/ext/pig/pig.js).
+// Anpassungen:
+// - sfLightbox-Support (Links um die Full-Images)
+// - Nummern aus Dateinamen als Tag-Overlay
+// - Robust: wartet bis window.Pig vorhanden ist
 "use strict";
 
-var debug = 0 ? console.log.bind(console, "[hugo-grid-gallery]") : function () {};
+const debug = 0 ? console.log.bind(console, "[hugo-grid-gallery]") : function () {};
 
 let params = {};
-
 try {
   const paramScript = document.getElementById("hugg-config");
   if (paramScript?.textContent) {
@@ -21,10 +27,11 @@ try {
   console.error("❌ Fehler beim Parsen von hugogridgallery-params", e);
 }
 
-let HugoGridGallery = {
+const HugoGridGallery = {
   init: async function () {
     const galleryId = "hugogridgallery";
     const dataAttributeName = "data-hugg-image-data-url";
+
     const container = document.getElementById(galleryId);
     if (!container) throw new Error(`No element with id ${galleryId} found.`);
 
@@ -42,11 +49,11 @@ let HugoGridGallery = {
       images = images.reverse();
     }
 
-    let imagesMap = new Map();
-    let imageData = [];
+    const imagesMap = new Map();
+    const imageData = [];
 
     for (let i = 0; i < images.length; i++) {
-      let image = images[i];
+      const image = images[i];
       image.prev = images[(i + images.length - 1) % images.length];
       image.next = images[(i + 1) % images.length];
 
@@ -71,44 +78,41 @@ let HugoGridGallery = {
       }));
     }
 
-    var options = {
+    const options = {
       containerId: galleryId,
       spaceBetweenImages: 10,
       classPrefix: "hugg",
       /*
-      onClickHandler: function (filename) { /// ← wichtig: wird aufgerufen, wenn ein Bild angeklickt wird
-        console.log("⏩ Öffne fslightbox für", filename);
+      onClickHandler: function (filename) {
         const image = imagesMap.get(filename);
-        console.log("⏩ Öffne fslightbox mit", image);
-        // if (!image || !image.full) return;
-
+        if (!image || !image.full) return;
         const a = document.createElement("a");
         a.href = image.full;
         a.setAttribute("data-fslightbox", "gallery");
         a.style.display = "none";
         document.body.appendChild(a);
         a.click();
-        // a.remove();
+        a.remove();
       },
-*/
+      */
       urlForSize: function (filename, size) {
         const image = imagesMap.get(filename);
         if (!image) return "";
 
         const val = image[size];
         if (typeof val === "string") return val;
-        if (val && typeof val === "object" && val.RelPermalink)
-          return val.RelPermalink;
+        if (val && typeof val === "object" && val.RelPermalink) return val.RelPermalink;
 
         return "";
       },
 
+      // robust: colors kann fehlen; Arrays haben length (nicht size)
       styleForElement: function (filename) {
-        let image = imagesMap.get(filename);
-        if (!image || image.colors.size < 1) return "";
-        let colors = image.colors;
-        let first = colors[0];
-        let second = colors.length > 1 ? colors[1] : "#ccc";
+        const image = imagesMap.get(filename);
+        if (!image || !image.colors || image.colors.length < 1) return "";
+        const colors = image.colors;
+        const first = colors[0];
+        const second = colors.length > 1 ? colors[1] : "#ccc";
         return ` background: linear-gradient(15deg, ${first}, ${second});`;
       },
     };
@@ -117,35 +121,29 @@ let HugoGridGallery = {
       console.warn("Pig-Galerie bereits initialisiert – Abbruch");
       return;
     }
-
     window.__pigGalleryInitialized = true;
 
-// Wichtig: nicht vorab aus window "abgreifen", sondern JETZT nehmen.
+    // Wichtig: jetzt auf window.Pig zugreifen (wird separat als <script> geladen)
     const PigCtor = window.Pig;
     if (!PigCtor) {
-      console.error("Pig ist noch nicht geladen (window.Pig fehlt).");
+      console.error("❌ Pig ist noch nicht geladen (window.Pig fehlt).");
       return;
     }
-    let pig = new PigCtor(imageData, options);
-    
-    // Optional, wenn du später window.__pigGallery?.update() nutzt:
+
+    const pig = new PigCtor(imageData, options);
     window.__pigGallery = pig;
 
-    console.log("🐷 Pig hat Bilder (vor enable):", pig.images.length);
+    debug("🐷 Pig hat Bilder (vor enable):", pig.images.length);
 
     pig.getImageFromFilename = function (filename) {
       const entry = this.images.find((e) => e.filename === filename);
       if (!entry) return undefined;
-      return {
-        ...entry.image,
-        imageTag: entry.imageTag,
-        filename: entry.filename,
-      };
+      return { ...entry.image, imageTag: entry.imageTag, filename: entry.filename };
     };
 
     pig.enable();
 
-    console.log(
+    debug(
       "🐷 Visible count (nach enable):",
       document.querySelectorAll("figure.hugg-figure").length
     );
@@ -154,12 +152,13 @@ let HugoGridGallery = {
       window.dispatchEvent(new Event("scroll"));
       window.dispatchEvent(new Event("resize"));
       requestAnimationFrame(() => {
-        window.__pigGallery?.update();
+        window.__pigGallery?.update?.();
       });
     }, 200);
   },
 };
 
+// -NN- bis -NNNNNN- (2..6 Ziffern zwischen Bindestrichen)
 function extractNumberFromFilename(filename) {
 /* 
 Da regex ja immer wieder rätselhaft ist, hier eine ausführliche Erklärung:
