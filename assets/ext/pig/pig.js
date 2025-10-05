@@ -739,12 +739,13 @@
    */
   Pig.prototype.enable = function () {
     this.onScroll = this._getOnScroll();
-
-    this.scroller.addEventListener("scroll", this.onScroll);
-
-    this.onScroll();
+    // 1) ZUERST Layout berechnen und anwenden
     this._computeLayout();
     this._doLayout();
+
+    // 2) DANN Scroll-Listener setzen und initialen Durchlauf
+    this.scroller.addEventListener("scroll", this.onScroll);
+    this.onScroll();
 
     optimizedResize.add(
       function () {
