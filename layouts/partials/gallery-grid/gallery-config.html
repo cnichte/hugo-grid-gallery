@@ -64,15 +64,19 @@
     <script src="{{ $r.RelPermalink }}"{{ with $r.Data.Integrity }} integrity="{{ . }}"{{ end }}></script>
   {{- end -}}
 
-  {{/* ---------- JS: App-Entry ---------- */}}
-  {{- with resources.Get "hugo-grid-gallery/js/main.js" -}}
-    {{- $opts := dict "target" "es2018" "minify" hugo.IsProduction "sourceMap" (cond hugo.IsProduction "external" "inline") -}}
-    {{- $r := js.Build . $opts -}}
-    {{- if hugo.IsProduction -}}{{- $r = resources.Fingerprint $r -}}{{- end -}}
-    <script defer src="{{ $r.RelPermalink }}"{{ with $r.Data.Integrity }} integrity="{{ . }}"{{ end }}></script>
-  {{- else -}}
-    {{- warnf "hugo-grid-gallery/js/main.js nicht gefunden" -}}
-  {{- end -}}
+{{/* ---------- JS: der App-Entry (importiert alles weitere) ---------- */}}
+{{ with resources.Get "hugo-grid-gallery/js/main.js" }}
+  {{ $opts := dict
+      "target"    "es2018"
+      "minify"    hugo.IsProduction
+      "sourceMap" (cond hugo.IsProduction "external" "inline")
+  }}
+  {{ $built := . | js.Build $opts }}
+  {{ if hugo.IsProduction }}{{ $built = $built | resources.Fingerprint }}{{ end }}
+  <script defer src="{{ $built.RelPermalink }}"{{ with $built.Data.Integrity }} integrity="{{ . }}"{{ end }}></script>
+{{ else }}
+  {{ warnf "hugo-grid-gallery/js/main.js nicht gefunden" }}
+{{ end }}
 
   {{/* ---------- Optional: DearFlip ---------- */}}
   {{- if .Param "use_flipbook" -}}
