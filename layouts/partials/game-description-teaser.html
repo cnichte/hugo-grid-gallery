@@ -1,40 +1,66 @@
 {{/* {{ partial "game-description-teaser.html" (dict "title" "Fallout" "limit" 25) }} */}}
-{{- $title := .title -}}
-{{- $limit := .limit | default 20 -}}
-{{- $game := index (where site.Data.games "title" $title) 0 -}}
+{{/* Usage-Beispiele:
+     {{ partial "game-description-teaser.html" (dict "page" .) }}
+     {{ partial "game-description-teaser.html" (dict "page" . "source" "games") }}
+     {{ partial "game-description-teaser.html" (dict "page" . "title" "Fallout" "limit" 30) }}
+     {{ partial "game-description-teaser.html" (dict "page" . "source" "stories" "keyField" "title") }}
+*/}}
 
-{{ if $game }}
-    {{ if $game.subtitle }}<p style="font-weight: bold;">{{  $game.subtitle }}</p>{{ end }}
-    
-    {{ if $game.developer.name }}
-      <p>Developer: 
-      {{ if $game.developer.link }}
-      <a href="{{ $game.developer.link }}" target="_blank" rel="noopener">{{ $game.developer.name }}</a>
-      {{ else }}
-        {{ $game.developer.name }}
-      {{ end }}
-      </p>
-    {{ end }}
-    
-    {{ if $game.publisher.name }}
-      <p>Publisher: 
-      {{ if $game.publisher.link }}
-        <a href="{{ $game.publisher.link }}" target="_blank" rel="noopener">{{ $game.publisher.name }}</a>
-      {{ else }}
-        {{ $game.publisher.name }}
-      {{ end }}
-      </p>
+{{- $ctx      := . -}}
+{{- $page     := $ctx.page | default .Page -}}
+{{- $title    := $ctx.title | default (cond $page $page.Title "") -}}
+{{- $limit    := $ctx.limit | default 20 -}}
+{{- $source   := $ctx.source | default "games" -}}     {{/* data/<source>.json */}}
+{{- $keyField := $ctx.keyField | default "title" -}}
+{{- $data     := index site.Data $source -}}
+{{- $entry    := cond $data (index (where $data $keyField $title) 0) nil -}}
+
+{{- if $entry }}
+  <div class="description-container">
+    {{ with $entry.subtitle }}
+      <p style="font-weight: bold;">{{ . | markdownify }}</p>
     {{ end }}
 
-  <p>{{/* TODO: use truncate-words.html */}}
-    {{ $words := split $game.description " " }}
-    {{ $short := delimit (first $limit $words) " " }}
-    {{ if gt (len $words) $limit }}
-      {{ $short }}…
-    {{ else }}
-      {{ $short }}
-    {{ end }}
-  </p>
-{{ else }}
-  <p style="color:red">No game found for: {{ $title }}</p>
-{{ end }}
+    {{/* Beschreibung auf $limit Wörter kürzen */}}
+    {{- $desc := $entry.description | default "" -}}
+    {{- $words := split $desc " " -}}
+    {{- $short := delimit (first $limit $words) " " -}}
+    <p>{{ if gt (len $words) $limit }}{{ $short }}…{{ else }}{{ $short }}{{ end }}</p>
+
+    {{/* Developer / Publisher */}}
+    <p>
+      {{ with $entry.developer.name }}
+        <strong>Developer:</strong>
+        {{- if $entry.developer.link -}}
+          <a href="{{ $entry.developer.link }}" target="_blank" rel="noopener">{{ . }}</a>
+        {{- else -}}
+          {{ . }}
+        {{- end -}}
+      {{ end }}
+      {{ with $entry.publisher.name }}
+        , <strong>Publisher:</strong>
+        {{- if $entry.publisher.link -}}
+          <a href="{{ $entry.publisher.link }}" target="_blank" rel="noopener">{{ . }}</a>
+        {{- else -}}
+          {{ . }}
+        {{- end -}}
+      {{ end }}
+    </p>
+
+    {{/* Zähltext: robust mit Fallback auf aktuelle Seite */}}
+    {{- $galleryLink := $entry.galleryLink | default (cond $page $page.RelPermalink "") -}}
+    {{- if $galleryLink }}
+      <p>
+        {{ partial "count-images-page-partial.html" (dict
+            "path"   $galleryLink
+            "prefix" "This Gallery contains "
+            "suffix" " virtual Photographs."
+        ) }}
+      </p>
+    {{- end }}
+  </div>
+{{- else }}
+  <div class="description-container">
+    <p style="color:red">No meta entry in data/{{ $source }}.json for: {{ $title }}</p>
+  </div>
+{{- end }}
