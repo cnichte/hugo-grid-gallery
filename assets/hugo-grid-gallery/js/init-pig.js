@@ -8,8 +8,6 @@
 //
 "use strict";
 
-import { Pig } from "../../ext/pig/pig-wrapper";
-
 var debug = 0 ? console.log.bind(console, "[hugo-grid-gallery]") : function () {};
 
 let params = {};
@@ -122,7 +120,17 @@ let HugoGridGallery = {
 
     window.__pigGalleryInitialized = true;
 
-    let pig = new Pig(imageData, options);
+// Wichtig: nicht vorab aus window "abgreifen", sondern JETZT nehmen.
+    const PigCtor = window.Pig;
+    if (!PigCtor) {
+      console.error("Pig ist noch nicht geladen (window.Pig fehlt).");
+      return;
+    }
+    let pig = new PigCtor(imageData, options);
+    
+    // Optional, wenn du später window.__pigGallery?.update() nutzt:
+    window.__pigGallery = pig;
+
     console.log("🐷 Pig hat Bilder (vor enable):", pig.images.length);
 
     pig.getImageFromFilename = function (filename) {
