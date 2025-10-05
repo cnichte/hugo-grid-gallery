@@ -1,88 +1,125 @@
-{{/* list-taxonomy-index.html
-     Zeigt Karten für alle Terms einer Taxonomie,
-     gefiltert nach Type/Section/Unterpfad und mit wählbarer Kategorien-Data.
+{{/* ---------------------------------------------------------
+   Zeigt Karten für alle Terms einer Taxonomie (z. B. categories).
+   Erwartet: dict { page: .Page, taxonomy: "categories"|... }
+---------------------------------------------------------- */}}
+{{/* layouts/partials/gallery-grid/list-taxonomy-index.html */}}
+{{- $ctx := . -}}
+{{- $page := $ctx.page -}}
+{{- $taxonomy := $ctx.taxonomy | default "categories" -}}
+{{- $types := $ctx.types | default (slice) -}}
+{{- $sections := $ctx.sections | default (slice) -}}
+{{- $under := $ctx.under | default "" -}}
+{{- $catDataKey := $ctx.categoriesData | default "" -}}
 
-     Erwartet dict:
-       - page
-       - taxonomy          (string)   z. B. "categories"
-       - types             ([]string) Kandidaten-Typen
-       - sections          ([]string) Kandidaten-Sections (optional)
-       - under             (string)   nur Seiten unter diesem Pfad (optional, beginnt/endet mit "/")
-       - categoriesData    (string)   z. B. "games", "streetphotography", "stories" …
-*/}}
-
-{{- $ctx        := . -}}
-{{- $page       := $ctx.page -}}
-{{- $taxonomy   := $ctx.taxonomy      | default "categories" -}}
-{{- $types      := $ctx.types         | default (slice "hugo-grid-gallery") -}}
-{{- $sections   := $ctx.sections      | default (slice) -}}
-{{- $under      := $ctx.under         | default "" -}}
-{{- $catDataKey := $ctx.categoriesData| default "" -}}
-
-{{- $cfg   := (index site.Params "hugo-grid-gallery") | default dict -}}
+{{- $cfg := (index site.Params "hugo-grid-gallery") | default dict -}}
 {{- $debug := $cfg.debug | default false -}}
+{{- if and (eq (len $types) 0) (eq (len $sections) 0) -}}
+  {{- $types = $cfg.gallerySections | default (slice "hugo-grid-gallery") -}}
+{{- end -}}
 
-{{ if $debug }}{{ warnf "🧭 list-taxonomy-index: tax=%s types=%v sections=%v under=%q catData=%q (on %s)"
-    $taxonomy $types $sections $under $catDataKey $page.RelPermalink }}{{ end }}
+{{- if $debug }}{{ warnf "🧭 list-taxonomy-index: tax=%s types=%v sections=%v under=%q catData=%q on %s"
+  $taxonomy $types $sections $under $catDataKey $page.RelPermalink }}{{ end }}
 
-{{/* Terms-Containerseite (z. B. /categories/) */}}
 {{- $termsPage := site.GetPage (printf "/%s" $taxonomy) -}}
 {{- if not $termsPage -}}
-  {{ if $debug }}{{ warnf "⛔ Keine Taxonomie-Seite für '%s' gefunden" $taxonomy }}{{ end }}
+  {{- if $debug }}{{ warnf "⛔ Keine Taxonomie-Seite für '%s' gefunden" $taxonomy }}{{ end }}
   <p>Unknown taxonomy ‘{{ $taxonomy }}’.</p>
   {{- return -}}
 {{- end -}}
 
-{{/* 1) Kandidatenpool: per TYPE und optional SECTION einschränken */}}
-{{- $poolByType := where site.RegularPages "Type" "in" $types -}}
-{{- $pool := $poolByType -}}
-{{- if gt (len $sections) 0 -}}
-  {{- $poolBySect := where site.RegularPages "Section" "in" $sections -}}
-  {{- $pool = intersect $poolByType $poolBySect -}}
+{{/* Kandidaten bestimmen: per Type ODER Section + optional Pfad-Filter */}}
+{{- $candByType := cond (gt (len $types) 0) (where site.RegularPages "Type" "in" $types) (slice) -}}
+{{- $candBySect := cond (gt (len $sections) 0) (where site.RegularPages "Section" "in" $sections) (slice) -}}
+{{- $candidates := uniq (union $candByType $candBySect) -}}
+
+{{- if and (eq (len $types) 0) (eq (len $sections) 0) -}}
+  {{- $candidates = where site.RegularPages "Type" "in" ($cfg.gallerySections | default (slice "hugo-grid-gallery")) -}}
 {{- end -}}
 
-{{/* 2) Optional: nur Inhalte unter bestimmtem Pfad (unter) */}}
+{{/* --- DEBUG: Pool-Größen vor under-Filter --- */}}
+{{- if $debug -}}
+  {{- warnf "📦 Pool before 'under': byType=%d bySect=%d union=%d"
+      (len $candByType) (len $candBySect) (len $candidates) -}}
+  {{- range first 6 $candidates -}}
+    {{- warnf "  • pool item: Title=%q Type=%q Section=%q Rel=%s"
+        .Title .Type .Section .RelPermalink -}}
+  {{- end -}}
+{{- end -}}
+
+{{- if $under -}}
+
+{{/* 2) Optional: nur Inhalte unter bestimmtem Pfad (under) */}}
 {{- if ne $under "" -}}
   {{- $under = cond (hasPrefix $under "/") $under (printf "/%s" $under) -}}
   {{- $under = cond (hasSuffix $under "/") $under (printf "%s/" $under) -}}
-  {{- $pool = where $pool "RelPermalink" "prefix" $under -}}
+
+  {{- $filtered := slice -}}
+  {{- range $it := $candidates -}}
+    {{- if hasPrefix $it.RelPermalink $under -}}
+      {{- $filtered = $filtered | append $it -}}
+    {{- end -}}
+  {{- end -}}
+  {{- $candidates = $filtered -}}
+
+  {{- if $debug -}}
+    {{- warnf "🔎 after 'under'=%q => pool=%d" $under (len $candidates) -}}
+    {{- range first 6 $candidates -}}
+      {{- warnf "  • pool item (under): %q (%s)" .Title .RelPermalink -}}
+    {{- end -}}
+  {{- end -}}
 {{- end -}}
 
-{{/* 3) Kategorie-Metadaten-Quelle bestimmen (flexibel)
-       - Wenn categoriesData="games"  -> site.Data.games_categories
-       - Sonst: site.Data.<key>_categories, falls vorhanden
-       - Fallback: site.Data.games_categories (falls existiert)
-*/}}
-{{- $catData := slice -}}
-{{- if $catDataKey -}}
-  {{- $try := index site.Data (printf "%s_categories" $catDataKey) -}}
-  {{- if $try -}}{{- $catData = $try -}}{{- end -}}
+
+  {{- if $debug -}}
+    {{- warnf "🔎 after 'under'=%q => pool=%d" $under (len $candidates) -}}
+    {{- range first 6 $candidates -}}
+      {{- warnf "  • pool item (under): %q (%s)" .Title .RelPermalink -}}
+    {{- end -}}
+  {{- end -}}
 {{- end -}}
-{{- if and (eq (len $catData) 0) (index site.Data "games_categories") -}}
-  {{- $catData = index site.Data "games_categories" -}}
+
+{{/* Kategorien-Datenquelle bestimmen (so wie bisher – nur Log) */}}
+{{- $catData := cond (ne $catDataKey "") (index site.Data $catDataKey) (slice) -}}
+{{- if $debug -}}
+  {{- if $catDataKey -}}
+    {{- if $catData -}}
+      {{- warnf "🗂️ categoriesData key=%q gefunden (len=%d)" $catDataKey (len $catData) -}}
+    {{- else -}}
+      {{- warnf "⚠️ categoriesData key=%q NICHT gefunden" $catDataKey -}}
+    {{- end -}}
+  {{- else -}}
+    {{- warnf "🗂️ categoriesData nicht gesetzt (catDataKey leer) – es wird kein Metadaten-Text geladen." -}}
+  {{- end -}}
 {{- end -}}
 
 <div class="galleries" id="gallery-container">
   {{- range sort $termsPage.Pages "Title" -}}
-    {{- $term    := .Title -}}
+    {{- $term := .Title -}}
     {{- $termURL := .RelPermalink -}}
+    {{- $matching := where $candidates "Params.categories" "intersect" (slice $term) -}}
 
-    {{/* Alle Seiten aus $pool, die diesen Term tragen */}}
-    {{- $matching := where $pool "Params.categories" "intersect" (slice $term) -}}
-    {{- if $debug }}{{ warnf "🧪 term=%s matching=%d" $term (len $matching) }}{{ end }}
-
-    {{- /* Thumbs über alle passenden Seiten sammeln */ -}}
-    {{- $allThumbs := slice -}}
-    {{- range $p := $matching -}}
-      {{- $imgs   := partial "get-images.html" (dict "page" $p) -}}
-      {{- $thumbs := partial "gallery-grid/get-gallery-index.html" (dict "images" $imgs "page" $p) -}}
-      {{- if gt (len $thumbs) 0 -}}
-        {{- $allThumbs = $allThumbs | append $thumbs -}}
+    {{- if $debug -}}
+      {{- warnf "🧪 Term %q – matching pages=%d" $term (len $matching) -}}
+      {{- range first 4 $matching -}}
+        {{- warnf "    ↳ match: %q (Type=%q Section=%q Rel=%s)"
+            .Title .Type .Section .RelPermalink -}}
       {{- end -}}
     {{- end -}}
 
-    {{- /* Kategorie-Beschreibung/Cover aus gewählter Data-Quelle */ -}}
-    {{- $cat := index (where $catData "name" $term) 0 -}}
+    {{- $allThumbs := slice -}}
+    {{- $imageCount := 0 -}}
+    {{- range $p := $matching -}}
+      {{- $imgs := partial "get-images.html" (dict "page" $p) -}}
+      {{- $imageCount = add $imageCount (len $imgs) -}}
+      {{- $thumbs := partial "gallery-grid/get-gallery-index.html" (dict "images" $imgs "page" $p) -}}
+      {{- if gt (len $thumbs) 0 }}{{ $allThumbs = $allThumbs | append $thumbs }}{{ end -}}
+    {{- end -}}
+
+    {{- if $debug -}}
+      {{- warnf "    images total for %q = %d ; thumbs=%d" $term $imageCount (len $allThumbs) -}}
+    {{- end -}}
+
+    {{- $cat := cond (and $catData (gt (len $catData) 0)) (index (where $catData "name" $term) 0) nil -}}
     {{- $resScratch := newScratch -}}
     {{- if $cat -}}
       {{- partial "helpers/resolve-category-cover.html" (dict
@@ -94,7 +131,6 @@
       ) -}}
     {{- end -}}
 
-    {{- /* finale Thumb-Entscheidung */ -}}
     {{- $thumb_final := dict -}}
     {{- $resolved := $resScratch.Get "resolved" -}}
     {{- if $resolved -}}
@@ -107,19 +143,16 @@
     {{- if $thumb_final -}}
       <div class="card" data-title="{{ $term }}" data-image-count="{{ len $matching }}">
         <a class="card-img" href="{{ $termURL }}">
-          <img src="{{ $thumb_final.thumb }}" alt="{{ $term }}"
-               width="{{ $thumb_final.width }}" height="{{ $thumb_final.height }}" />
-          {{- $imageCount := 0 -}}
-          {{- range $matching -}}{{- $imageCount = add $imageCount (len (partial "get-images.html" (dict "page" .))) -}}{{- end -}}
+          <img src="{{ $thumb_final.thumb }}" alt="{{ $term }}" width="{{ $thumb_final.width }}" height="{{ $thumb_final.height }}" />
           <span class="num-photos">{{ $imageCount }} {{ T "photo" $imageCount }}</span>
         </a>
         <div class="body">
           <h2><a href="{{ $termURL }}">{{ $term }}</a></h2>
-          {{- with $cat -}}<p class="category-description">{{ .description | markdownify }}</p>{{- end -}}
+          {{- with $cat }}<p class="category-description">{{ .description | markdownify }}</p>{{ end -}}
         </div>
       </div>
-    {{- else if $debug -}}
-      {{- warnf "⚠️ Kein Thumb für Term '%s' (matching=%d)" $term (len $matching) -}}
+    {{- else -}}
+      {{- if $debug }}{{ warnf "⚠️ Kein Thumb für Term %q (matching=%d)" $term (len $matching) }}{{ end -}}
     {{- end -}}
   {{- end -}}
 </div>

@@ -1,51 +1,45 @@
-{{/* ---------------------------------------------------------
-   layouts/partials/get-images.html
-   Liefert IMMER ein Slice von Image-Resources (lokale Dateien)
-   oder ein leeres Slice – ohne Exceptions.
+{{/* get-images.html
+   Liefert IMMER ein Slice von Image-Resources zurück.
 
    Akzeptiert:
-     1) dict { "resources": []Resource }  -> direkt verwenden
-     2) dict { "page": <Page> }           -> .Resources.ByType "image"
-     3) <Page> (pageState / pageForShortcode / ...) -> .Resources.ByType "image"
-
-   Filter:
-     - nur lokale Dateien (haben .Name)
-     - SVGs ausschließen
----------------------------------------------------------- */}}
+   - {{ partial "get-images.html" (dict "resources" $rs) }}
+   - {{ partial "get-images.html" (dict "page" .) }}
+   - {{ partial "get-images.html" . }}
+*/}}
 
 {{- $debug := (index site.Params "hugo-grid-gallery").debug | default false -}}
 
-{{- $in := . -}}
 {{- $images := slice -}}
 
-{{/* 1) Explizit übergebene Resources haben Vorrang */}}
-{{- if and (reflect.IsMap $in) (isset $in "resources") -}}
-  {{- $res := (index $in "resources") -}}
-  {{- range $res -}}
-    {{- if and .Name (ne .MediaType.SubType "svg") -}}
-      {{- $images = $images | append . -}}
-    {{- end -}}
+{{/* 1) Wenn resources direkt übergeben wurden */}}
+{{- with .resources -}}
+  {{- range . }}
+    {{- if and .Name (ne .MediaType.SubType "svg") }}
+      {{- $images = $images | append . }}
+    {{- end }}
+  {{- end }}
+  {{- if $debug }}{{ warnf "get-images: resources direkt (%d)" (len $images) }}{{ end }}
+{{- else -}}
+
+  {{/* 2) Seite bestimmen: bevorzugt .page, sonst . (aktuelles .) */}}
+  {{- $pg := . -}}
+  {{- with .page -}}
+    {{- $pg = . -}}
   {{- end -}}
-  {{- if $debug }}{{ warnf "get-images: via .resources (%d)" (len $images) }}{{ end -}}
-  {{- return $images -}}
+
+  {{/* 3) Aus der Seite lesen (falls Resources vorhanden) */}}
+  {{- with $pg.Resources -}}
+    {{- $rs := .ByType "image" -}}
+    {{- range $rs }}
+      {{- if and .Name (ne .MediaType.SubType "svg") }}
+        {{- $images = $images | append . }}
+      {{- end }}
+    {{- end }}
+    {{- if $debug }}{{ warnf "get-images: .Resources (%d) auf %s" (len $images) ($pg.RelPermalink | default $pg.Title) }}{{ end }}
+  {{- else -}}
+    {{- if $debug }}{{ warnf "get-images: keine .Resources" }}{{ end }}
+  {{- end -}}
+
 {{- end -}}
-
-{{/* 2) Page besorgen: dict{page: ...} oder direkt . */}}
-{{- $page := cond (and (reflect.IsMap $in) (isset $in "page")) (index $in "page") $in -}}
-
-{{ with $page }}
-  {{ with .Resources }}
-    {{- range .ByType "image" -}}
-      {{- if and .Name (ne .MediaType.SubType "svg") -}}
-        {{- $images = $images | append . -}}
-      {{- end -}}
-    {{- end -}}
-    {{- if $debug }}{{ warnf "get-images: from .Resources (%d)" (len $images) }}{{ end -}}
-  {{ else }}
-    {{- if $debug }}{{ warnf "get-images: page has no .Resources" }}{{ end -}}
-  {{ end }}
-{{ else }}
-  {{- if $debug }}{{ warnf "get-images: invalid input type %T (no page/map)" $in }}{{ end -}}
-{{ end }}
 
 {{- return $images -}}
