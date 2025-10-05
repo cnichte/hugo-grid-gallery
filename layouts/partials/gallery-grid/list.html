@@ -28,6 +28,12 @@
 
 {{ if $debug }}{{ warnf "📃 list.html: Kind=%s | Type=%s | Section=%s | IsHome=%v | Permalink=%s" $p.Kind $p.Type $p.Section $p.IsHome $p.RelPermalink }}{{ end }}
 
+<div class="hugg-toolbar">
+  <a id="sort-title"   class="menu-link" href="#">Title</a>
+  <a id="sort-count"   class="menu-link" href="#"># Photos</a>
+  <a id="sort-updated" class="menu-link" href="#">Updated</a>
+</div>
+
 {{/* 1) TAXONOMIE-INDEX (z. B. /categories/) */}}
 {{ if eq $p.Kind "taxonomy" }}
   {{ if $debug }}{{ warnf "➡️ list.html -> list-taxonomy-index (taxonomy=%s)" $p.Type }}{{ end }}
@@ -68,7 +74,7 @@
           {{ end }}
           {{ $thumb := cond (ne (len $cover) 0) $cover (index $thumbs 0) }}
 
-          <div class="hugg-card" data-title="{{ .LinkTitle }}" data-image-count="{{ len $thumbs }}">
+          <div class="hugg-card" data-title="{{ .LinkTitle }}" data-image-count="{{ len $thumbs }}" data-updated='{{ or .Lastmod .Date | time.Format "2006-01-02T15:04:05Z07:00" }}'>
             <a class="hugg-card-img" href="{{ .RelPermalink }}">
               <img
                 src="{{ $thumb.thumb }}"

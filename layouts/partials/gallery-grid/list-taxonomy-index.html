@@ -92,13 +92,6 @@
   {{- end -}}
 {{- end -}}
 
-<div class="hugg hugg-sort" data-scope="cards">
-  <span>by</span>
-  <a href="#" class="hugg-sort-link active" data-sort="title"   title="sort by title">Title</a> |
-  <a href="#" class="hugg-sort-link"        data-sort="count"   title="sort by number of images">Count</a> |
-  <a href="#" class="hugg-sort-link"        data-sort="updated" title="sort by last updated">Updated</a>
-</div>
-
 <div class="hugg-cards" id="gallery-container">
   {{- range sort $termsPage.Pages "Title" -}}
     {{- $term := .Title -}}
