@@ -1,25 +1,4 @@
-{{/* layouts/partials/gallery-grid/gallery-config.html
-     Einmalige Einbindung der Gallery-Assets (CSS/JS) + optionales Config-JSON.
-     Lazy aus den Grid-Partials aufrufen ODER global in baseof.html – dank Scratch nur 1× pro Seite.
-
-     Aufruf:
-       - lazy:  aus list-gallery.html UND list-taxonomy-index.html
-       - oder:  global in baseof.html (dann kannst du den Aufruf in list-gallery.html weglassen)
-
-       Variante „lazy“: 
-       In list-gallery.html und in deinem Taxonomie-Index-Partial grid-index/list-taxonomy-index.html einmal
-       {{ partial "gallery-grid/gallery-config.html" . }} aufrufen. 
-       Das Scratch-Flag sorgt dafür, dass die Assets nur einmal eingebunden werden, 
-       selbst wenn beide Partials auf einer Seite landen.
-
-	     Variante „global“:
-       In layouts/_default/baseof.html in <head> oder kurz vor </body> einbauen. 
-        Dann nicht mehr aus list-gallery.html aufrufen (um Doppel-Calls zu vermeiden).
-
-        Also:
-        - „Nur laden, wenn tatsächlich ein Grid da ist“ → lazy (Partial in den Grid-Partials).
-        - „Immer verfügbar“ → global (Partial in baseof.html).
-*/}}
+{{/* layouts/partials/gallery-grid/gallery-config.html */}}
 
 {{- $flag := "hugg-assets-loaded" -}}
 {{- if not (.Scratch.Get $flag) -}}
@@ -32,7 +11,7 @@
     <script>window.configObj = window.configObj || {};</script>
   {{- end -}}
 
-  {{/* ---------- CSS ---------- */}}
+  {{/* #################### CSS #################### */}}
 {{ with resources.Get "ext/pig/pig.css" }}
   {{ $r := . }}
   {{ if hugo.IsProduction }}{{ $r = $r | resources.Minify | resources.Fingerprint }}{{ end }}
@@ -51,7 +30,7 @@
   <link rel="stylesheet" href="{{ $r.RelPermalink }}"{{ with $r.Data.Integrity }} integrity="{{ . }}"{{ end }}>
 {{ end }}
 
-  {{/* ---------- JS: Libs zuerst ---------- */}}
+  {{/* #################### JS: Libs zuerst #################### */}}
 {{ $pigRes := resources.Get "ext/pig/pig.js" }}
 {{ if $pigRes }}
   {{ if hugo.IsProduction }}{{ $pigRes = $pigRes | resources.Minify | fingerprint }}{{ end }}
@@ -68,7 +47,7 @@
   {{ warnf "ext/fslightbox/fslightbox.js nicht gefunden" }}
 {{ end }}
 
-{{/* ---------- JS: App-Entry (immer über js.Build) ---------- */}}
+{{/* #################### JS: App-Entry (immer über js.Build) #################### */}}
 {{ $opts := dict
     "target"    "es2018"
     "minify"    hugo.IsProduction
@@ -82,21 +61,6 @@
   <script defer src="{{ $mainBuilt.RelPermalink }}"{{ with $mainBuilt.Data.Integrity }} integrity="{{ . }}"{{ end }}></script>
 {{ else }}
   {{ warnf "hugo-grid-gallery/js/main.js nicht gefunden" }}
-{{ end }}
-
-  {{/* ---------- Optional: DearFlip ---------- */}}
-{{ if .Param "use_flipbook" }}
-  {{ with resources.Get "ext/dflip/js/libs/jquery.min.js" }}
-    {{ $r := . }}<script src="{{ $r.RelPermalink }}"></script>
-  {{ end }}
-  {{ with resources.Get "ext/dflip/js/dflip.min.js" }}
-    {{ $r := . }}<script async data-cfasync="false" src="{{ $r.RelPermalink }}"></script>
-  {{ end }}
-  {{ with resources.Get "ext/dflip/css/dflip.css" }}
-    {{ $r := . }}
-    {{ if hugo.IsProduction }}{{ $r = $r | resources.Minify | resources.Fingerprint }}{{ end }}
-    <link rel="stylesheet" href="{{ $r.RelPermalink }}"{{ with $r.Data.Integrity }} integrity="{{ . }}"{{ end }}>
-  {{ end }}
 {{ end }}
 
 {{- end -}}
