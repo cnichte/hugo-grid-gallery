@@ -26,7 +26,7 @@
 {{/* Paramter, über dic */}}
 
 {{- $ctx := .ctx | default . | default site -}}
-{{- $games := or $ctx.Site.Data.games site.Data.games -}}
+{{- $games := or $ctx.Site.Data.games_meta site.Data.games_meta -}}
 
 {{- $showTitles := .showTitles | default false -}}
 {{- $sortBy := .sortBy | default "count" -}}

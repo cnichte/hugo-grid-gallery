@@ -6,7 +6,7 @@
 const siteCfg =
   (typeof window !== "undefined" && window.configObj) ? window.configObj : {};
 
-// Defaults; einzelne Werte können via data/gallery/config -> scrollToTop überschrieben werden
+// Defaults; einzelne Werte können via data/hugo-grid-gallery/config -> scrollToTop überschrieben werden
 const configObj = {
   buttonD:
     "M16.806 13.667v-5.25c0-.967-.841-1.75-1.879-1.75-1.037 0-1.878.783-1.878 1.75v8.998c0 .912-1.073 1.472-1.907.995l-1.79-1.024c-.588-.328-1.326-.312-1.896.042-.93.578-1.061 1.805-.27 2.542l5.757 5.363h10.929l1.43-7.49c.22-1.333-.714-2.594-2.129-2.876l-6.367-1.3z",

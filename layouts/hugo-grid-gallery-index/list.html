@@ -17,6 +17,16 @@
     </div>
   {{ end }}
 
+  <ul>
+    <li>{{ .Title }}</li>
+      <li>
+        {{ $categories := .GetTerms "categories" }}
+        {{ range $categories }}
+        <a href="{{ .Page.RelPermalink }}" class="menu-link">{{ .Page.Title }}</a> 
+        {{ end }}
+    </li>
+</ul>
+
   {{/* 🔹 Toolbar für Sortierung */}}
   <div class="hugg-toolbar" style="margin:.5rem 0 1rem; display:flex; gap:.75rem; flex-wrap:wrap; align-items:center;">
     <strong style="opacity:.7">Sort:</strong>

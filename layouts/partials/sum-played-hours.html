@@ -26,7 +26,7 @@
 {{- $unitTag := $p.unitTag | default "i" -}}
 {{- $componentTag := $p.componentTag | default "code" -}}
 
-{{- $games := or $ctx.Site.Data.games site.Data.games -}} {{/* Daten aus games.json */}}
+{{- $games := or $ctx.Site.Data.games_meta site.Data.games_meta -}} {{/* Daten aus games.json */}}
 {{- $scratch := newScratch -}}
 {{- $scratch.Set "totalMinutes" 0 -}}
 

@@ -1,0 +1,80 @@
+{{/* ---------------------------------------------------------
+  gallery-grid/teaser.html
+  Basis-Teaser für eine Seite (Gallery/Story/Term egal):
+  - zieht den passenden Meta-Eintrag aus `meta` anhand von .Title
+  - rendert "Basis" (subtitle/description + optionaler Count)
+  - bietet Hook/Callback-Partials für Spezialisierungen
+
+  Erwartet dict: { page: . , meta: slice }
+
+    In einer Seite mit Front-Matter explizit ein Teaser-Partial setzen:
+    # content/.../index.md
+    teaserPartial = "gallery-grid/teaser-games.html"
+---------------------------------------------------------- */}}
+
+{{- $ctx  := . -}}
+{{- $p    := $ctx.page -}}
+{{- $meta := $ctx.meta | default (slice) -}}
+
+{{- $cfg   := (index site.Params "hugo-grid-gallery") | default dict -}}
+{{- $debug := $cfg.debug | default false -}}
+
+{{- if not (and $p $meta) -}}
+  {{- if $debug }}{{ warnf "teaser.html: fehlende Inputs (page/meta)" }}{{ end -}}
+  {{- return -}}
+{{- end -}}
+
+{{- $entry := index (where $meta "title" $p.Title) 0 -}}
+{{- if not $entry -}}
+  {{- if $debug }}{{ warnf "teaser.html: kein Meta-Eintrag für %q" $p.Title }}{{ end -}}
+  {{- return -}}
+{{- end -}}
+
+<div class="hugg-desc">
+  {{ with $entry.subtitle }}
+    <p class="hugg-subtitle">{{ . | markdownify }}</p>
+  {{ end }}
+
+  {{ with $entry.description }}
+    <p class="hugg-description">{{ . | markdownify }}</p>
+  {{ end }}
+
+  {{/* Optional: Item-Zähler (fällt auf aktuelle Seite zurück) */}}
+  {{- $link := $entry.galleryLink | default $p.RelPermalink -}}
+  {{- partial "count-images-page-partial.html" (dict
+        "path"   $link
+        "prefix" ""
+        "suffix" ""
+  ) -}}
+</div>
+
+{{/* ---------------------------------------------------------
+   Spezialisierungs-Hooks (erste, die existiert, gewinnt):
+   1) Seiten-Param: .Params.teaserPartial                 (z.B. "gallery-grid/teaser-games.html")
+   2) Section-Hook: "gallery-grid/teaser-<section>.html"  (z.B. teaser-binary-voids-galleries)
+   3) Type-Hook:    "gallery-grid/teaser-type-<type>.html"
+   4) Generic Hook: "gallery-grid/teaser-hook.html"
+   Der Hook bekommt { entry: <meta-entry> , page: . }
+---------------------------------------------------------- */}}
+
+{{- $hookFromParam := cond (isset $p.Params "teaserPartial") (printf "partials/%s" ($p.Params.teaserPartial | default "")) "" -}}
+{{- $hookBySection := printf "partials/gallery-grid/teaser-%s.html" $p.Section -}}
+{{- $hookByType    := printf "partials/gallery-grid/teaser-type-%s.html" $p.Type -}}
+{{- $hookGeneric   := "partials/gallery-grid/teaser-hook.html" -}}
+
+{{- $hookToUse := "" -}}
+{{- if and $hookFromParam (templates.Exists $hookFromParam) -}}
+  {{- $hookToUse = $hookFromParam -}}
+{{- else if templates.Exists $hookBySection -}}
+  {{- $hookToUse = $hookBySection -}}
+{{- else if templates.Exists $hookByType -}}
+  {{- $hookToUse = $hookByType -}}
+{{- else if templates.Exists $hookGeneric -}}
+  {{- $hookToUse = $hookGeneric -}}
+{{- end -}}
+
+{{- if $hookToUse -}}
+  {{- partial $hookToUse (dict "entry" $entry "page" $p) -}}
+{{- else if $debug -}}
+  {{- warnf "teaser.html: kein Hook gefunden (ok)" -}}
+{{- end -}}

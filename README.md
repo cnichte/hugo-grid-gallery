@@ -88,3 +88,33 @@ In Doks verwenden, ohne das Theme anzufassen über  Shortcodes im Content:
 - Index/Karten für Taxonomie: `{{< gallery-index taxonomy="categories" >}}`
 
 ## Verwenden im Theme
+
+...
+
+## Metadaten
+
+```toml
+[params.hugo-grid-gallery]
+  # Globale Fallbacks
+  metaKey           = "default_meta"
+  metaCategoriesKey = "default_meta_categories"
+
+  # Sections, in denen Galerien liegen:
+  gallerySections = [
+    "binary-voids-galleries",
+    "anderland-galleries",
+    "street-photography",
+    "hugo-grid-gallery"
+  ]
+```
+
+Der name der json wird zusammen gesetzt.
+
+Überschreiben im Frontmatter der _index.md / index.md der gallerie.
+
+```toml
+[params]
+  metaKey = "anderland-galleries_meta"
+  metaCategoriesKey = "anderland-galleries_meta_categories"
+```
+

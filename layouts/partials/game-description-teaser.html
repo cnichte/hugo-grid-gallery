@@ -10,7 +10,7 @@
 {{- $page     := $ctx.page | default .Page -}}
 {{- $title    := $ctx.title | default (cond $page $page.Title "") -}}
 {{- $limit    := $ctx.limit | default 20 -}}
-{{- $source   := $ctx.source | default "games" -}}     {{/* data/<source>.json */}}
+{{- $source   := $ctx.source | default "games_meta" -}}     {{/* data/<source>.json */}}
 {{- $keyField := $ctx.keyField | default "title" -}}
 {{- $data     := index site.Data $source -}}
 {{- $entry    := cond $data (index (where $data $keyField $title) 0) nil -}}

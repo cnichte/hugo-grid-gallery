@@ -33,7 +33,10 @@ const HugoGridGallery = {
     const dataAttributeName = "data-hugg-image-data-url";
 
     const container = document.getElementById(galleryId);
-    if (!container) throw new Error(`No element with id ${galleryId} found.`);
+    if (!container) {
+      debug && debug(`Kein #${galleryId} auf dieser Seite – überspringe Grid-Init.`);
+      return; // ← leise aussteigen, NICHT werfen
+    }
 
     const dataUrl = container.getAttribute(dataAttributeName);
     if (!dataUrl) throw new Error(`No ${dataAttributeName} attribute found.`);

@@ -13,7 +13,7 @@
 */}}
 
 {{- $ctx := .ctx | default . | default site -}}
-{{- $games := $ctx.Site.Data.games -}}
+{{- $games := $ctx.Site.Data.games_meta -}}
 {{- $showTitles := .showTitles | default false -}}
 {{- $sortBy := .sortBy | default "name" -}}
 {{- $descending := .descending | default true -}}

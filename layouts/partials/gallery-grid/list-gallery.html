@@ -34,6 +34,13 @@
   {{ return }}
 {{ end }}
 
+{{/* --- Meta laden (auto aus Section / overrides aus params) --- */}}
+{{- $scratch := newScratch -}}
+{{- partial "gallery-grid/meta-provider.html" (dict "page" . "Scratch" $scratch) -}}
+{{- $metaRes  := $scratch.Get "metaProviderResult" -}}
+{{- $meta     := $metaRes.meta -}}        {{/* z.B. games.json, oder anderland-galleries_meta.json */}}
+{{- $catsData := $metaRes.metaCats -}}    {{/* z.B. games_categories.json, …_meta_categories.json */}}
+
 {{/* ---- Kategorien-Datenquelle (konfigurierbar) ---- */}}
 {{- $cfg := (index site.Params "hugo-grid-gallery") | default dict -}}
 {{- $catsKey :=
@@ -49,56 +56,8 @@
      1) Beschreibung/Teaser (VOR dem Grid)
    ========================================================= */}}
 
-{{/* ---- games.json (Galerie-Seiten) ---- */}}
-{{ if and $p.IsPage (in $gallerySections $p.Section) }}
-  {{- $entry := index (where site.Data.games "title" $p.Title) 0 -}}
-  {{ if $entry }}
-    <div class="hugg-desc">
-      <p>
-        {{ $entry.description | markdownify }}
-        <strong>Developer:</strong>
-        {{- if $entry.developer.link -}}
-          <a href="{{ $entry.developer.link }}" target="_blank" rel="noopener">{{ $entry.developer.name }}</a>
-        {{- else -}}
-          {{ $entry.developer.name }}
-        {{- end -}}
-        {{- if $entry.publisher.name -}}
-          , <strong>Publisher:</strong>
-          {{- if $entry.publisher.link -}}
-            <a href="{{ $entry.publisher.link }}" target="_blank" rel="noopener">{{ $entry.publisher.name }}</a>
-          {{- else -}}
-            {{ $entry.publisher.name }}
-          {{- end -}}
-        {{- end -}}
-      </p>
-      <p>
-      {{/* Fallback: Wenn games.json keinen/ungültigen Link liefert, nimm die aktuelle Seite */}}
-      {{- $link := $entry.galleryLink | default $p.RelPermalink -}}
-      {{- partial "count-images-page-partial.html" (dict
-        "path"   $link
-        "prefix" "This Gallery contains "
-        "suffix" " virtual Photographs."
-)     -}}
-      </p>
-    </div>
-  {{ else if $debug }}
-    <div class="hugg-desc">
-      <p style="color:red">Kein Eintrag in games.json für: {{ $p.Title }}</p>
-    </div>
-  {{ end }}
-
-{{/* ---- stories.json (Story-Seiten) ---- */}}
-{{ else if and $p.IsPage (eq $p.Section "stories") }}
-  {{- $s := index (where site.Data.stories "title" $p.Title) 0 -}}
-  {{ if $s }}
-    <div class="hugg-desc">
-      {{ with $s.subtitle }}{{ . | markdownify }}{{ end }}
-      {{ $s.description | markdownify }}
-    </div>
-  {{ else if $debug }}
-    <p style="color:red">Kein Eintrag in stories.json für: {{ $p.Title }}</p>
-  {{ end }}
-{{ end }}
+{{/* TEASER (Basis + optionale Spezialisierung per Hook) */}}
+{{ partial "gallery-grid/teaser.html" (dict "page" $p "meta" $meta) }}
 
 {{/* =========================================================
      2) Bilder einsammeln
@@ -304,3 +263,62 @@
     {{ end }}
   {{ end }}
 {{ end }}
+
+
+
+{{/* ---------------------------------------------------------
+
+ALTE LOGIK
+
+{{ ---- games.json (Galerie-Seiten) ---- }}
+{{ if and $p.IsPage (in $gallerySections $p.Section) }}
+  {{- $entry := index (where $meta "title" $p.Title) 0 -}}
+  {{ if $entry }}
+    <div class="hugg-desc">
+      <p>
+        {{ $entry.description | markdownify }}
+        <strong>Developer:</strong>
+        {{- if $entry.developer.link -}}
+          <a href="{{ $entry.developer.link }}" target="_blank" rel="noopener">{{ $entry.developer.name }}</a>
+        {{- else -}}
+          {{ $entry.developer.name }}
+        {{- end -}}
+        {{- if $entry.publisher.name -}}
+          , <strong>Publisher:</strong>
+          {{- if $entry.publisher.link -}}
+            <a href="{{ $entry.publisher.link }}" target="_blank" rel="noopener">{{ $entry.publisher.name }}</a>
+          {{- else -}}
+            {{ $entry.publisher.name }}
+          {{- end -}}
+        {{- end -}}
+      </p>
+      <p>
+      {{ Fallback: Wenn games.json keinen/ungültigen Link liefert, nimm die aktuelle Seite }}
+      {{- $link := $entry.galleryLink | default $p.RelPermalink -}}
+      {{- partial "count-images-page-partial.html" (dict
+        "path"   $link
+        "prefix" "This Gallery contains "
+        "suffix" " virtual Photographs."
+)     -}}
+      </p>
+    </div>
+  {{ else if $debug }}
+    <div class="hugg-desc">
+      <p style="color:red">Kein Eintrag in {{ }} für: {{ $p.Title }}</p>
+    </div>
+  {{ end }}
+
+{{ ---- stories.json (Story-Seiten) ---- }}
+{{ else if and $p.IsPage (eq $p.Section "stories") }}
+  {{- $s := index (where $meta "title" $p.Title) 0 -}}
+  {{ if $s }}
+    <div class="hugg-desc">
+      {{ with $s.subtitle }}{{ . | markdownify }}{{ end }}
+      {{ $s.description | markdownify }}
+    </div>
+  {{ else if $debug }}
+    <p style="color:red">Kein Eintrag in stories.json für: {{ $p.Title }}</p>
+  {{ end }}
+{{ end }}
+
+---------------------------------------------------------- */}}

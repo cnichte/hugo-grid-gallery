@@ -1,0 +1,11 @@
+[
+  {
+    "title": "Gallery 1",
+    "id": "gallery-01",
+    "subtitle": "",
+    "description": "gallery <id | name> als folder?",
+    "galleryLink": "/galleries/a-plague-tale/",
+    "cover":"3856",
+    "cover_crop":"mitte"
+  }
+]

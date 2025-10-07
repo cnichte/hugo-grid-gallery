@@ -4,10 +4,10 @@ Was ist noch zu tun?
 
 ## Allgemein
 
-- [ ] `dflip` gehört hier eingentlich auch nicht hin.
+- [x] `dflip` gehört hier eingentlich auch nicht hin - entfernt.
 - [ ] Eine Variante von `gallery-config.html` -> `gallery-head.html`/`gallery-foot.html`, um die ressourcen korrekt in header und footer zu laden?
 
-- [ ] games.json  verallgemeinern.
+- [ ] `games.json`  verallgemeinern.
   - Gibt es ein hook oder callback Feature oder einen anderen Möglichkeit Code ein zu schleusen?
   - Vermutlich dort ein weiteres kleines Partial einsetzen, und das später überschreiben: `provide-metadata-content`
 - [ ] Das Seitenverhältnis konfigurierbar machen.
@@ -19,7 +19,7 @@ Was ist noch zu tun?
 
 - [ ] Kleinere Thumbnails bitte ohne Watermark.
 
-- [ ] Aufräumen/Refaktorieren…. Ein paar Verzeichnisse umbenennen, und shortcodes und partials umziehen. Zb 
+- [ ] Aufräumen/Refaktorieren…. Ein paar Verzeichnisse umbenennen, und shortcodes und partials umziehen. Zb
   - data/hugo-grid-gallery/
   - /config/
   - /meta/
@@ -87,6 +87,13 @@ Gallerie
 ## Aufräumen
 
 Nur core `data` support ins Modul.
+
+`.Data.games_meta` sind sonderfälle für binary-voids.de.
+Dazu gehörn noch ein paar shortcodes:
+
+- platform-title-counts.html
+- state-title-counts.html
+- sum-played-hours.html
 
 games.json ist zB. ne typische Erweiterung, die in der webseite binary-voids customized wird.
 Die Base hat weniger daten.
