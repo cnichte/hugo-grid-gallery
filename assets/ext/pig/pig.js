@@ -373,6 +373,47 @@
     // images are necessarily in view or loaded.
     this.images = this._parseImageData(imageData);
 
+    // 🧠 FS-Lightbox: Erzeuge einen versteckten Container mit Anker-Elementen
+    // für alle Bilder, damit fslightbox die vollständige Galerie findet,
+    // auch wenn pig die sichtbaren Bilder virtualisiert und nur diese in
+    // den DOM einfügt. Die Anker sind `display:none` und werden einmalig
+    // beim Erstellen der Pig-Instanz angelegt.
+    try {
+      const fsContainerId = "pig-fslightbox-sources";
+      let fsContainer = document.getElementById(fsContainerId);
+      if (!fsContainer) {
+        fsContainer = document.createElement("div");
+        fsContainer.id = fsContainerId;
+        fsContainer.style.display = "none";
+        document.body.appendChild(fsContainer);
+      }
+
+      // Erzeuge pro Bild einen versteckten <a> mit data-fslightbox="gallery"
+      this.images.forEach(function (img, idx) {
+        // Prüfe ob der Link schon existiert (z.B. bei Hot-Reload)
+        if (!fsContainer.querySelector('a[data-pig-index="' + idx + '"]')) {
+          const a = document.createElement("a");
+          a.href = img.all_image_data && img.all_image_data.image ? img.all_image_data.image.full : "";
+          a.setAttribute("data-fslightbox", "gallery");
+          a.setAttribute("data-pig-index", idx);
+          a.setAttribute("title", "Bild vergrößern");
+          fsContainer.appendChild(a);
+        }
+      });
+
+      // Einmaliges Refresh von fslightbox, falls verfügbar
+      if (typeof refreshFsLightbox === "function") {
+        requestAnimationFrame(function () {
+          try {
+            refreshFsLightbox();
+            console.log("🔁 fslightbox initial refresh from pig (hidden anchors)");
+          } catch (e) {}
+        });
+      }
+    } catch (e) {
+      // defensive: falls document/body nicht verfügbar
+    }
+
     // Inject our boilerplate CSS.
     _injectStyle(
       this.settings.containerId,
@@ -888,28 +929,27 @@
             }
           };
 
-          //! Link für fslightbox erzeugen
-          const link = document.createElement("a");
-          link.href = this.fullImage.src;
-          link.setAttribute("data-fslightbox", "gallery");
-          link.setAttribute("title", "Bild vergrößern");
+          // Full image direkt anhängen (wir verwenden versteckte Anchors,
+          // die beim Erstellen der Pig-Instanz angelegt wurden, damit
+          // fslightbox die komplette Galerie kennt). Für das sichtbare
+          // Thumbnail hängen wir das Bild direkt an und setzen beim Figure
+          // einen Klick-Handler, der fsLightbox mit dem richtigen Index
+          // öffnet.
+          this.getElement().appendChild(this.fullImage);
 
-          link.appendChild(this.fullImage);
-          this.getElement().appendChild(link);
-
-          // 🧠 Wenn alle Bilder da sind → refreshFsLightbox aufrufen.
-          if (typeof refreshFsLightbox === "function") {
-            // Verzögert, um sicherzugehen
-            requestAnimationFrame(() => {
-              const count =
-                document.querySelectorAll("a[data-fslightbox]").length;
-              console.log(
-                "🔁 fslightbox Refresh aus load() – Links gefunden:",
-                count
-              );
-              refreshFsLightbox();
-            });
-          }
+          // Klick öffnet fsLightbox an dieser Position (falls vorhanden)
+          try {
+            this.getElement().onclick = function (e) {
+              e.preventDefault && e.preventDefault();
+              if (
+                window.fsLightboxInstances &&
+                window.fsLightboxInstances.gallery &&
+                typeof window.fsLightboxInstances.gallery.open === "function"
+              ) {
+                window.fsLightboxInstances.gallery.open(this.index);
+              }
+            }.bind(this);
+          } catch (e) {}
         }
       }.bind(this),
       100
@@ -939,9 +979,14 @@ ProgressiveImage.prototype.hide = function () {
       this.fullImage.src = "";
 
       // ➤ Falls fullImage in einem Link hängt, muss parentNode.parentNode geprüft werden
-      const fullImageParent = this.fullImage.parentNode;
-      if (fullImageParent && fullImageParent.parentNode === this.getElement()) {
-        this.getElement().removeChild(fullImageParent);
+      // Falls das fullImage direkt als Kind im Figure hängt, entferne es.
+      if (this.fullImage.parentNode && this.fullImage.parentNode === this.getElement()) {
+        this.getElement().removeChild(this.fullImage);
+      } else {
+        const fullImageParent = this.fullImage.parentNode;
+        if (fullImageParent && fullImageParent.parentNode === this.getElement()) {
+          this.getElement().removeChild(fullImageParent);
+        }
       }
 
       delete this.fullImage;
