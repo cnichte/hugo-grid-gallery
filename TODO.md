@@ -77,7 +77,8 @@ Gallerie
   - `fslightbox` muss man (sollte man) halt lizensieren.
   - [ ] Wenn das erledigt ist: git des Moduls wieder öffentlich schalten.
 
-- [ ] `fslightbox` bekommt noch nicht alle bilder sondern immer nur den gerade geladenen ausschnitt.
+- [x] `fslightbox` bekommt noch nicht alle bilder sondern immer nur den gerade geladenen ausschnitt. Dazu wurde die integrationn in pig angepasst.
+  - Alternative Lösung (als die jetzt implementierte) wäre, fslightbox programmgesteuert mit einem Quellen-Array zu initialisieren (statt DOM-Scan). Das wäre sauberer, erfordert jedoch tieferes Eingreifen in die fslightbox-Initialisierung. Die aktuelle Lösung ist minimal-invasiv und performant (nur unsichtbare `<a>`-Elemente). Falls du sehr große Galerien (mehrere tausend Bilder) hast, können zwar hunderte/tausende versteckte `<a>`-Elemente im DOM stehen — das ist in den meisten Fällen aber unproblematisch; wenn das ein Problem wird, können wir auf ein reines programmgesteuertes Setup wechseln.
 
 - [ ] öffentliches remote git anlegen mit dieser Testwebseite.
   - [ ] Ordentliche Beispiel Galerien anlegen mit Testbildern.
