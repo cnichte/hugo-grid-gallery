@@ -35,10 +35,13 @@
   {{ return }}
 {{ end }}
 
+
 {{/* 2) SECTION-INDEX (z. B. /my-galleries/) */}}
 {{ if eq $p.Kind "section" }}
   {{ with $p.Content }}<div class="section-content">{{ . }}</div>{{ end }}
 
+  <h2> TITLE UND MENU UND PREFIX - list (1) - TODO wird nie aufgerufen???</h2>
+  {{/* partial "teaser.html" (dict "page" . "meta" $metaRes.meta) */}}
   {{ partial "gallery-grid/sort-toolbar.html" . }}
 
   {{- $children := $p.RegularPages -}}

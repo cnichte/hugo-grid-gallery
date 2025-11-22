@@ -17,7 +17,10 @@
     </div>
   {{ end }}
 
-  <ul>
+  {{/* 🔹 Toolbar für Sortierung */}}
+  <h2> TITLE UND MENU UND PREFIX - (2)</h2>
+
+    <ul>
     <li>{{ .Title }}</li>
       <li>
         {{ $categories := .GetTerms "categories" }}
@@ -25,15 +28,9 @@
         <a href="{{ .Page.RelPermalink }}" class="menu-link">{{ .Page.Title }}</a> 
         {{ end }}
     </li>
-</ul>
+   </ul>
 
-  {{/* 🔹 Toolbar für Sortierung */}}
-  <div class="hugg-toolbar" style="margin:.5rem 0 1rem; display:flex; gap:.75rem; flex-wrap:wrap; align-items:center;">
-    <strong style="opacity:.7">Sort:</strong>
-    <a id="sort-title"   class="menu-link" href="#">Title</a>
-    <a id="sort-count"   class="menu-link" href="#">Count</a>
-    <a id="sort-updated" class="menu-link" href="#">Updated</a>
-  </div>
+  {{ partial "gallery-grid/sort-toolbar.html" . }}
 
   {{- $children := .RegularPages -}}
   {{ if not $children }}

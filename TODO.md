@@ -89,7 +89,7 @@ Gallerie
 Nur core `data` support ins Modul.
 
 `.Data.games_meta` sind sonderfälle für binary-voids.de.
-Dazu gehörn noch ein paar shortcodes:
+Dazu gehören noch ein paar shortcodes:
 
 - platform-title-counts.html
 - state-title-counts.html
