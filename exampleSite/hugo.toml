@@ -7,3 +7,9 @@ disableKinds = ["taxonomy", "term"]
 [params.hugo-grid-gallery]
   debug = false
   teaserWordLimit = 18
+
+[params.hugo-grid-gallery.recentlyUpdated]
+  days = 3650
+  limit = 2
+  symbol = "⭐"
+  title = "Recently Updated"

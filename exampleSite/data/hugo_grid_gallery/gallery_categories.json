@@ -4,5 +4,17 @@
     "description": "Images used by the minimal example gallery.",
     "cover": "cover",
     "cover_crop": "center"
+  },
+  {
+    "name": "Role",
+    "description": "Gallery fixtures with explicit game and story roles.",
+    "cover": "cover",
+    "cover_crop": "center"
+  },
+  {
+    "name": "Empty",
+    "description": "A category metadata fixture intentionally assigned to no Gallery.",
+    "cover": "",
+    "cover_crop": "center"
   }
 ]

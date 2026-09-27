@@ -3,7 +3,7 @@
 {{- $collectionResult := $validation.collectionResult -}}
 {{- $collection := $validation.collection -}}
 {{- $metaKey := $collectionResult.params.metaKey -}}
-{{- $json := partial "gallery-grid/collection-metadata.html" (dict "page" $page) -}}
+{{- $json := partial "gallery-grid/collection-metadata.html" (dict "page" $page "role" "game") -}}
 {{- $galleryPages := partial "gallery-grid/collection-pages.html" (dict "page" $page) -}}
 {{- partial "gallery-grid/styles.html" $page -}}
 

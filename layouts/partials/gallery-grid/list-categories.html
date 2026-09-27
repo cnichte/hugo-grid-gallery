@@ -26,6 +26,10 @@
 <div class="hugg-cards">
   {{- range $category := $categories -}}
     {{- $metadata := where $categoriesData "name" $category -}}
+    {{- $categoryMetadata := dict -}}
+    {{- if eq (len $metadata) 1 -}}
+      {{- $categoryMetadata = index $metadata 0 -}}
+    {{- end -}}
     {{- $matching := where $galleries "Params.hugg.categories" "intersect" (slice $category) -}}
     {{- $thumbnails := slice -}}
     {{- $imageCount := 0 -}}
@@ -36,7 +40,10 @@
       {{- $imageCount = add $imageCount (len $galleryThumbnails) -}}
     {{- end -}}
     {{- if gt (len $thumbnails) 0 -}}
-      {{- $thumbnail := index $thumbnails (mod (hash.FNV32a $category) (len $thumbnails)) -}}
+      {{- $coverScratch := newScratch -}}
+      {{- partial "helpers/resolve-cover.html" (dict "metadata" $categoryMetadata "pages" $matching "scratch" $coverScratch) -}}
+      {{- $resolvedCover := $coverScratch.Get "resolved" | default dict -}}
+      {{- $thumbnail := cond (ne (len $resolvedCover) 0) $resolvedCover (index $thumbnails (mod (hash.FNV32a $category) (len $thumbnails))) -}}
       {{- $categoryURL := printf "%s%s/" $taxonomyURL ($category | urlize) -}}
       <div class="hugg-card" data-title="{{ $category }}" data-gallery-count="{{ len $matching }}" data-image-count="{{ $imageCount }}">
         <a class="hugg-card-img" href="{{ $categoryURL }}">
@@ -45,8 +52,8 @@
         </a>
         <div class="hugg-card-body">
           <h3 class="hugg-card-title"><a href="{{ $categoryURL }}">{{ $category }}</a></h3>
-          {{- if gt (len $metadata) 0 -}}
-            {{- with (index $metadata 0).description -}}<p class="hugg-card-desc">{{ . | markdownify }}</p>{{- end -}}
+          {{- with $categoryMetadata.description -}}
+            <p class="hugg-card-desc">{{ . | markdownify }}</p>
           {{- end -}}
         </div>
       </div>

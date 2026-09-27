@@ -73,7 +73,7 @@ Gallerie
 
 ## Sonstiges
 
-- [ ] in PIG die alte Lightbox (vielleicht etwsa verbessert) wieder in `pig.js` einbauen, und den `fslightbox` support optional machen.
+- [x] in PIG die alte Lightbox (vielleicht etwas verbessert) wieder in `pig.js` einbauen, und den `fslightbox` support optional machen - da nutze ich die free version von fslightbox.
   - `fslightbox` muss man (sollte man) halt lizensieren.
   - [ ] Wenn das erledigt ist: git des Moduls wieder öffentlich schalten.
 

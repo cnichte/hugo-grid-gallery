@@ -10,6 +10,11 @@
       {{- if not $cardPage -}}
         {{- errorf "hugo-grid-gallery: invalid params.hugg.cardPage %q in %s; expected an existing content page" . $page.File.Path -}}
       {{- end -}}
+      {{- $metadata := partial "gallery-grid/collection-metadata.html" (dict "page" $page) -}}
+      {{- $metadataMatches := where $metadata "id" $validation.id -}}
+      {{- if ne (len $metadataMatches) 1 -}}
+        {{- errorf "hugo-grid-gallery: invalid Gallery Card metadata match for %s/%s referenced by %s; expected exactly one entry, found %d" $collectionParams.collection $validation.id $page.File.Path (len $metadataMatches) -}}
+      {{- end -}}
       {{- $anchor := partial "gallery-grid/card-anchor.html" (dict
         "collection" $collectionParams.collection
         "id" $validation.id

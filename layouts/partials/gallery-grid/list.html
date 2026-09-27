@@ -1,6 +1,11 @@
 {{- $page := .page -}}
 {{- $role := .role | default "" -}}
 {{- $galleries := sort (partial "gallery-grid/collection-pages.html" (dict "page" $page "role" $role)) "Title" -}}
+{{- $moduleConfig := (index site.Params "hugo-grid-gallery") | default dict -}}
+{{- $recentConfig := $moduleConfig.recentlyUpdated | default dict -}}
+{{- $recentDays := $recentConfig.days | default 7 | int -}}
+{{- $recentSymbol := $recentConfig.symbol | default "⭐" -}}
+{{- $recentCutoff := now.AddDate 0 0 (mul -1 $recentDays) -}}
 
 {{- $scratch := newScratch -}}
 {{- partial "gallery-grid/meta-provider.html" (dict "page" $page "Scratch" $scratch) -}}
@@ -13,27 +18,48 @@
 
 <div class="hugg-sortable" data-hugg-sortable>
   {{- partial "gallery-grid/sort-toolbar.html" $page -}}
+  {{- partial "gallery-grid/recently-updated.html" (dict "pages" $galleries "config" $recentConfig) -}}
 
 <div class="hugg-cards">
   {{- range $galleryPage := $galleries -}}
+    {{- $galleryID := $galleryPage.Params.hugg.id -}}
+    {{- $metadataMatches := where $metadata "id" $galleryID -}}
+    {{- $entry := dict -}}
+    {{- if eq (len $metadataMatches) 1 -}}
+      {{- $entry = index $metadataMatches 0 -}}
+    {{- end -}}
     {{- $images := partial "get-images.html" (dict "page" $galleryPage) -}}
-    {{- $thumbnails := partial "gallery-grid/get-gallery-index.html" (dict "images" $images "page" $galleryPage) -}}
+    {{- $crop := $entry.cover_crop | default "" -}}
+    {{- $thumbnails := partial "gallery-grid/get-gallery-index.html" (dict "images" $images "page" $galleryPage "crop" $crop) -}}
     {{- if gt (len $thumbnails) 0 -}}
+      {{- $updated := $galleryPage.Date -}}
+      {{- $isRecentlyUpdated := false -}}
+      {{- with $galleryPage.Params.lastmod -}}
+        {{- $updated = time.AsTime . -}}
+        {{- $isRecentlyUpdated = ge $updated $recentCutoff -}}
+      {{- end -}}
       {{- $cover := dict -}}
-      {{- range $thumbnails -}}
-        {{- if findRE "(?i)cover" .title -}}
-          {{- $cover = . -}}
-          {{- break -}}
+      {{- if $entry.cover -}}
+        {{- $coverScratch := newScratch -}}
+        {{- partial "helpers/resolve-cover.html" (dict "metadata" $entry "pages" (slice $galleryPage) "scratch" $coverScratch) -}}
+        {{- $cover = $coverScratch.Get "resolved" | default dict -}}
+      {{- end -}}
+      {{- if eq (len $cover) 0 -}}
+        {{- range $thumbnails -}}
+          {{- if findRE "(?i)cover" .title -}}
+            {{- $cover = . -}}
+            {{- break -}}
+          {{- end -}}
         {{- end -}}
       {{- end -}}
       {{- $thumbnail := cond (ne (len $cover) 0) $cover (index $thumbnails 0) -}}
       <div class="hugg-card"
            data-title="{{ $galleryPage.LinkTitle }}"
            data-image-count="{{ len $thumbnails }}"
-           data-updated='{{ (or $galleryPage.Lastmod $galleryPage.Date) | time.Format "2006-01-02T15:04:05Z07:00" }}'>
+           data-updated='{{ $updated | time.Format "2006-01-02T15:04:05Z07:00" }}'>
         <a class="hugg-card-img" href="{{ $galleryPage.RelPermalink }}">
           <img src="{{ $thumbnail.thumb }}" alt="{{ $thumbnail.title }}" width="{{ $thumbnail.width }}" height="{{ $thumbnail.height }}" loading="lazy">
-          <span class="hugg-num-photos">{{ len $thumbnails }} {{ cond (eq (len $thumbnails) 1) "photo" "photos" }}</span>
+          <span class="hugg-num-photos">{{ len $thumbnails }} {{ cond (eq (len $thumbnails) 1) "photo" "photos" }}{{ if $isRecentlyUpdated }} <span class="hugg-new-symbol" aria-label="{{ $recentConfig.title | default "Recently Updated" }}">{{ $recentSymbol }}</span>{{ end }}</span>
         </a>
         <div class="hugg-card-body">
           <h2><a href="{{ $galleryPage.RelPermalink }}">{{ $galleryPage.LinkTitle }}</a></h2>

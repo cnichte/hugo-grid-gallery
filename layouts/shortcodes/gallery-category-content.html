@@ -1,0 +1,15 @@
+{{- $page := .Page -}}
+{{- $categoryName := $page.Params.categoryName -}}
+{{- if not $categoryName -}}
+  {{- errorf "hugo-grid-gallery: missing categoryName in %s" $page.File.Path -}}
+  {{- return -}}
+{{- end -}}
+{{- $metaScratch := newScratch -}}
+{{- partial "gallery-grid/meta-provider.html" (dict "page" $page "Scratch" $metaScratch) -}}
+{{- $categoriesData := ($metaScratch.Get "metaProviderResult").metaCats -}}
+{{- partial "gallery-grid/category-detail.html" (dict
+  "categoryName" $categoryName
+  "categoriesData" $categoriesData
+  "itemLabel" "galleries"
+  "page" $page
+) -}}

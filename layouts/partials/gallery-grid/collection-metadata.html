@@ -1,4 +1,5 @@
 {{- $page := .page -}}
+{{- $role := .role | default "" -}}
 {{- $validation := partial "gallery-grid/validate.html" (dict "page" $page) -}}
 {{- $collectionResult := $validation.collectionResult -}}
 {{- $metaKey := $collectionResult.params.metaKey | default "" -}}
@@ -8,5 +9,19 @@
 {{- $metadata := index hugo.Data.hugo_grid_gallery $metaKey -}}
 {{- if not $metadata -}}
   {{- errorf "hugo-grid-gallery: missing or empty data/hugo_grid_gallery/%s configured in %s; expected a non-empty metadata list" $metaKey $collectionResult.root.File.Path -}}
+{{- end -}}
+{{- if $role -}}
+  {{- $rolePages := partial "gallery-grid/collection-pages.html" (dict "page" $page "role" $role) -}}
+  {{- $roleIDs := slice -}}
+  {{- range $rolePages -}}
+    {{- $roleIDs = $roleIDs | append .Params.hugg.id -}}
+  {{- end -}}
+  {{- $filteredMetadata := slice -}}
+  {{- range $entry := $metadata -}}
+    {{- if in $roleIDs ($entry.id | default "") -}}
+      {{- $filteredMetadata = $filteredMetadata | append $entry -}}
+    {{- end -}}
+  {{- end -}}
+  {{- $metadata = $filteredMetadata -}}
 {{- end -}}
 {{- return $metadata -}}

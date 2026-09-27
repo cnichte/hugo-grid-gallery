@@ -1,0 +1,55 @@
+{{- $metadata := .metadata | default dict -}}
+{{- $coverRaw := $metadata.cover | default "" -}}
+{{- $scratch := .scratch | default (newScratch) -}}
+{{- $scratch.Delete "resolved" -}}
+
+{{- if $coverRaw -}}
+  {{- $crop := .crop | default ($metadata.cover_crop | default "smart") -}}
+  {{- $slug := "" -}}
+  {{- $fileHint := $coverRaw -}}
+  {{- if in $coverRaw "/" -}}
+    {{- $parts := split $coverRaw "/" -}}
+    {{- $slug = index $parts 0 -}}
+    {{- $fileHint = index $parts (sub (len $parts) 1) -}}
+  {{- end -}}
+
+  {{- $hintNumberMatches := findRE `\d+` $fileHint -}}
+  {{- $hintNumber := cond (gt (len $hintNumberMatches) 0) (index $hintNumberMatches 0) "" -}}
+  {{- $candidatePages := .pages -}}
+  {{- if $slug -}}
+    {{- $slugPath := printf "/%s/" (lower $slug) -}}
+    {{- $filteredPages := slice -}}
+    {{- range .pages -}}
+      {{- if or (eq (urlize .Title) (lower $slug)) (in (lower .RelPermalink) $slugPath) -}}
+        {{- $filteredPages = $filteredPages | append . -}}
+      {{- end -}}
+    {{- end -}}
+    {{- if gt (len $filteredPages) 0 -}}{{- $candidatePages = $filteredPages -}}{{- end -}}
+  {{- end -}}
+
+  {{- $scratch.Set "foundExact" false -}}
+  {{- range $page := $candidatePages -}}
+    {{- range partial "get-images.html" (dict "page" $page) -}}
+      {{- if not ($scratch.Get "foundExact") -}}
+        {{- $name := .Name -}}
+        {{- $base := replace (replace $name "-web" "") "_web" "" -}}
+        {{- $numberMatches := findRE `\d+` $name -}}
+        {{- $number := cond (gt (len $numberMatches) 0) (index $numberMatches 0) "" -}}
+        {{- $exact := eq (lower $name) (lower $fileHint) -}}
+        {{- $contains := and $fileHint (in (lower $base) (lower $fileHint)) -}}
+        {{- $numberMatch := and $hintNumber (eq $number $hintNumber) -}}
+        {{- if or $exact $contains $numberMatch -}}
+          {{- $thumbnails := partial "gallery-grid/get-gallery-index.html" (dict
+            "images" (slice .)
+            "page" $page
+            "crop" $crop
+          ) -}}
+          {{- if gt (len $thumbnails) 0 -}}
+            {{- $scratch.Set "resolved" (index $thumbnails 0) -}}
+            {{- if $exact -}}{{- $scratch.Set "foundExact" true -}}{{- end -}}
+          {{- end -}}
+        {{- end -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}

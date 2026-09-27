@@ -1,0 +1,8 @@
+[
+  {
+    "id": "different-gallery",
+    "title": "Different Gallery",
+    "subtitle": "",
+    "description": "Keeps the metadata dataset non-empty without matching the fixture Gallery."
+  }
+]

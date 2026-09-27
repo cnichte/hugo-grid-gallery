@@ -4,15 +4,6 @@
 {{- if not (.Scratch.Get $flag) -}}
   {{- .Scratch.Set $flag true -}}
 
-  {{/* Config-JSON (neu: hugg-config; Fallback: global window.configObj) */}}
-  {{- with hugo.Data.hugo_grid_gallery.config -}}
-<script id="hugg-config" type="application/json">
-  {{ . | jsonify | safeJS }}
-</script>
-  {{- else -}}
-    <script>window.configObj = window.configObj || {};</script>
-  {{- end -}}
-
   {{/* #################### CSS #################### */}}
 {{ with resources.Get "ext/pig/pig.css" }}
   {{ $r := . }}

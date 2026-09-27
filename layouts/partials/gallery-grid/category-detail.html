@@ -5,6 +5,7 @@
 {{- $validation := partial "gallery-grid/validate.html" (dict "page" $page) -}}
 {{- $collectionResult := $validation.collectionResult -}}
 {{- $galleries := partial "gallery-grid/collection-pages.html" (dict "page" $page) -}}
+{{- $galleryConfig := partial "gallery-grid/resolve-config.html" (dict "page" $page) -}}
 {{- $matching := where $galleries "Params.hugg.categories" "intersect" (slice $categoryName) -}}
 {{- $taxonomyBase := $collectionResult.params.taxonomyBase | default "gallery_categories" -}}
 {{- $taxonomyURL := printf "%s%s/" $collectionResult.root.RelPermalink (strings.Trim $taxonomyBase "/") -}}
@@ -28,8 +29,7 @@
 
 {{- if eq (len $images) 0 -}}
   <div class="hugg-desc"><p>Sorry, there are currently no images.</p></div>
-  {{- return -}}
-{{- end -}}
+{{- else -}}
 
 {{- $names := slice -}}
 {{- range sort $images "Name" -}}
@@ -43,6 +43,7 @@
   "id" $gridID
   "Scratch" $scratch
   "page" $page
+  "config" $galleryConfig
 ) -}}
 {{- $gallery := $scratch.Get "result" -}}
 
@@ -52,7 +53,7 @@
 {{- end -}}
 {{- $gridIndex := add ($page.Scratch.Get "hugg-grid-index" | default 0) 1 -}}
 {{- $page.Scratch.Set "hugg-grid-index" $gridIndex -}}
-<div class="hugg-grid" id="hugg-grid-{{ $gridID | urlize }}-{{ $gridIndex }}" data-hugg-image-data-url="{{ $gallery.imageDataUrl }}"></div>
+<div class="hugg-grid" id="hugg-grid-{{ $gridID | urlize }}-{{ $gridIndex }}" data-hugg-image-data-url="{{ $gallery.imageDataUrl }}" data-hugg-config="{{ $galleryConfig | jsonify }}"></div>
 
 {{- $categoryNames := slice -}}
 {{- range $categoriesData -}}
@@ -113,4 +114,5 @@
          href="{{ printf "%s%s/" $taxonomyURL ($category | urlize) }}">{{ $category }}</a>
     {{- end -}}
   </div>
+{{- end -}}
 {{- end -}}

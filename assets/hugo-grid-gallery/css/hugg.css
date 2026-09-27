@@ -117,6 +117,27 @@
   color: var(--hugg-sort-selected-text, Canvas);
 }
 
+.hugg-updated {
+  margin-block: 1rem 1.25rem;
+}
+
+.hugg-updated-title {
+  margin-block: 0 .5rem;
+}
+
+.hugg-updated-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+}
+
+.hugg-updated-link {
+  padding: .2rem .5rem;
+  border: 1px solid currentColor;
+  border-radius: .25rem;
+  text-decoration: none;
+}
+
 /* Prev/Next navigation (bottom) */
 .hugg-nav {
   display: grid;

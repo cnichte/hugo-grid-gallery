@@ -1,0 +1,18 @@
+{{- $page := .page | default . -}}
+{{- $globalConfig := hugo.Data.hugo_grid_gallery.config | default dict -}}
+{{- $collectionConfig := dict -}}
+{{- $galleryConfig := dict -}}
+
+{{- with partial "gallery-grid/collection-config.html" (dict "page" $page) -}}
+  {{- with .params.config -}}
+    {{- $collectionConfig = . -}}
+  {{- end -}}
+{{- end -}}
+
+{{- if $page.IsPage -}}
+  {{- with $page.Params.hugg.config -}}
+    {{- $galleryConfig = . -}}
+  {{- end -}}
+{{- end -}}
+
+{{- return merge $globalConfig $collectionConfig $galleryConfig -}}

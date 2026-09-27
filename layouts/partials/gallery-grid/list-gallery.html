@@ -28,6 +28,7 @@
 {{- $collectionPages := partial "gallery-grid/collection-pages.html" (dict "page" $p) -}}
 {{- $taxonomyBase := $collectionResult.params.taxonomyBase | default "gallery_categories" -}}
 {{- $taxonomyURL := printf "%s%s/" $collectionResult.root.RelPermalink (strings.Trim $taxonomyBase "/") -}}
+{{- $galleryConfig := partial "gallery-grid/resolve-config.html" (dict "page" $p) -}}
 
 {{ if $debug }}{{ warnf "🧪 CONTEXT: Kind=%s | Type=%s | Section=%s | IsPage=%v | Permalink=%s" $p.Kind $p.Type $p.Section $p.IsPage $p.Permalink }}{{ end }}
 
@@ -108,7 +109,7 @@
 {{- $id  := printf "%s__%s" $galleryID $sig -}}
 
 {{- $scratch := newScratch -}}
-{{- $ctx := dict "images" $images "id" $id "Scratch" $scratch "page" $p -}}
+{{- $ctx := dict "images" $images "id" $id "Scratch" $scratch "page" $p "config" $galleryConfig -}}
 {{ partial "gallery-grid/init.html" $ctx }}
 {{- $gallery := $scratch.Get "result" -}}
 
@@ -119,7 +120,7 @@
 
 {{- $gridIndex := add ($p.Scratch.Get "hugg-grid-index" | default 0) 1 -}}
 {{- $p.Scratch.Set "hugg-grid-index" $gridIndex -}}
-<div class="hugg-grid" id="hugg-grid-{{ $id | urlize }}-{{ $gridIndex }}" data-hugg-image-data-url="{{ $gallery.imageDataUrl }}"></div>
+<div class="hugg-grid" id="hugg-grid-{{ $id | urlize }}-{{ $gridIndex }}" data-hugg-image-data-url="{{ $gallery.imageDataUrl }}" data-hugg-config="{{ $galleryConfig | jsonify }}"></div>
 
 {{/* =========================================================
      4) Prev/Next Navigation innerhalb derselben Collection/Rolle

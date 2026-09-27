@@ -17,16 +17,6 @@
 
 const debug = 0 ? console.log.bind(console, "[hugo-grid-gallery]") : function () {};
 
-let params = {};
-try {
-  const paramScript = document.getElementById("hugg-config");
-  if (paramScript?.textContent) {
-    params = JSON.parse(paramScript.textContent);
-  }
-} catch (e) {
-  console.error("❌ Fehler beim Parsen von hugogridgallery-params", e);
-}
-
 const HugoGridGallery = {
   init: async function () {
     const dataAttributeName = "data-hugg-image-data-url";
@@ -47,6 +37,13 @@ const HugoGridGallery = {
 
     const dataUrl = container.getAttribute(dataAttributeName);
     if (!dataUrl) throw new Error(`No ${dataAttributeName} attribute found.`);
+
+    let params = {};
+    try {
+      params = JSON.parse(container.dataset.huggConfig || "{}");
+    } catch (error) {
+      console.error(`Invalid Gallery configuration for ${galleryId}`, error);
+    }
 
     let images = await (await fetch(dataUrl)).json();
 
@@ -90,7 +87,8 @@ const HugoGridGallery = {
 
     const options = {
       containerId: galleryId,
-      spaceBetweenImages: 10,
+      spaceBetweenImages:
+        params.spaceBetweenImages ?? params.spacebetweenimages ?? 10,
       classPrefix: "hugg",
       /*
       onClickHandler: function (filename) {

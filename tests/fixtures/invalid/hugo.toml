@@ -1,0 +1,4 @@
+baseURL = "https://example.org/"
+title = "Hugo Grid Gallery Invalid Fixtures"
+theme = "hugo-grid-gallery"
+disableKinds = ["taxonomy", "term"]

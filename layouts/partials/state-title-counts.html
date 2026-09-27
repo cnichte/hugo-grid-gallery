@@ -28,7 +28,7 @@
 {{- $ctx := .ctx | default . | default site -}}
 {{- $games := .games | default (slice) -}}
 {{- if eq (len $games) 0 -}}
-  {{- $games = partial "gallery-grid/collection-metadata.html" (dict "page" $ctx) -}}
+  {{- $games = partial "gallery-grid/collection-metadata.html" (dict "page" $ctx "role" "game") -}}
 {{- end -}}
 
 {{- $showTitles := .showTitles | default false -}}

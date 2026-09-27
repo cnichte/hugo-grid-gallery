@@ -1,0 +1,23 @@
+{{- $pages := .pages | default slice -}}
+{{- $config := .config | default dict -}}
+{{- $limit := $config.limit | default 3 | int -}}
+{{- $symbol := $config.symbol | default "⭐" -}}
+{{- $title := $config.title | default "Recently Updated" -}}
+{{- $candidates := slice -}}
+{{- range $page := $pages -}}
+  {{- with $page.Params.lastmod -}}
+    {{- $candidates = $candidates | append (dict "page" $page "updated" (time.AsTime .)) -}}
+  {{- end -}}
+{{- end -}}
+{{- $recent := first $limit (sort $candidates "updated" "desc") -}}
+
+{{- if gt (len $recent) 0 -}}
+<div class="hugg-updated tag-cloud-container">
+  <p class="hugg-updated-title tag-cloud-container-headline">{{ $title }} {{ $symbol }}</p>
+  <div class="hugg-updated-links">
+    {{- range $item := $recent }}
+    <a class="hugg-updated-link menu-link" href="{{ $item.page.RelPermalink }}">{{ $item.page.LinkTitle }}</a>
+    {{- end }}
+  </div>
+</div>
+{{- end -}}

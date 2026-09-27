@@ -3,6 +3,66 @@
     "id": "example-gallery",
     "title": "Example Gallery",
     "subtitle": "A minimal standalone fixture",
-    "description": "This gallery demonstrates the strict collection and gallery contracts without relying on a consumer theme."
+    "description": "This gallery demonstrates the strict collection and gallery contracts without relying on a consumer theme.",
+    "cover": "03-orbits.jpg",
+    "cover_crop": "top"
+  },
+  {
+    "id": "game-fixture",
+    "title": "Game Fixture",
+    "subtitle": "Role: game",
+    "description": "A role-filtered gallery used to verify game lists, statistics, cards, and stable links.",
+    "developer": {
+      "name": "Fixture Studio",
+      "link": ""
+    },
+    "publisher": {
+      "name": "Example Publishing",
+      "link": ""
+    },
+    "items": [
+      {
+        "name": "Game fixture",
+        "playedHours": "2h",
+        "platform": "Desktop",
+        "state": "finished"
+      }
+    ],
+    "review": {
+      "rating": 4,
+      "rezension": ""
+    }
+  },
+  {
+    "id": "game-fixture-two",
+    "title": "Game Fixture Two",
+    "subtitle": "Second game role fixture",
+    "description": "A second game gallery used to verify role-scoped navigation and DOM contracts.",
+    "developer": {
+      "name": "Fixture Studio",
+      "link": ""
+    },
+    "publisher": {
+      "name": "Example Publishing",
+      "link": ""
+    },
+    "items": [
+      {
+        "name": "Second game fixture",
+        "playedHours": "30m",
+        "platform": "Console",
+        "state": "pile of shame"
+      }
+    ],
+    "review": {
+      "rating": 2,
+      "rezension": ""
+    }
+  },
+  {
+    "id": "story-fixture",
+    "title": "Story Fixture",
+    "subtitle": "Role: story",
+    "description": "A role-filtered gallery used to verify story lists independently from game and standalone galleries."
   }
 ]
