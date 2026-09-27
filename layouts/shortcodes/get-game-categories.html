@@ -1,7 +1,0 @@
-{{/* TODO Ich will das im Category-index die enthaltenen Spiele auftauchen: Mixup of ... and .... */}}
-{{/* untested, unused - {{< get-game-categories >}} */}}
-
-{{ $categories := .GetTerms "categories" }}
-{{ range $categories }}
-<a href="{{ .Page.RelPermalink }}">{{ .Page.Title }}</a> - 
-{{ end }}

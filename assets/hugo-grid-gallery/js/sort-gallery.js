@@ -1,81 +1,94 @@
 // Robust sorting for gallery cards
 // Expects:
-//   - container with id="gallery-container"
+//   - a root with data-hugg-sortable
+//   - a child container with class="hugg-cards"
 //   - child cards with class="hugg-card"
 //   - data attributes on each card:
 //       data-title="..." (string)
 //       data-image-count="..." (number)
 //       data-updated="2025-10-05T17:00:27+02:00" (ISO-ish date)
-//   - optional toolbar links with IDs: sort-title, sort-count, sort-updated
+//   - optional controls with data-hugg-sort-by
 
 document.addEventListener("DOMContentLoaded", () => {
-  const container = document.getElementById("gallery-container");
-  if (!container) return;
+  document.querySelectorAll("[data-hugg-sortable]").forEach((root) => {
+    const container = root.querySelector(".hugg-cards");
+    if (!container) return;
 
-  // Only actual cards (ignore whitespace/text nodes)
-  const cards = Array.from(container.querySelectorAll(".hugg-card"));
-  if (!cards.length) return;
+    // Only actual cards (ignore whitespace/text nodes)
+    const cards = Array.from(container.querySelectorAll(":scope > .hugg-card"));
+    if (!cards.length) return;
 
-  const el = (id) => document.getElementById(id);
-  const sortLinks = {
-    title: el("sort-title"),
-    count: el("sort-count"),
-    updated: el("sort-updated"),
-  };
+    const control = (sortBy) => root.querySelector(`[data-hugg-sort-by="${sortBy}"]`);
+    const sortControls = {
+      title: control("title"),
+      count: control("count"),
+      updated: control("updated"),
+    };
 
-  const haveToolbar = !!(sortLinks.title || sortLinks.count || sortLinks.updated);
+    const haveToolbar = Object.values(sortControls).some(Boolean);
 
-  const clearActive = () =>
-    Object.values(sortLinks).forEach((a) => a?.classList.remove("menu-selected-sek"));
+    const clearActive = () => {
+      Object.values(sortControls).forEach((link) => {
+        link?.classList.remove("hugg-selected");
+        link?.removeAttribute("aria-current");
+      });
+    };
 
-  const appendOrder = (ordered) => {
-    // Re-append in the new order (keeps nodes, only changes order)
-    ordered.forEach((c) => container.appendChild(c));
-  };
+    const selectControl = (controlElement) => {
+      controlElement?.classList.add("hugg-selected");
+      controlElement?.setAttribute("aria-current", "true");
+    };
 
-  const getTitle = (card) => (card.dataset.title || "").toString();
-  const getCount = (card) => Number(card.dataset.imageCount || 0);
-  const getUpdated = (card) => {
-    // Use Date parsing and fallback
-    const raw = card.dataset.updated || "";
-    const d = new Date(raw);
-    return isNaN(d.getTime()) ? new Date(0) : d;
-  };
+    const appendOrder = (ordered) => {
+      ordered.forEach((card) => container.appendChild(card));
+    };
 
-  const sortByTitle = (ev) => {
-    ev?.preventDefault?.();
-    const ordered = [...cards].sort((a, b) =>
-      getTitle(a).localeCompare(getTitle(b), "de", { sensitivity: "base" })
-    );
-    appendOrder(ordered);
-    clearActive();
-    sortLinks.title?.classList.add("menu-selected-sek");
-  };
+    const getTitle = (card) => (card.dataset.title || "").toString();
+    const getCount = (card) => Number(card.dataset.imageCount || 0);
+    const getUpdated = (card) => {
+      const raw = card.dataset.updated || "";
+      const date = new Date(raw);
+      return isNaN(date.getTime()) ? new Date(0) : date;
+    };
 
-  const sortByCount = (ev) => {
-    ev?.preventDefault?.();
-    const ordered = [...cards].sort((a, b) => getCount(b) - getCount(a));
-    appendOrder(ordered);
-    clearActive();
-    sortLinks.count?.classList.add("menu-selected-sek");
-  };
+    const sortByTitle = () => {
+      const ordered = [...cards].sort((a, b) =>
+        getTitle(a).localeCompare(getTitle(b), "de", { sensitivity: "base" })
+      );
+      appendOrder(ordered);
+      clearActive();
+      selectControl(sortControls.title);
+    };
 
-  const sortByUpdated = (ev) => {
-    ev?.preventDefault?.();
-    const ordered = [...cards].sort((a, b) => getUpdated(b) - getUpdated(a));
-    appendOrder(ordered);
-    clearActive();
-    sortLinks.updated?.classList.add("menu-selected-sek");
-  };
+    const sortByCount = () => {
+      const ordered = [...cards].sort((a, b) => getCount(b) - getCount(a));
+      appendOrder(ordered);
+      clearActive();
+      selectControl(sortControls.count);
+    };
 
-  // Hook up toolbar (if present)
-  sortLinks.title?.addEventListener("click", sortByTitle);
-  sortLinks.count?.addEventListener("click", sortByCount);
-  sortLinks.updated?.addEventListener("click", sortByUpdated);
+    const sortByUpdated = () => {
+      const ordered = [...cards].sort((a, b) => getUpdated(b) - getUpdated(a));
+      appendOrder(ordered);
+      clearActive();
+      selectControl(sortControls.updated);
+    };
 
-  // Default: Title
-  sortByTitle();
+    sortControls.title?.addEventListener("click", (event) => {
+      event.preventDefault();
+      sortByTitle();
+    });
+    sortControls.count?.addEventListener("click", (event) => {
+      event.preventDefault();
+      sortByCount();
+    });
+    sortControls.updated?.addEventListener("click", (event) => {
+      event.preventDefault();
+      sortByUpdated();
+    });
 
-  // No toolbar? fine—just keep default sorting
-  if (!haveToolbar) return;
+    sortByTitle();
+
+    if (!haveToolbar) return;
+  });
 });

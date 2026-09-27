@@ -1,6 +1,7 @@
 {{- $collection := .collection | default "" -}}
 {{- $id := .id | default "" -}}
+{{- $path := .path | default "calling template" -}}
 {{- if or (not $collection) (not $id) -}}
-  {{- errorf "hugo-grid-gallery: card anchor requires collection and id" -}}
+  {{- errorf "hugo-grid-gallery: missing card anchor input in %s; expected collection and id" $path -}}
 {{- end -}}
 {{- return (printf "hugg-card--%s--%s" $collection $id) -}}

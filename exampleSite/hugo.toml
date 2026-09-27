@@ -1,0 +1,9 @@
+baseURL = "https://example.org/"
+locale = "en-US"
+title = "Hugo Grid Gallery Example"
+theme = "hugo-grid-gallery"
+disableKinds = ["taxonomy", "term"]
+
+[params.hugo-grid-gallery]
+  debug = false
+  teaserWordLimit = 18

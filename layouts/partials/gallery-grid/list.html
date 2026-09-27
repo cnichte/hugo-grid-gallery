@@ -11,9 +11,10 @@
   {{- $page.Scratch.Set "hugg-assets-loaded" true -}}
 {{- end -}}
 
-{{- partial "gallery-grid/sort-toolbar.html" $page -}}
+<div class="hugg-sortable" data-hugg-sortable>
+  {{- partial "gallery-grid/sort-toolbar.html" $page -}}
 
-<div class="hugg-cards" id="gallery-container">
+<div class="hugg-cards">
   {{- range $galleryPage := $galleries -}}
     {{- $images := partial "get-images.html" (dict "page" $galleryPage) -}}
     {{- $thumbnails := partial "gallery-grid/get-gallery-index.html" (dict "images" $images "page" $galleryPage) -}}
@@ -36,9 +37,10 @@
         </a>
         <div class="hugg-card-body">
           <h2><a href="{{ $galleryPage.RelPermalink }}">{{ $galleryPage.LinkTitle }}</a></h2>
-          {{- partial "gallery-grid/teaser.html" (dict "page" $galleryPage "meta" $metadata) -}}
+          {{- partial "gallery-grid/teaser.html" (dict "page" $galleryPage "meta" $metadata "index" true) -}}
         </div>
       </div>
     {{- end -}}
   {{- end -}}
+</div>
 </div>

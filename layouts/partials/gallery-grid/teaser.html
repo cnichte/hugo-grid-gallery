@@ -15,6 +15,7 @@
 {{- $ctx  := . -}}
 {{- $p    := $ctx.page -}}
 {{- $meta := $ctx.meta | default (slice) -}}
+{{- $isIndex := $ctx.index | default false -}}
 
 {{- $cfg   := (index site.Params "hugo-grid-gallery") | default dict -}}
 {{- $debug := $cfg.debug | default false -}}
@@ -24,10 +25,8 @@
   {{- return -}}
 {{- end -}}
 
-{{- $galleryID := $p.Params.hugg.id | default "" -}}
-{{- if not $galleryID -}}
-  {{- errorf "hugo-grid-gallery: missing params.hugg.id in %s" $p.File.Path -}}
-{{- end -}}
+{{- $validation := partial "gallery-grid/validate.html" (dict "page" $p "gallery" true) -}}
+{{- $galleryID := $validation.id -}}
 {{- $matches := where $meta "id" $galleryID -}}
 {{- if ne (len $matches) 1 -}}
   {{- if $debug }}{{ warnf "teaser.html: expected one metadata entry for %q, got %d" $galleryID (len $matches) }}{{ end -}}
@@ -35,54 +34,54 @@
 {{- end -}}
 {{- $entry := index $matches 0 -}}
 
+{{- $hookFromParam := cond (isset $p.Params "teaserPartial") ($p.Params.teaserPartial | default "") "" -}}
+{{- $role := $p.Params.hugg.role | default "" -}}
+{{- $hookByRole := cond (eq $role "game") "gallery-grid/teaser-games.html" "" -}}
+{{- $hookByType := printf "gallery-grid/teaser-type-%s.html" $p.Type -}}
+{{- $hookGeneric := "gallery-grid/teaser-hook.html" -}}
+
+{{- $hookToUse := "" -}}
+{{- if and $hookFromParam (templates.Exists (printf "partials/%s" $hookFromParam)) -}}
+  {{- $hookToUse = $hookFromParam -}}
+{{- else if and $hookByRole (templates.Exists (printf "partials/%s" $hookByRole)) -}}
+  {{- $hookToUse = $hookByRole -}}
+{{- else if templates.Exists (printf "partials/%s" $hookByType) -}}
+  {{- $hookToUse = $hookByType -}}
+{{- else if templates.Exists (printf "partials/%s" $hookGeneric) -}}
+  {{- $hookToUse = $hookGeneric -}}
+{{- end -}}
+
 <div class="hugg-desc">
   {{ with $entry.subtitle }}
     <p class="hugg-subtitle">{{ . | markdownify }}</p>
   {{ end }}
 
-  {{ with $entry.description }}
-    {{- $wordLimit := $cfg.teaserWordLimit | default 0 -}}
-    {{- $text := . -}}
-    {{- if gt $wordLimit 0 -}}
-      {{- $words := split $text " " -}}
-      {{- if gt (len $words) $wordLimit -}}
-        {{- $text = printf "%s…" (delimit (first $wordLimit $words) " ") -}}
+  {{- if $isIndex -}}
+    {{- if $hookToUse }}
+      {{ partial $hookToUse (dict "entry" $entry "page" $p "index" true) }}
+    {{- else if $debug }}
+      {{ warnf "teaser.html: kein Hook gefunden (ok)" }}
+    {{- end }}
+
+    {{- with $entry.description -}}
+      {{- $wordLimit := $cfg.teaserWordLimit | default 0 -}}
+      {{- $text := . | markdownify | plainify | htmlUnescape -}}
+      {{- if gt $wordLimit 0 -}}
+        {{- $words := split $text " " -}}
+        {{- if gt (len $words) $wordLimit -}}
+          {{- $text = printf "%s…" (delimit (first $wordLimit $words) " ") -}}
+        {{- end -}}
       {{- end -}}
+      <p class="hugg-description">{{ $text }}</p>
     {{- end -}}
-    <p class="hugg-description">{{ $text | markdownify }}</p>
-  {{ end }}
-
-  {{- partial "count-images-page-partial.html" (dict
-      "path"   $p.RelPermalink
-        "prefix" ""
-        "suffix" ""
-  ) -}}
-    {{- partial "gallery-grid/back-to-card-link.html" $p -}}
+  {{- else -}}
+    <p class="hugg-description">
+      {{- with $entry.description }}{{ . | markdownify }}{{ end -}}
+      {{- if $hookToUse }} {{ partial $hookToUse (dict "entry" $entry "page" $p) -}}
+      {{- else if $debug }}{{ warnf "teaser.html: kein Hook gefunden (ok)" -}}
+      {{- end }}
+      {{- " " -}}
+      {{- partial "gallery-grid/back-to-card-link.html" $p -}}
+    </p>
+  {{- end -}}
 </div>
-
-{{/* ---------------------------------------------------------
-   Spezialisierungs-Hooks (erste, die existiert, gewinnt):
-   1) Seiten-Param: .Params.teaserPartial                 (z.B. "gallery-grid/teaser-games.html")
-  2) Type-Hook:    "gallery-grid/teaser-type-<type>.html"
-  3) Generic Hook: "gallery-grid/teaser-hook.html"
-   Der Hook bekommt { entry: <meta-entry> , page: . }
----------------------------------------------------------- */}}
-
-{{- $hookFromParam := cond (isset $p.Params "teaserPartial") (printf "partials/%s" ($p.Params.teaserPartial | default "")) "" -}}
-{{- $hookByType    := printf "partials/gallery-grid/teaser-type-%s.html" $p.Type -}}
-{{- $hookGeneric   := "partials/gallery-grid/teaser-hook.html" -}}
-
-{{- $hookToUse := "" -}}
-{{- if and $hookFromParam (templates.Exists $hookFromParam) -}}
-  {{- $hookToUse = $hookFromParam -}}
-{{- else if templates.Exists $hookByType -}}
-  {{- $hookToUse = $hookByType -}}
-{{- else if templates.Exists $hookGeneric -}}
-  {{- $hookToUse = $hookGeneric -}}
-{{- end -}}
-
-{{- if $hookToUse -}}
-  {{- partial $hookToUse (dict "entry" $entry "page" $p) -}}
-{{- else if $debug -}}
-  {{- warnf "teaser.html: kein Hook gefunden (ok)" -}}
-{{- end -}}

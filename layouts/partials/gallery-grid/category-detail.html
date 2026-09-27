@@ -2,10 +2,8 @@
 {{- $categoriesData := .categoriesData | default (slice) -}}
 {{- $page := .page -}}
 {{- $itemLabel := .itemLabel | default "galleries" -}}
-{{- $collectionResult := partial "gallery-grid/collection-config.html" (dict "page" $page) -}}
-{{- if not $collectionResult -}}
-  {{- errorf "hugo-grid-gallery: no params.hugg.collection ancestor found for %s" $page.File.Path -}}
-{{- end -}}
+{{- $validation := partial "gallery-grid/validate.html" (dict "page" $page) -}}
+{{- $collectionResult := $validation.collectionResult -}}
 {{- $galleries := partial "gallery-grid/collection-pages.html" (dict "page" $page) -}}
 {{- $matching := where $galleries "Params.hugg.categories" "intersect" (slice $categoryName) -}}
 {{- $taxonomyBase := $collectionResult.params.taxonomyBase | default "gallery_categories" -}}
@@ -22,7 +20,7 @@
   {{- $categoryMatches := where $categoriesData "name" $categoryName -}}
   {{- if gt (len $categoryMatches) 0 -}}
     {{- with (index $categoryMatches 0).description -}}
-      <p class="category-description">{{ . | markdownify }}</p>
+      <p class="hugg-category-description">{{ . | markdownify }}</p>
     {{- end -}}
   {{- end -}}
   <p>The Category '{{ $categoryName }}' shows {{ len $images }} virtual Photographs from {{ len $matching }} {{ $itemLabel }}.</p>
@@ -39,9 +37,10 @@
 {{- end -}}
 {{- $signature := printf "%d-%d" (len $images) (hash.FNV32a (delimit $names "|")) -}}
 {{- $scratch := newScratch -}}
+{{- $gridID := printf "category-%s__%s" ($categoryName | urlize) $signature -}}
 {{- partial "gallery-grid/init.html" (dict
   "images" $images
-  "id" (printf "category-%s__%s" ($categoryName | urlize) $signature)
+  "id" $gridID
   "Scratch" $scratch
   "page" $page
 ) -}}
@@ -51,7 +50,9 @@
   {{- partial "gallery-grid/gallery-config.html" $page -}}
   {{- $page.Scratch.Set "hugg-assets-loaded" true -}}
 {{- end -}}
-<div id="hugogridgallery" data-hugg-image-data-url="{{ $gallery.imageDataUrl }}"></div>
+{{- $gridIndex := add ($page.Scratch.Get "hugg-grid-index" | default 0) 1 -}}
+{{- $page.Scratch.Set "hugg-grid-index" $gridIndex -}}
+<div class="hugg-grid" id="hugg-grid-{{ $gridID | urlize }}-{{ $gridIndex }}" data-hugg-image-data-url="{{ $gallery.imageDataUrl }}"></div>
 
 {{- $categoryNames := slice -}}
 {{- range $categoriesData -}}

@@ -1,0 +1,50 @@
+{{- $page := .page -}}
+{{- $validateGallery := .gallery | default false -}}
+{{- $path := $page.RelPermalink -}}
+{{- with $page.File -}}
+  {{- $path = .Path -}}
+{{- end -}}
+
+{{- $collectionResult := partial "gallery-grid/collection-config.html" (dict "page" $page) -}}
+{{- $result := dict -}}
+{{- if not $collectionResult -}}
+  {{- errorf "hugo-grid-gallery: missing params.hugg.collection for %s; expected a collection ID on the page or an ancestor" $path -}}
+{{- else -}}
+  {{- $collection := printf "%v" $collectionResult.params.collection -}}
+  {{- if not (eq (len (findRE `^[a-z0-9]+(?:-[a-z0-9]+)*$` $collection)) 1) -}}
+    {{- errorf "hugo-grid-gallery: invalid params.hugg.collection %q in %s; expected lowercase letters, digits, and hyphens" $collection $collectionResult.root.File.Path -}}
+  {{- end -}}
+
+  {{- $result = dict
+    "collection" $collection
+    "collectionResult" $collectionResult
+  -}}
+
+  {{- if $validateGallery -}}
+    {{- if ne $page.Type "hugo-grid-gallery" -}}
+      {{- errorf "hugo-grid-gallery: invalid type %q in %s; expected hugo-grid-gallery" $page.Type $path -}}
+    {{- end -}}
+
+    {{- $galleryID := $page.Params.hugg.id | default "" -}}
+    {{- if not $galleryID -}}
+      {{- errorf "hugo-grid-gallery: missing params.hugg.id in %s; expected a lowercase ID" $path -}}
+    {{- else if not (eq (len (findRE `^[a-z0-9]+(?:-[a-z0-9]+)*$` $galleryID)) 1) -}}
+      {{- errorf "hugo-grid-gallery: invalid params.hugg.id %q in %s; expected lowercase letters, digits, and hyphens" $galleryID $path -}}
+    {{- end -}}
+
+    {{- if not (isset $page.Params.hugg "categories") -}}
+      {{- errorf "hugo-grid-gallery: missing params.hugg.categories in %s; expected a list, including [] when empty" $path -}}
+    {{- else if not (reflect.IsSlice $page.Params.hugg.categories) -}}
+      {{- errorf "hugo-grid-gallery: invalid params.hugg.categories in %s; expected a list, including [] when empty" $path -}}
+    {{- end -}}
+
+    {{- $role := $page.Params.hugg.role | default "" -}}
+    {{- if not (in (slice "" "game" "story" "standalone") $role) -}}
+      {{- errorf "hugo-grid-gallery: invalid params.hugg.role %q in %s; expected game, story, standalone, or an empty value" $role $path -}}
+    {{- end -}}
+
+    {{- $result = merge $result (dict "id" $galleryID "role" $role) -}}
+  {{- end -}}
+{{- end -}}
+
+{{- return $result -}}

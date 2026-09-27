@@ -29,14 +29,21 @@ try {
 
 const HugoGridGallery = {
   init: async function () {
-    const galleryId = "hugogridgallery";
     const dataAttributeName = "data-hugg-image-data-url";
+    const containers = Array.from(
+      document.querySelectorAll(`.hugg-grid[${dataAttributeName}]`)
+    );
 
-    const container = document.getElementById(galleryId);
-    if (!container) {
-      debug && debug(`Kein #${galleryId} auf dieser Seite – überspringe Grid-Init.`);
-      return; // ← leise aussteigen, NICHT werfen
-    }
+    await Promise.all(
+      containers.map((container) => this.initContainer(container, dataAttributeName))
+    );
+  },
+
+  initContainer: async function (container, dataAttributeName) {
+    if (container.dataset.huggInitialized === "true") return;
+
+    const galleryId = container.id;
+    if (!galleryId) throw new Error("HUGG grid container requires an id.");
 
     const dataUrl = container.getAttribute(dataAttributeName);
     if (!dataUrl) throw new Error(`No ${dataAttributeName} attribute found.`);
@@ -115,16 +122,10 @@ const HugoGridGallery = {
         if (!image || !image.colors || image.colors.length < 1) return "";
         const colors = image.colors;
         const first = colors[0];
-        const second = colors.length > 1 ? colors[1] : "#ccc";
+        const second = colors.length > 1 ? colors[1] : "var(--hugg-image-placeholder-color, #ccc)";
         return ` background: linear-gradient(15deg, ${first}, ${second});`;
       },
     };
-
-    if (window.__pigGalleryInitialized) {
-      console.warn("Pig-Galerie bereits initialisiert – Abbruch");
-      return;
-    }
-    window.__pigGalleryInitialized = true;
 
     // Wichtig: jetzt auf window.Pig zugreifen (wird separat als <script> geladen)
     const PigCtor = window.Pig;
@@ -134,7 +135,10 @@ const HugoGridGallery = {
     }
 
     const pig = new PigCtor(imageData, options);
-    window.__pigGallery = pig;
+  container.dataset.huggInitialized = "true";
+  window.__pigGalleries = window.__pigGalleries || [];
+  window.__pigGalleries.push(pig);
+  window.__pigGallery = window.__pigGalleries[0];
 
     debug("🐷 Pig hat Bilder (vor enable):", pig.images.length);
 
@@ -155,7 +159,7 @@ const HugoGridGallery = {
       window.dispatchEvent(new Event("scroll"));
       window.dispatchEvent(new Event("resize"));
       requestAnimationFrame(() => {
-        window.__pigGallery?.update?.();
+        window.__pigGalleries.forEach((gallery) => gallery.update?.());
       });
     }, 200);
   },
@@ -163,11 +167,11 @@ const HugoGridGallery = {
 
 // -NN- bis -NNNNNN- (2..6 Ziffern zwischen Bindestrichen)
 function extractNumberFromFilename(filename) {
-/* 
+/*
 Da regex ja immer wieder rätselhaft ist, hier eine ausführliche Erklärung:
 
-- Das Regex /-(\d{3,6})-/ sucht nach einer Zeichenfolge 
-- der Form -XXX- bis -XXXXXX-, also 3 bis 6 Ziffern zwischen Bindestrichen 
+- Das Regex /-(\d{3,6})-/ sucht nach einer Zeichenfolge
+- der Form -XXX- bis -XXXXXX-, also 3 bis 6 Ziffern zwischen Bindestrichen
 - und extrahiert die Ziffern in der Erfassungsgruppe für die weitere Verarbeitung.
 
 1. Aufbau des Regex

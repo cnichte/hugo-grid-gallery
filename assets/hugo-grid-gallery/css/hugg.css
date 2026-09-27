@@ -60,7 +60,7 @@
   line-height: 1;
   background: color-mix(in oklab, currentColor 50%, transparent);
   border-radius: .25rem;
-  color: #fff;
+  color: var(--hugg-count-text, #fff);
 }
 
 /* Card body */
@@ -77,6 +77,44 @@
 /* Description/intro blocks above/below the grid */
 .hugg-desc {
   margin-block: 1rem;
+}
+
+.hugg-card-body .hugg-desc,
+.hugg-card-body .hugg-desc > p {
+  margin-block: 0;
+}
+
+.hugg-toolbar {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: .25rem .75rem;
+  margin-block-end: 1rem;
+}
+
+.hugg-sort-control {
+  position: relative;
+}
+
+.hugg-sort-control + .hugg-sort-control::before {
+  position: absolute;
+  inset-inline-start: -.5rem;
+  top: 50%;
+  width: 1px;
+  height: 1em;
+  content: "";
+  background-color: var(--hugg-sort-separator-color, CanvasText);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.hugg-sort-control.hugg-selected {
+  display: inline-block;
+  padding: 2px;
+  border: 0;
+  border-radius: 0;
+  background-color: var(--hugg-sort-selected-background, LinkText);
+  color: var(--hugg-sort-selected-text, Canvas);
 }
 
 /* Prev/Next navigation (bottom) */
@@ -121,46 +159,73 @@
   cursor: zoom-in;
 }
 
-.gallery-entry[id^="hugg-card--"] {
+.hugg-card-index {
+  margin-block: 1rem 1.5rem;
+  line-height: 1.7;
+}
+
+.hugg-gallery-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr));
+  gap: 1rem;
+  margin-block: 1.5rem;
+}
+
+.hugg-gallery-entry {
+  padding: clamp(1rem, 2vw, 1.5rem);
+  border: 1px solid var(--hugg-card-border, color-mix(in srgb, currentColor 22%, transparent));
+  border-radius: var(--hugg-card-radius, .5rem);
+  background: var(--hugg-card-background, transparent);
+}
+
+.hugg-gallery-entry[id^="hugg-card--"] {
   scroll-margin-top: 6rem;
 }
 
-
-
-/* Additiona stuff */
-
-
-/* ---- Badges auf Karten (Index / Taxonomy) ---- */
-.hugg .num-photos {
-  position: absolute;
-  top: .5rem;
-  right: .5rem;
-  padding: .15rem .4rem;
-  font-size: .75rem;
-  line-height: 1;
-  background: rgba(0,0,0,.55);
-  color: #fff;
-  border-radius: .25rem;
-  z-index: 2;
-}
-.hugg .card {
-  position: relative;
-}
-.hugg .card .card-img {
-  position: relative;
-  display: block;
+.hugg-gallery-entry:target {
+  outline: 2px solid var(--hugg-focus-color, currentColor);
+  outline-offset: 3px;
 }
 
+.hugg-gallery-entry-title {
+  margin-block: 0 .75rem;
+  font-size: 1.125rem;
+  line-height: 1.3;
+}
+
+.hugg-gallery-entry-anchor {
+  margin-inline-start: .25rem;
+  font-size: .8em;
+  text-decoration: none;
+}
+
+.hugg-gallery-entry-description {
+  margin-block: 0 1rem;
+}
+
+.hugg-gallery-entry-meta {
+  margin-block: 0;
+  padding-inline-start: 1.25rem;
+}
+
+.hugg-gallery-entry-meta > li + li {
+  margin-block-start: .35rem;
+}
+
+.hugg-gallery-link,
+.hugg-card-link {
+  font-weight: 600;
+}
 /* ---- Bildnummer im Grid (unten rechts) ---- */
 
 /* Tag-Overlay im Grid-Tumbnail - rechts unten */
-.hugg .hugg-image-tag {
+.hugg-image-tag {
   position: absolute;
   bottom: 6px;
   right: 6px;
   padding: 2px 6px;
-  background-color: rgba(0, 0, 0, 0.6);
-  color: silver;
+  background-color: var(--hugg-image-tag-background, rgba(0, 0, 0, 0.6));
+  color: var(--hugg-image-tag-text, silver);
   font-size: 0.7rem;
   font-family: system-ui, sans-serif;
   border-radius: 4px;
@@ -168,32 +233,3 @@
   pointer-events: none;
   z-index: 10;
 }
-
-/* Stelle sicher, dass Grid-Thumb-Container relativ sind */
-.hugg .hugg-thumb,
-.hugg .pig__item,
-.hugg .pig__item a {
-  position: relative;
-}
-
-/* ---- Sortier-Toolbar ---- */
-.hugg .hugg-sort {
-  display: flex; gap: .5rem; align-items: baseline; flex-wrap: wrap;
-  margin: .25rem 0 1rem;
-}
-.hugg .hugg-sort a { text-decoration: none; }
-.hugg .hugg-sort .active { font-weight: 700; text-decoration: underline; }
-
-/* ---- Kleinigkeit für den Recently-Updated-Block ---- */
-.hugg .hugg-updated {
-  margin: 1rem 0 1.25rem;
-}
-.hugg .hugg-updated .cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px,1fr));
-  gap: .75rem;
-}
-
-
-.menu-link { text-decoration:none; border:1px solid #ccc; padding:.2rem .5rem; border-radius:.4rem; }
-.menu-selected-sek { background:#eee; }

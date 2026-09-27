@@ -1,0 +1,8 @@
+[
+  {
+    "name": "Example",
+    "description": "Images used by the minimal example gallery.",
+    "cover": "cover",
+    "cover_crop": "center"
+  }
+]

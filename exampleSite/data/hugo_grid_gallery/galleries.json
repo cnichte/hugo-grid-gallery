@@ -1,0 +1,8 @@
+[
+  {
+    "id": "example-gallery",
+    "title": "Example Gallery",
+    "subtitle": "A minimal standalone fixture",
+    "description": "This gallery demonstrates the strict collection and gallery contracts without relying on a consumer theme."
+  }
+]

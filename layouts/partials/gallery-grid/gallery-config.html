@@ -20,17 +20,13 @@
   <link rel="stylesheet" href="{{ $r.RelPermalink }}"{{ with $r.Data.Integrity }} integrity="{{ . }}"{{ end }}>
 {{ end }}
 
-{{ with resources.Get "ext/fslightbox/fslightbox.js" }}
-  {{ $r := . }}
-  {{ if hugo.IsProduction }}{{ $r = $r | resources.Minify | resources.Fingerprint }}{{ end }}
-  <script src="{{ $r.RelPermalink }}"{{ with $r.Data.Integrity }} integrity="{{ . }}"{{ end }}></script>
-{{ end }}
-
-{{ with resources.Get "hugo-grid-gallery/css/hugg.css" }}
+{{ with resources.Get "ext/fslightbox/fslightbox.css" }}
   {{ $r := . }}
   {{ if hugo.IsProduction }}{{ $r = $r | resources.Minify | resources.Fingerprint }}{{ end }}
   <link rel="stylesheet" href="{{ $r.RelPermalink }}"{{ with $r.Data.Integrity }} integrity="{{ . }}"{{ end }}>
 {{ end }}
+
+{{ partial "gallery-grid/styles.html" . }}
 
   {{/* #################### JS: Libs zuerst #################### */}}
 {{ $pigRes := resources.Get "ext/pig/pig.js" }}

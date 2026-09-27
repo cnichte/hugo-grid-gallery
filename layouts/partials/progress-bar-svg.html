@@ -1,4 +1,4 @@
-{{/* 
+{{/*
   Partial: progress-bar-svg
   Zeichnet einen einzelnen SVG-Balken.
 
@@ -27,9 +27,9 @@
 {{- $w        := int (or $p.width 50) -}}
 {{- $h        := int (or $p.height 16) -}}
 {{- $r        := int (or $p.radius 4) -}}
-{{- $bar      := or $p.barColor "#06b6d4" -}}
-{{- $bg       := or $p.bgColor  "#e5e7eb" -}}
-{{- $txt      := or $p.textColor "#111827" -}}
+{{- $bar      := or $p.barColor "var(--hugg-progress-bar-color, #06b6d4)" -}}
+{{- $bg       := or $p.bgColor  "var(--hugg-progress-background, #e5e7eb)" -}}
+{{- $txt      := or $p.textColor "var(--hugg-progress-text, #111827)" -}}
 {{- $fs       := int (or $p.fontSize 12) -}}
 {{- $class    := or $p.class "" -}}
 
@@ -45,12 +45,12 @@
 {{- if gt $filled $w }}{{- $filled = $w -}}{{- end -}}
 
 {{- $pct := div (add (mul $count 100) (div $total 2)) $total -}}
-{{- $id := printf "pb-%s" (urlize (printf "%s-%d-%d" $label $count $total)) -}}
+{{- $accessibleLabel := printf "%s: %d/%d (%d%%)" $label $count $total $pct -}}
 
-<svg 
+<svg
   width="{{ $w }}" height="{{ $h }}" viewBox="0 0 {{ $w }} {{ $h }}"
-  role="img" aria-labelledby="{{ $id }}" class="{{ $class }}">
-  <title id="{{ $id }}">{{ printf "%s: %d/%d (%d%%)" $label $count $total $pct }}</title>
+  role="img" aria-label="{{ $accessibleLabel }}" class="{{ $class }}">
+  <title>{{ $accessibleLabel }}</title>
   <rect x="0" y="0" width="{{ $w }}" height="{{ $h }}" rx="{{ $r }}" ry="{{ $r }}" fill="{{ $bg }}" />
   <rect x="0" y="0" width="{{ $filled }}" height="{{ $h }}" rx="{{ $r }}" ry="{{ $r }}" fill="{{ $bar }}" />
   {{- if $showText -}}

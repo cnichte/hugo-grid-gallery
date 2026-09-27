@@ -1,14 +1,12 @@
 {{- $page := .page -}}
-{{- $collectionResult := partial "gallery-grid/collection-config.html" (dict "page" $page) -}}
-{{- if not $collectionResult -}}
-  {{- errorf "hugo-grid-gallery: no params.hugg.collection ancestor found for %s" $page.File.Path -}}
-{{- end -}}
+{{- $validation := partial "gallery-grid/validate.html" (dict "page" $page) -}}
+{{- $collectionResult := $validation.collectionResult -}}
 {{- $metaKey := $collectionResult.params.metaKey | default "" -}}
 {{- if not $metaKey -}}
-  {{- errorf "hugo-grid-gallery: params.hugg.metaKey is required for %s" $page.File.Path -}}
+  {{- errorf "hugo-grid-gallery: missing params.hugg.metaKey in %s; expected a key below data/hugo_grid_gallery" $collectionResult.root.File.Path -}}
 {{- end -}}
 {{- $metadata := index hugo.Data.hugo_grid_gallery $metaKey -}}
 {{- if not $metadata -}}
-  {{- errorf "hugo-grid-gallery: data/hugo_grid_gallery/%s is missing or empty" $metaKey -}}
+  {{- errorf "hugo-grid-gallery: missing or empty data/hugo_grid_gallery/%s configured in %s; expected a non-empty metadata list" $metaKey $collectionResult.root.File.Path -}}
 {{- end -}}
 {{- return $metadata -}}

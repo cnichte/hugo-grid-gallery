@@ -16,7 +16,7 @@ git push -u origin main
 ```
 
 ```bash
-tree -a -L 3 ./assets > verzeichnis-struktur.txt
+tree -a -L 3 ./assets
 
 # was kennt git
 git status
@@ -85,36 +85,77 @@ hugo server --disableFastRender --noHTTPCache
 In Doks verwenden, ohne das Theme anzufassen über  Shortcodes im Content:
 
 - Grid überall: `{{< gallery-grid >}}`
-- Index/Karten für Taxonomie: `{{< gallery-index taxonomy="categories" >}}`
+- Collection-basierte Kategorie-Karten: `{{< gallery-categories >}}`
+- Kompatibilitätsalias: `{{< gallery-index >}}`
 
 ## Verwenden im Theme
 
 ...
 
-## Metadaten
+## Datenvertrag
 
 ```toml
 [params.hugo-grid-gallery]
-  # Globale Fallbacks
-  metaKey           = "default_meta"
-  metaCategoriesKey = "default_meta_categories"
-
-  # Sections, in denen Galerien liegen:
-  gallerySections = [
-    "binary-voids-galleries",
-    "anderland-galleries",
-    "street-photography",
-    "hugo-grid-gallery"
-  ]
+  debug = false
 ```
 
-Der name der json wird zusammen gesetzt.
+### Collection-Root
 
-Überschreiben im Frontmatter der _index.md / index.md der gallerie.
+Jede Collection benötigt eine global eindeutige `collection`. Die Data-Keys und
+`cardPage` sind optional und werden von allen enthaltenen Galerien geerbt.
 
 ```toml
-[params]
-  metaKey = "anderland-galleries_meta"
-  metaCategoriesKey = "anderland-galleries_meta_categories"
+[params.hugg]
+  collection = "example"
+  metaKey = "galleries"
+  metaCategoriesKey = "gallery_categories"
+  taxonomyBase = "gallery_categories"
+  cardPage = "/example/cards/"
 ```
 
+### Gallery
+
+Eine Gallery ist ein Leaf Bundle mit `type = "hugo-grid-gallery"`. `id` und
+`categories` sind Pflichtfelder; auch eine Gallery ohne Kategorien verwendet
+eine leere Liste. Zulässige Rollen sind `game`, `story`, `standalone` oder ein
+leerer Wert.
+
+```toml
+type = "hugo-grid-gallery"
+
+[params.hugg]
+  id = "example-gallery"
+  role = "standalone"
+  categories = ["Architecture", "Night"]
+```
+
+Die stabile Identität lautet `<collection>/<id>`. Titel, URL, Pfad und Section
+sind keine Identitätsfelder.
+
+### Metadaten
+
+Die in `metaKey` und `metaCategoriesKey` genannten JSON-Dateien liegen unter
+`data/hugo_grid_gallery/`. Gallery-Metadaten werden ausschließlich über `id`
+zugeordnet; Kategorie-Metadaten über `name`.
+
+```json
+[
+  {
+    "id": "example-gallery",
+    "title": "Example Gallery",
+    "subtitle": "Optional subtitle",
+    "description": "Optional description"
+  }
+]
+```
+
+```json
+[
+  {
+    "name": "Architecture",
+    "description": "Optional category description",
+    "cover": "image-name-fragment",
+    "cover_crop": "mitte"
+  }
+]
+```

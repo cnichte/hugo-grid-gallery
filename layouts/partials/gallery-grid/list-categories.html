@@ -1,8 +1,6 @@
 {{- $page := . -}}
-{{- $collectionResult := partial "gallery-grid/collection-config.html" (dict "page" $page) -}}
-{{- if not $collectionResult -}}
-  {{- errorf "hugo-grid-gallery: no params.hugg.collection ancestor found for %s" $page.File.Path -}}
-{{- end -}}
+{{- $validation := partial "gallery-grid/validate.html" (dict "page" $page) -}}
+{{- $collectionResult := $validation.collectionResult -}}
 {{- $galleries := partial "gallery-grid/collection-pages.html" (dict "page" $page) -}}
 {{- $taxonomyBase := $collectionResult.params.taxonomyBase | default "gallery_categories" -}}
 {{- $taxonomyURL := printf "%s%s/" $collectionResult.root.RelPermalink (strings.Trim $taxonomyBase "/") -}}
@@ -24,7 +22,8 @@
   {{- $page.Scratch.Set "hugg-assets-loaded" true -}}
 {{- end -}}
 
-<div class="hugg-cards" id="gallery-container">
+<div class="hugg-sortable" data-hugg-sortable>
+<div class="hugg-cards">
   {{- range $category := $categories -}}
     {{- $metadata := where $categoriesData "name" $category -}}
     {{- $matching := where $galleries "Params.hugg.categories" "intersect" (slice $category) -}}
@@ -53,4 +52,5 @@
       </div>
     {{- end -}}
   {{- end -}}
+</div>
 </div>

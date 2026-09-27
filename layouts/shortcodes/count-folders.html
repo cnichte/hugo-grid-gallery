@@ -1,19 +1,16 @@
 {{/*
   Shortcode: count-folders
-  Counts child pages (leaf + branch bundles).
+  Counts Gallery pages in the current Collection.
 
   Named params ONLY:
-    section       (string, optional) e.g. "galleries" or "/galleries"
-                  -> zählt alle RegularPages in dieser Section (empfohlen)
-    path          (string, optional) e.g. "/galleries"
-                  -> zählt Kinder der Zielseite (fallback)
+    role          (string, optional) e.g. "game" or "story"
     numberTag     (string, optional) e.g. "code"
     componentTag  (string, optional) e.g. "strong"
 
   Beispiele:
-    {{< count-folders section="/galleries" >}}
-    {{< count-folders section="galleries" numberTag="code" >}}
-    {{< count-folders path="/galleries" componentTag="strong" >}}
+    {{< count-folders >}}
+    {{< count-folders role="game" numberTag="code" >}}
+    {{< count-folders role="story" componentTag="strong" >}}
 */}}
 
 {{- $numberTag     := .Get "numberTag"     | default "" -}}
@@ -30,14 +27,4 @@
 {{- $compClose := cond (ne $componentTag "") (printf "</%s>" $componentTag) "" -}}
 
 {{- printf "%s%s%d%s%s" $compOpen $numOpen $count $numClose $compClose | safeHTML -}}
-
-{{/* Zählt die Folder in der Section einer Seite (nicht rekursiv, also nicht noch deren Unterverzeichnisse) */}}
-
-{{/*
-
-{{- $section := .Get "section" | default "galleries"  -}}
-{{ $pages := (where .Site.RegularPages "Section" "==" $section) }}
-{{ $pages.Len }}
-
-*/}}
 

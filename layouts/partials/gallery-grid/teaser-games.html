@@ -1,5 +1,5 @@
 {{/* gallery-grid/teaser-games.html
-     Erweiterung für Games: Developer/Publisher/Items/Review
+  Erweiterung für Games: Developer/Publisher
      Erwartet dict: { entry, page }
 
      Lege einen der folgenden Hooks an (du brauchst nur einen, abhängig davon, wie du matchen willst):
@@ -8,52 +8,23 @@
     Oder per Page-Param: teaserPartial = "gallery-grid/teaser-games.html"
 */}}
 {{- $e := .entry -}}
+{{- $isIndex := .index | default false -}}
 
-<div class="hugg-desc hugg-games-extra">
-  {{ with $e.developer }}
-    {{- if or .name .link -}}
-      <p>
-        <strong>Developer:</strong>
-        {{ if .link }}
-          <a href="{{ .link }}" target="_blank" rel="noopener">{{ .name }}</a>
-        {{ else }}{{ .name }}{{ end }}
-      </p>
-    {{- end -}}
-  {{ end }}
-
-  {{ with $e.publisher }}
-    {{- if or .name .link -}}
-      <p>
-        <strong>Publisher:</strong>
-        {{ if .link }}
-          <a href="{{ .link }}" target="_blank" rel="noopener">{{ .name }}</a>
-        {{ else }}{{ .name }}{{ end }}
-      </p>
-    {{- end -}}
-  {{ end }}
-
-  {{ with $e.items }}
-    {{ if gt (len .) 0 }}
-      <div class="hugg-game-items">
-        <strong>Parts / Play Data:</strong>
-        <ul>
-          {{ range . }}
-            <li>
-              {{ with .name }}<span class="item-name">{{ . }}</span>{{ end }}
-              {{ with .platform }} · <span class="item-plat">{{ . }}</span>{{ end }}
-              {{ with .playedHours }} · <span class="item-hours">{{ . }}</span>{{ end }}
-              {{ with .state }} · <span class="item-state">{{ . }}</span>{{ end }}
-            </li>
-          {{ end }}
-        </ul>
-      </div>
-    {{ end }}
-  {{ end }}
-
-  {{ with $e.review }}
-    <p class="hugg-review">
-      {{ with .rating }}<strong>Rating:</strong> {{ . }}/5{{ end }}
-      {{ with .rezension }}<br>{{ . | markdownify }}{{ end }}
-    </p>
-  {{ end }}
-</div>
+{{- with $e.developer -}}
+  {{- if or .name .link -}}
+    {{- if $isIndex }}<p class="hugg-developer">{{ else }}<span class="hugg-developer">{{ end -}}
+      <strong>Developer:</strong>
+      {{- if .link }} <a href="{{ .link }}" target="_blank" rel="noopener">{{ .name }}</a>
+      {{- else }} {{ .name }}{{ end -}}
+    {{- if $isIndex }}</p>{{ else }}</span>{{ " " }}{{ end -}}
+  {{- end -}}
+{{- end -}}
+{{- with $e.publisher -}}
+  {{- if or .name .link -}}
+    {{- if $isIndex }}<p class="hugg-publisher">{{ else }}<span class="hugg-publisher">{{ end -}}
+      <strong>Publisher:</strong>
+      {{- if .link }} <a href="{{ .link }}" target="_blank" rel="noopener">{{ .name }}</a>
+      {{- else }} {{ .name }}{{ end -}}
+    {{- if $isIndex }}</p>{{ else }}</span>{{ end -}}
+  {{- end -}}
+{{- end -}}

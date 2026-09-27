@@ -45,17 +45,19 @@ Button. */}}
   };
 </script>
 
-{{ range $items -}}
+{{ range $index, $item := $items -}}
+{{- with $item -}}
 {{- $fields := split . "\n " -}}
 {{- $src := index $fields 0 }}
 {{- $cov := index $fields 1 }}
 {{- $alt := index $fields 2 }}
 {{ with $src -}}
 
-<div class="_df_thumb" id="flipbook" source="{{ $my_path }}{{ strings.TrimSpace $src }}"
+<div class="_df_thumb" id="hugg-flipbook-{{ $.Ordinal }}-{{ $index }}" source="{{ $my_path }}{{ strings.TrimSpace $src }}"
   thumb="{{ $my_path }}{{ strings.TrimSpace $cov }}">{{ $alt }}
 </div>
 
+{{ end -}}
 {{ end -}}
 {{ end -}}
 

@@ -1,4 +1,4 @@
-{{/* 
+{{/*
   Partial: progress-bar-svg-stacked
   Zeichnet EINEN gestapelten Balken aus bis zu 3 Segmenten (finished/wip/shame).
 
@@ -33,18 +33,18 @@
 {{- $w := int (or $p.width 100) -}}
 {{- $h := int (or $p.height 18) -}}
 {{- $r := int (or $p.radius 6) -}}
-{{- $bg := or $p.bgColor "#e5e7eb" -}}
+{{- $bg := or $p.bgColor "var(--hugg-progress-background, #e5e7eb)" -}}
 {{- $class := or $p.class "" -}}
-{{- $txt := or $p.textColor "#111827" -}}
+{{- $txt := or $p.textColor "var(--hugg-progress-text, #111827)" -}}
 {{- $fs  := int (or $p.fontSize 12) -}}
 
 {{- $fl := or $p.finishedLabel "Finished" -}}
 {{- $wl := or $p.wipLabel      "Work in progress" -}}
 {{- $sl := or $p.shameLabel    "Pile of shame" -}}
 
-{{- $fcol := or $p.finishedColor "#16a34a" -}}
-{{- $wcol := or $p.wipColor      "#f59e0b" -}}
-{{- $scol := or $p.shameColor    "#ef4444" -}}
+{{- $fcol := or $p.finishedColor "var(--hugg-progress-finished, #16a34a)" -}}
+{{- $wcol := or $p.wipColor      "var(--hugg-progress-active, #f59e0b)" -}}
+{{- $scol := or $p.shameColor    "var(--hugg-progress-pending, #ef4444)" -}}
 
 {{- $valign := or $p.valign "middle" -}}
 {{- $nudge  := printf "%v" (or $p.nudge "0") -}}  {{/* als String, damit 0.1 etc. geht */}}
@@ -61,28 +61,19 @@
 {{- $sumW := add (add $fw $ww) $sw -}}
 {{- $rem := sub $w $sumW -}}
 {{- $sw = add $sw $rem -}} {{/* Rest auf letztes Segment */}}
-{{- $id := printf "stack-%d-%d-%d-%d" $fc $wc $sc $total -}}
-{{- $clipId := printf "%s-clip" $id -}}
+{{- $accessibleLabel := printf "%s %d, %s %d, %s %d (Total %d)" $fl $fc $wl $wc $sl $sc $total -}}
 
 {{/* TODO: Der Code-Linter meckert hier an $valign und $nudge rum, es läuft aber einwandfrei */}}
 <svg
   width="{{ $w }}" height="{{ $h }}" viewBox="0 0 {{ $w }} {{ $h }}"
-  role="img" aria-labelledby="{{ $id }}" class="{{ $class }}"
-  style="display:inline-block; vertical-align: {{ $valign }}; {{ if ne $nudge "0" }}transform: translateY({{ $nudge }}em);{{ end }}">
-  <title id="{{ $id }}">{{ printf "%s %d, %s %d, %s %d (Total %d)" $fl $fc $wl $wc $sl $sc $total }}</title>
+  role="img" aria-label="{{ $accessibleLabel }}" class="{{ $class }}"
+  style="display:inline-block; overflow:hidden; border-radius:{{ $r }}px; vertical-align: {{ $valign }}; {{ if ne $nudge "0" }}transform: translateY({{ $nudge }}em);{{ end }}">
+  <title>{{ $accessibleLabel }}</title>
 
   <!-- Hintergrund (voller Rounded-Container) -->
   <rect x="0" y="0" width="{{ $w }}" height="{{ $h }}" rx="{{ $r }}" ry="{{ $r }}" fill="{{ $bg }}" />
 
-  <!-- ClipPath mit denselben Rundungen; alles im <g> wird daran beschnitten -->
-  <defs>
-    <clipPath id="{{ $clipId }}">
-      <rect x="0" y="0" width="{{ $w }}" height="{{ $h }}" rx="{{ $r }}" ry="{{ $r }}" />
-    </clipPath>
-  </defs>
-
-  <!-- Segmente: keine Rundungen! werden sauber an ClipPath-Kontur beschnitten -->
-  <g clip-path="url(#{{ $clipId }})" shape-rendering="crispEdges">
+  <g shape-rendering="crispEdges">
     {{- $x := 0 -}}
     {{- if gt $fw 0 -}}
       <rect x="{{ $x }}" y="0" width="{{ $fw }}" height="{{ $h }}" fill="{{ $fcol }}" />

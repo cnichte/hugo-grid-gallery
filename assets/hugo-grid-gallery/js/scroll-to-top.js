@@ -29,20 +29,22 @@ const configObj = {
 let backToTopButton, backToTopButtonSvg, backToTopButtonImg;
 
 function createButton(obj) {
-  const body = document.querySelector("body");
+  if (document.getElementById("hugg-back-to-top-button")) return;
 
-  backToTopButton = document.createElement("span");
-  backToTopButton.classList.add("back-to-top-button");
-  backToTopButton.id = "back-to-top-button";
+  backToTopButton = document.createElement("button");
+  backToTopButton.type = "button";
+  backToTopButton.setAttribute("aria-label", "Back to top");
+  backToTopButton.classList.add("hugg-back-to-top-button");
+  backToTopButton.id = "hugg-back-to-top-button";
 
-  body.appendChild(backToTopButton);
+  document.body.appendChild(backToTopButton);
 
   backToTopButton.style.width = obj.buttonWidth;
   backToTopButton.style.height = obj.buttonHeight;
   backToTopButton.style.marginRight = obj.buttonDToRight;
   backToTopButton.style.marginBottom = obj.buttonDToBottom;
   backToTopButton.style.borderRadius = obj.roundnessSize;
-  backToTopButton.style.boxShadow = obj.shadowSize;
+  backToTopButton.style.boxShadow = `var(--hugg-scroll-shadow, ${obj.shadowSize})`;
   backToTopButton.style.position = "fixed";
   backToTopButton.style.outline = "none";
   backToTopButton.style.bottom = "0px";
@@ -51,26 +53,23 @@ function createButton(obj) {
   backToTopButton.style.textAlign = "center";
   backToTopButton.style.border = "solid 2px";
   backToTopButton.innerHTML =
-    '<svg class="back-to-top-button-svg" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" > <g fill="none" fill-rule="evenodd"> <path d="M0 0H32V32H0z" transform="translate(-1028 -172) translate(832 140) translate(32 32) translate(164) matrix(1 0 0 -1 0 32)" /> <path class="back-to-top-button-img" fill-rule="nonzero" d="M11.384 13.333h9.232c.638 0 .958.68.505 1.079l-4.613 4.07c-.28.246-.736.246-1.016 0l-4.613-4.07c-.453-.399-.133-1.079.505-1.079z" transform="translate(-1028 -172) translate(832 140) translate(32 32) translate(164) matrix(1 0 0 -1 0 32)" /> </g> </svg>';
+    '<svg class="hugg-back-to-top-button-svg" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" > <g fill="none" fill-rule="evenodd"> <path d="M0 0H32V32H0z" transform="translate(-1028 -172) translate(832 140) translate(32 32) translate(164) matrix(1 0 0 -1 0 32)" /> <path class="hugg-back-to-top-button-img" fill-rule="nonzero" d="M11.384 13.333h9.232c.638 0 .958.68.505 1.079l-4.613 4.07c-.28.246-.736.246-1.016 0l-4.613-4.07c-.453-.399-.133-1.079.505-1.079z" transform="translate(-1028 -172) translate(832 140) translate(32 32) translate(164) matrix(1 0 0 -1 0 32)" /> </g> </svg>';
 
-  // old: '<svg class="back-to-top-button-svg" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" > <g fill="none" fill-rule="evenodd"> <path d="M0 0H32V32H0z" transform="translate(-1028 -172) translate(832 140) translate(32 32) translate(164) matrix(1 0 0 -1 0 32)" /> <path class="back-to-top-button-img" fill-rule="nonzero" d="M11.384 13.333h9.232c.638 0 .958.68.505 1.079l-4.613 4.07c-.28.246-.736.246-1.016 0l-4.613-4.07c-.453-.399-.133-1.079.505-1.079z" transform="translate(-1028 -172) translate(832 140) translate(32 32) translate(164) matrix(1 0 0 -1 0 32)" /> </g> </svg>';
-  // new: '<svg class="back-to-top-button-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" width="24" height="24" stroke-width="2"> <path d="M4 13l8 -3l8 3"></path> </svg>';
-  // new2: '<svg class="back-to-top-button-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" width="24" height="24" stroke-width="2"> <path d="M8 13v-8.5a1.5 1.5 0 0 1 3 0v7.5"></path> <path d="M11 11.5v-2a1.5 1.5 0 1 1 3 0v2.5"></path> <path d="M14 10.5a1.5 1.5 0 0 1 3 0v1.5"></path> <path d="M17 11.5a1.5 1.5 0 0 1 3 0v4.5a6 6 0 0 1 -6 6h-2h.208a6 6 0 0 1 -5.012 -2.7a69.74 69.74 0 0 1 -.196 -.3c-.312 -.479 -1.407 -2.388 -3.286 -5.728a1.5 1.5 0 0 1 .536 -2.022a1.867 1.867 0 0 1 2.28 .28l1.47 1.47"></path> </svg>';
-  backToTopButtonSvg = document.querySelector(".back-to-top-button-svg");
+  backToTopButtonSvg = backToTopButton.querySelector(".hugg-back-to-top-button-svg");
   backToTopButtonSvg.style.verticalAlign = "middle";
   backToTopButtonSvg.style.margin = "auto";
   backToTopButtonSvg.style.justifyContent = "center";
   backToTopButtonSvg.style.width = obj.svgWidth;
   backToTopButtonSvg.style.height = obj.svgHeight;
   backToTopButton.appendChild(backToTopButtonSvg);
-  backToTopButtonImg = document.querySelector(".back-to-top-button-img");
-  backToTopButtonImg.style.fill = obj.selectedIconColor;
+  backToTopButtonImg = backToTopButton.querySelector(".hugg-back-to-top-button-img");
+  backToTopButtonImg.style.fill = `var(--hugg-scroll-icon-color, ${obj.selectedIconColor})`;
   backToTopButtonSvg.appendChild(backToTopButtonImg);
   backToTopButtonImg.setAttribute("d", obj.buttonD);
   backToTopButtonImg.setAttribute("transform", obj.buttonT);
 
   backToTopButton.style.display = "none";
-  window.onscroll = function () {
+  window.addEventListener("scroll", function () {
     if (
       document.body.scrollTop > 20 ||
       document.documentElement.scrollTop > 20
@@ -79,7 +78,7 @@ function createButton(obj) {
     } else {
       backToTopButton.style.display = "none";
     }
-  };
+  });
 
   backToTopButton.onclick = function () {
     document.body.scrollTop = 0;

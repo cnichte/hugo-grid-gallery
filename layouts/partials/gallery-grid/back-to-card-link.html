@@ -2,21 +2,18 @@
 {{- if $page.IsPage -}}
   {{- $galleryParams := $page.Params.hugg | default dict -}}
   {{- if eq ($galleryParams.role | default "") "game" -}}
-  {{- $collectionResult := partial "gallery-grid/collection-config.html" (dict "page" $page) -}}
-  {{- with $collectionResult -}}
+  {{- $validation := partial "gallery-grid/validate.html" (dict "page" $page "gallery" true) -}}
+  {{- with $validation.collectionResult -}}
     {{- $collectionParams := .params -}}
     {{- with $collectionParams.cardPage -}}
       {{- $cardPage := site.GetPage . -}}
       {{- if not $cardPage -}}
-        {{- errorf "hugo-grid-gallery: cardPage %q configured for %s does not exist" . $page.File.Path -}}
-      {{- end -}}
-      {{- $galleryID := $galleryParams.id | default "" -}}
-      {{- if not $galleryID -}}
-        {{- errorf "hugo-grid-gallery: params.hugg.id is required in %s" $page.File.Path -}}
+        {{- errorf "hugo-grid-gallery: invalid params.hugg.cardPage %q in %s; expected an existing content page" . $page.File.Path -}}
       {{- end -}}
       {{- $anchor := partial "gallery-grid/card-anchor.html" (dict
         "collection" $collectionParams.collection
-        "id" $galleryID
+        "id" $validation.id
+        "path" $page.File.Path
       ) -}}
       <a class="hugg-card-link" href="{{ $cardPage.RelPermalink }}#{{ $anchor }}">&rarr; Visit Gamecard</a>
     {{- end -}}

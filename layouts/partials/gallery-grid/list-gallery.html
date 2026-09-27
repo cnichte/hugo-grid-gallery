@@ -23,10 +23,8 @@
 {{- $p := . -}}
 {{- $cfg := (index site.Params "hugo-grid-gallery") | default dict -}}
 {{- $debug := $cfg.debug | default false -}}
-{{- $collectionResult := partial "gallery-grid/collection-config.html" (dict "page" $p) -}}
-{{- if not $collectionResult -}}
-  {{- errorf "hugo-grid-gallery: no params.hugg.collection ancestor found for %s" $p.File.Path -}}
-{{- end -}}
+{{- $validation := partial "gallery-grid/validate.html" (dict "page" $p "gallery" $p.IsPage) -}}
+{{- $collectionResult := $validation.collectionResult -}}
 {{- $collectionPages := partial "gallery-grid/collection-pages.html" (dict "page" $p) -}}
 {{- $taxonomyBase := $collectionResult.params.taxonomyBase | default "gallery_categories" -}}
 {{- $taxonomyURL := printf "%s%s/" $collectionResult.root.RelPermalink (strings.Trim $taxonomyBase "/") -}}
@@ -62,10 +60,7 @@
 {{- $matching  := slice -}}
 
 {{ if $p.IsPage }}
-  {{- $galleryID = $p.Params.hugg.id | default "" -}}
-  {{- if not $galleryID -}}
-    {{- errorf "hugo-grid-gallery: missing params.hugg.id in %s" $p.File.Path -}}
-  {{- end -}}
+  {{- $galleryID = $validation.id -}}
   {{- $images = partial "get-images.html" (dict "page" $p) -}}
 
 {{ else if or (eq $p.Kind "taxonomy") (eq $p.Kind "term") }}
@@ -89,7 +84,7 @@
 {{ if or (eq $p.Kind "taxonomy") (eq $p.Kind "term") }}
   <div class="hugg-desc">
     {{- $cat := index (where $catsData "name" $p.Title) 0 -}}
-    {{ with $cat }}<p class="category-description">{{ .description | markdownify }}</p>{{ end }}
+    {{ with $cat }}<p class="hugg-category-description">{{ .description | markdownify }}</p>{{ end }}
     <p>The Category ‘{{ $p.Title }}’ shows {{ len $images }} virtual Photographs from {{ len $matching }} computergames.</p>
   </div>
 {{ end }}
@@ -122,7 +117,9 @@
   {{ $p.Scratch.Set "hugg-assets-loaded" true }}
 {{ end }}
 
-<div id="hugogridgallery" data-hugg-image-data-url="{{ $gallery.imageDataUrl }}"></div>
+{{- $gridIndex := add ($p.Scratch.Get "hugg-grid-index" | default 0) 1 -}}
+{{- $p.Scratch.Set "hugg-grid-index" $gridIndex -}}
+<div class="hugg-grid" id="hugg-grid-{{ $id | urlize }}-{{ $gridIndex }}" data-hugg-image-data-url="{{ $gallery.imageDataUrl }}"></div>
 
 {{/* =========================================================
      4) Prev/Next Navigation innerhalb derselben Collection/Rolle

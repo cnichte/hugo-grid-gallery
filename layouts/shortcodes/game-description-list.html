@@ -1,45 +1,46 @@
 {{- $page := .Page -}}
-{{- $collectionResult := partial "gallery-grid/collection-config.html" (dict "page" $page) -}}
-{{- if not $collectionResult -}}
-  {{- errorf "hugo-grid-gallery: no params.hugg.collection ancestor found for %s" $page.File.Path -}}
-{{- end -}}
-{{- $collection := $collectionResult.params.collection -}}
+{{- $validation := partial "gallery-grid/validate.html" (dict "page" $page) -}}
+{{- $collectionResult := $validation.collectionResult -}}
+{{- $collection := $validation.collection -}}
 {{- $metaKey := $collectionResult.params.metaKey -}}
 {{- $json := partial "gallery-grid/collection-metadata.html" (dict "page" $page) -}}
 {{- $galleryPages := partial "gallery-grid/collection-pages.html" (dict "page" $page) -}}
+{{- partial "gallery-grid/styles.html" $page -}}
 
 {{- $links := slice -}}
 {{- range $entry := sort $json "title" -}}
   {{- $id := $entry.id | default "" -}}
   {{- if not $id -}}
-    {{- errorf "hugo-grid-gallery: metadata entry %q in %s requires id" $entry.title $metaKey -}}
+    {{- errorf "hugo-grid-gallery: missing id for metadata entry %q in data/hugo_grid_gallery/%s; expected a Gallery ID" $entry.title $metaKey -}}
   {{- end -}}
-  {{- $anchor := partial "gallery-grid/card-anchor.html" (dict "collection" $collection "id" $id) -}}
+  {{- $anchor := partial "gallery-grid/card-anchor.html" (dict "collection" $collection "id" $id "path" $page.File.Path) -}}
   {{- $links = $links | append (printf "<a href=\"#%s\">%s</a>" $anchor $entry.title) -}}
 {{- end -}}
-{{ delimit $links ", " | safeHTML }}.
+<nav class="hugg-card-index" aria-label="Game cards">
+  {{- delimit $links ", " | safeHTML -}}
+</nav>
 
 <hr>
 
-<div class="gallery-list">
+<div class="hugg-gallery-list">
   {{- range $index, $entry := sort $json "title" -}}
     {{- $id := $entry.id | default "" -}}
-    {{- $anchor := partial "gallery-grid/card-anchor.html" (dict "collection" $collection "id" $id) -}}
+    {{- $anchor := partial "gallery-grid/card-anchor.html" (dict "collection" $collection "id" $id "path" $page.File.Path) -}}
     {{- $matches := where $galleryPages "Params.hugg.id" $id -}}
     {{- if ne (len $matches) 1 -}}
-      {{- errorf "hugo-grid-gallery: expected one gallery for %s/%s, found %d" $collection $id (len $matches) -}}
+      {{- errorf "hugo-grid-gallery: invalid Gallery match for %s/%s referenced by data/hugo_grid_gallery/%s; expected exactly one Gallery, found %d" $collection $id $metaKey (len $matches) -}}
     {{- end -}}
     {{- if eq (len $matches) 1 -}}
       {{- $galleryPage := index $matches 0 -}}
-    <section id="{{ $anchor }}" class="gallery-entry">
-      <h4>
+    <section id="{{ $anchor }}" class="hugg-gallery-entry">
+      <h4 class="hugg-gallery-entry-title">
         {{ add $index 1 }}. {{ $entry.title }}
-        <a href="#{{ $anchor }}">#</a>
+        <a class="hugg-gallery-entry-anchor" href="#{{ $anchor }}" aria-label="Link to {{ $entry.title }}">#</a>
       </h4>
 
-      <p>{{ $entry.description }}</p>
+      <p class="hugg-gallery-entry-description">{{ $entry.description }}</p>
 
-      <ul>
+      <ul class="hugg-gallery-entry-meta">
         <li>Travel time: {{ partial "sum-played-hours.html" (dict "ctx" $page "games" $json "title" $entry.title) }}</li>
         <li>Platform: {{ (index $entry.items 0).platform }}</li>
         {{- if $entry.developer.link -}}

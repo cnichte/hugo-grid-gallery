@@ -1,35 +1,18 @@
 {{- $page := .page -}}
 {{- $role := .role | default "" -}}
-{{- $collectionResult := partial "gallery-grid/collection-config.html" (dict "page" $page) -}}
-{{- if not $collectionResult -}}
-  {{- errorf "hugo-grid-gallery: no params.hugg.collection ancestor found for %s" $page.File.Path -}}
-{{- end -}}
-
-{{- $collection := $collectionResult.params.collection -}}
-{{- if not (eq (len (findRE `^[a-z0-9]+(?:-[a-z0-9]+)*$` $collection)) 1) -}}
-  {{- errorf "hugo-grid-gallery: invalid params.hugg.collection %q in %s; expected lowercase letters, digits, and hyphens" $collection $collectionResult.root.File.Path -}}
-{{- end -}}
+{{- $collectionRoots := partialCached "gallery-grid/validate-collections.html" site site.Language.Lang -}}
+{{- $validation := partial "gallery-grid/validate.html" (dict "page" $page) -}}
+{{- $collection := $validation.collection -}}
 {{- $pages := slice -}}
 {{- $seenIDs := newScratch -}}
 {{- range where site.RegularPages "Type" "hugo-grid-gallery" -}}
   {{- $candidatePage := . -}}
-  {{- $candidateResult := partial "gallery-grid/collection-config.html" (dict "page" .) -}}
-  {{- if not $candidateResult -}}
-    {{- errorf "hugo-grid-gallery: no params.hugg.collection ancestor found for %s" .File.Path -}}
-  {{- end -}}
-  {{- $candidateID := .Params.hugg.id | default "" -}}
-  {{- if not $candidateID -}}
-    {{- errorf "hugo-grid-gallery: missing params.hugg.id in %s" .File.Path -}}
-  {{- else if not (eq (len (findRE `^[a-z0-9]+(?:-[a-z0-9]+)*$` $candidateID)) 1) -}}
-    {{- errorf "hugo-grid-gallery: invalid params.hugg.id %q in %s; expected lowercase letters, digits, and hyphens" $candidateID .File.Path -}}
-  {{- end -}}
-  {{- if not (isset .Params.hugg "categories") -}}
-    {{- errorf "hugo-grid-gallery: missing params.hugg.categories in %s; expected a list" .File.Path -}}
-  {{- end -}}
-  {{- $candidateRole := .Params.hugg.role | default "" -}}
-  {{- if and $candidateResult (eq $candidateResult.params.collection $collection) -}}
+  {{- $candidateValidation := partial "gallery-grid/validate.html" (dict "page" . "gallery" true) -}}
+  {{- $candidateID := $candidateValidation.id -}}
+  {{- $candidateRole := $candidateValidation.role -}}
+  {{- if eq $candidateValidation.collection $collection -}}
     {{- with $seenIDs.Get $candidateID -}}
-      {{- errorf "hugo-grid-gallery: duplicate gallery identity %s/%s in %s and %s" $collection $candidateID .File.Path $candidatePage.File.Path -}}
+      {{- errorf "hugo-grid-gallery: duplicate gallery identity %s/%s in %s and %s; expected a unique ID within the collection" $collection $candidateID .File.Path $candidatePage.File.Path -}}
     {{- else -}}
       {{- $seenIDs.Set $candidateID . -}}
     {{- end -}}

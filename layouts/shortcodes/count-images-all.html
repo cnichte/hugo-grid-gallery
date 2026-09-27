@@ -1,16 +1,16 @@
 {{/*
   Shortcode: count-images-all
-  Counts all image resources of all pages in a section (non-recursive).
+  Counts all image resources of all Gallery pages in the current Collection.
 
   Named params ONLY:
-    section       (string)  e.g. "galleries" or "/galleries" (leading/trailing slashes are trimmed)
+    role          (string, optional) e.g. "game" or "story"
     numberTag     (string)  optional, e.g. "code"
     componentTag  (string)  optional, e.g. "strong"
 
   Examples:
-    {{< count-images-all section="galleries" >}}
-    {{< count-images-all section="/galleries" numberTag="code" >}}
-    {{< count-images-all section="galleries" componentTag="strong" >}}
+    {{< count-images-all >}}
+    {{< count-images-all role="game" numberTag="code" >}}
+    {{< count-images-all role="story" componentTag="strong" >}}
 */}}
 
 {{- $numberTag     := .Get "numberTag"     | default "" -}}

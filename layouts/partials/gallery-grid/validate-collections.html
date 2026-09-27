@@ -1,0 +1,19 @@
+{{- $seenCollections := newScratch -}}
+{{- $collectionRoots := dict -}}
+
+{{- range .Pages -}}
+  {{- $hugg := .Params.hugg | default dict -}}
+  {{- if and (reflect.IsMap $hugg) (isset $hugg "collection") -}}
+    {{- $root := . -}}
+    {{- $validation := partial "gallery-grid/validate.html" (dict "page" .) -}}
+    {{- $collection := $validation.collection -}}
+    {{- with $seenCollections.Get $collection -}}
+      {{- errorf "hugo-grid-gallery: duplicate collection ID %q in %s and %s; expected a globally unique Collection ID" $collection .File.Path $root.File.Path -}}
+    {{- else -}}
+      {{- $seenCollections.Set $collection . -}}
+      {{- $collectionRoots = merge $collectionRoots (dict $collection .) -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+
+{{- return $collectionRoots -}}
