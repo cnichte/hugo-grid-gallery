@@ -1,2 +1,4 @@
-{{/* Listet die untergeordneten Seiten (Kinder) der aktuellen Section als Karten/Teaser (Grid-Index). */}}
-{{ partial "gallery-grid/list.html" .Page }}
+{{- partial "gallery-grid/list.html" (dict
+	"page" .Page
+	"role" (.Get "role")
+) -}}

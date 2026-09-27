@@ -1,0 +1,6 @@
+{{- $collection := .collection | default "" -}}
+{{- $id := .id | default "" -}}
+{{- if or (not $collection) (not $id) -}}
+  {{- errorf "hugo-grid-gallery: card anchor requires collection and id" -}}
+{{- end -}}
+{{- return (printf "hugg-card--%s--%s" $collection $id) -}}

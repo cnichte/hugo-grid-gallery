@@ -1,0 +1,13 @@
+# hugo-grid-gallery module configuration
+
+[[mounts]]
+  source = "layouts"
+  target = "layouts"
+
+[[mounts]]
+  source = "assets"
+  target = "assets"
+
+[[mounts]]
+  source = "data"
+  target = "data"

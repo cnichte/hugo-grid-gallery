@@ -1,7 +1,7 @@
 {{/* ---------------------------------------------------------
   gallery-grid/teaser.html
   Basis-Teaser für eine Seite (Gallery/Story/Term egal):
-  - zieht den passenden Meta-Eintrag aus `meta` anhand von .Title
+  - zieht den passenden Meta-Eintrag aus `meta` anhand von params.hugg.id
   - rendert "Basis" (subtitle/description + optionaler Count)
   - bietet Hook/Callback-Partials für Spezialisierungen
 
@@ -24,11 +24,16 @@
   {{- return -}}
 {{- end -}}
 
-{{- $entry := index (where $meta "title" $p.Title) 0 -}}
-{{- if not $entry -}}
-  {{- if $debug }}{{ warnf "teaser.html: kein Meta-Eintrag für %q" $p.Title }}{{ end -}}
+{{- $galleryID := $p.Params.hugg.id | default "" -}}
+{{- if not $galleryID -}}
+  {{- errorf "hugo-grid-gallery: missing params.hugg.id in %s" $p.File.Path -}}
+{{- end -}}
+{{- $matches := where $meta "id" $galleryID -}}
+{{- if ne (len $matches) 1 -}}
+  {{- if $debug }}{{ warnf "teaser.html: expected one metadata entry for %q, got %d" $galleryID (len $matches) }}{{ end -}}
   {{- return -}}
 {{- end -}}
+{{- $entry := index $matches 0 -}}
 
 <div class="hugg-desc">
   {{ with $entry.subtitle }}
@@ -36,37 +41,40 @@
   {{ end }}
 
   {{ with $entry.description }}
-    <p class="hugg-description">{{ . | markdownify }}</p>
+    {{- $wordLimit := $cfg.teaserWordLimit | default 0 -}}
+    {{- $text := . -}}
+    {{- if gt $wordLimit 0 -}}
+      {{- $words := split $text " " -}}
+      {{- if gt (len $words) $wordLimit -}}
+        {{- $text = printf "%s…" (delimit (first $wordLimit $words) " ") -}}
+      {{- end -}}
+    {{- end -}}
+    <p class="hugg-description">{{ $text | markdownify }}</p>
   {{ end }}
 
-  {{/* Optional: Item-Zähler (fällt auf aktuelle Seite zurück) */}}
-  {{- $link := $entry.galleryLink | default $p.RelPermalink -}}
   {{- partial "count-images-page-partial.html" (dict
-        "path"   $link
+      "path"   $p.RelPermalink
         "prefix" ""
         "suffix" ""
   ) -}}
+    {{- partial "gallery-grid/back-to-card-link.html" $p -}}
 </div>
 
 {{/* ---------------------------------------------------------
    Spezialisierungs-Hooks (erste, die existiert, gewinnt):
    1) Seiten-Param: .Params.teaserPartial                 (z.B. "gallery-grid/teaser-games.html")
-   2) Section-Hook: "gallery-grid/teaser-<section>.html"  (z.B. teaser-binary-voids-galleries)
-   3) Type-Hook:    "gallery-grid/teaser-type-<type>.html"
-   4) Generic Hook: "gallery-grid/teaser-hook.html"
+  2) Type-Hook:    "gallery-grid/teaser-type-<type>.html"
+  3) Generic Hook: "gallery-grid/teaser-hook.html"
    Der Hook bekommt { entry: <meta-entry> , page: . }
 ---------------------------------------------------------- */}}
 
 {{- $hookFromParam := cond (isset $p.Params "teaserPartial") (printf "partials/%s" ($p.Params.teaserPartial | default "")) "" -}}
-{{- $hookBySection := printf "partials/gallery-grid/teaser-%s.html" $p.Section -}}
 {{- $hookByType    := printf "partials/gallery-grid/teaser-type-%s.html" $p.Type -}}
 {{- $hookGeneric   := "partials/gallery-grid/teaser-hook.html" -}}
 
 {{- $hookToUse := "" -}}
 {{- if and $hookFromParam (templates.Exists $hookFromParam) -}}
   {{- $hookToUse = $hookFromParam -}}
-{{- else if templates.Exists $hookBySection -}}
-  {{- $hookToUse = $hookBySection -}}
 {{- else if templates.Exists $hookByType -}}
   {{- $hookToUse = $hookByType -}}
 {{- else if templates.Exists $hookGeneric -}}

@@ -5,8 +5,10 @@
   {{- .Scratch.Set $flag true -}}
 
   {{/* Config-JSON (neu: hugg-config; Fallback: global window.configObj) */}}
-  {{- with site.Data.gallery.config -}}
-    <script id="hugg-config" type="application/json">{{ . | jsonify | safeHTML }}</script>
+  {{- with hugo.Data.hugo_grid_gallery.config -}}
+<script id="hugg-config" type="application/json">
+  {{ . | jsonify | safeJS }}
+</script>
   {{- else -}}
     <script>window.configObj = window.configObj || {};</script>
   {{- end -}}

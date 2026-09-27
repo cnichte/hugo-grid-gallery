@@ -1,4 +1,4 @@
-{{/* 
+{{/*
   Shortcode: count-images-all
   Counts all image resources of all pages in a section (non-recursive).
 
@@ -13,12 +13,11 @@
     {{< count-images-all section="galleries" componentTag="strong" >}}
 */}}
 
-{{- $sectionRaw    := .Get "section" | default "galleries" -}}
-{{- $section       := trim $sectionRaw "/" -}}  {{/* normalize to e.g. "galleries" */}}
 {{- $numberTag     := .Get "numberTag"     | default "" -}}
 {{- $componentTag  := .Get "componentTag"  | default "" -}}
+{{- $role          := .Get "role"          | default "" -}}
 
-{{- $pages := where site.RegularPages "Section" "==" $section -}}
+{{- $pages := partial "gallery-grid/collection-pages.html" (dict "page" .Page "role" $role) -}}
 {{- $count := 0 -}}
 {{- range $pg := $pages -}}
   {{- $count = add $count (len ($pg.Resources.ByType "image")) -}}

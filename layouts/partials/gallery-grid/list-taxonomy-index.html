@@ -68,7 +68,7 @@
 {{- $autoCatData := $metaRes.metaCats | default (slice) -}}
 
 {{- $overrideKey := $catDataKey -}}
-{{- $catData := cond $overrideKey ((index site.Data $overrideKey) | default (slice)) $autoCatData -}}
+{{- $catData := cond $overrideKey ((index hugo.Data.hugo_grid_gallery $overrideKey) | default (slice)) $autoCatData -}}
 
 {{- if $debug -}}
   {{- if $overrideKey -}}
@@ -81,7 +81,6 @@
 <div class="hugg">  {{/* <<< WICHTIG: Wrapper, damit CSS greift */}}
 
   {{/* Toolbar */}}
-  <h2> TITLE UND MENU UND PREFIX - list (0)</h2>
   {{/* partial "gallery-grid/teaser.html" (dict "page" . "meta" $metaRes.meta) */}}
   {{ partial "gallery-grid/sort-toolbar.html" . }}
 
@@ -89,7 +88,7 @@
     {{- range sort $termsPage.Pages "Title" -}}
       {{- $term := .Title -}}
       {{- $termURL := .RelPermalink -}}
-      {{- $matching := where $candidates "Params.categories" "intersect" (slice $term) -}}
+      {{- $matching := where $candidates "Params.hugg.categories" "intersect" (slice $term) -}}
 
       {{- $allThumbs := slice -}}
       {{- $imageCount := 0 -}}

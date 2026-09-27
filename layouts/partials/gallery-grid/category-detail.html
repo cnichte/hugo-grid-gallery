@@ -1,0 +1,115 @@
+{{- $categoryName := .categoryName -}}
+{{- $categoriesData := .categoriesData | default (slice) -}}
+{{- $page := .page -}}
+{{- $itemLabel := .itemLabel | default "galleries" -}}
+{{- $collectionResult := partial "gallery-grid/collection-config.html" (dict "page" $page) -}}
+{{- if not $collectionResult -}}
+  {{- errorf "hugo-grid-gallery: no params.hugg.collection ancestor found for %s" $page.File.Path -}}
+{{- end -}}
+{{- $galleries := partial "gallery-grid/collection-pages.html" (dict "page" $page) -}}
+{{- $matching := where $galleries "Params.hugg.categories" "intersect" (slice $categoryName) -}}
+{{- $taxonomyBase := $collectionResult.params.taxonomyBase | default "gallery_categories" -}}
+{{- $taxonomyURL := printf "%s%s/" $collectionResult.root.RelPermalink (strings.Trim $taxonomyBase "/") -}}
+
+{{- $images := slice -}}
+{{- range $matching -}}
+  {{- range partial "get-images.html" (dict "page" .) -}}
+    {{- $images = $images | append . -}}
+  {{- end -}}
+{{- end -}}
+
+<div class="hugg-desc">
+  {{- $categoryMatches := where $categoriesData "name" $categoryName -}}
+  {{- if gt (len $categoryMatches) 0 -}}
+    {{- with (index $categoryMatches 0).description -}}
+      <p class="category-description">{{ . | markdownify }}</p>
+    {{- end -}}
+  {{- end -}}
+  <p>The Category '{{ $categoryName }}' shows {{ len $images }} virtual Photographs from {{ len $matching }} {{ $itemLabel }}.</p>
+</div>
+
+{{- if eq (len $images) 0 -}}
+  <div class="hugg-desc"><p>Sorry, there are currently no images.</p></div>
+  {{- return -}}
+{{- end -}}
+
+{{- $names := slice -}}
+{{- range sort $images "Name" -}}
+  {{- $names = $names | append .Name -}}
+{{- end -}}
+{{- $signature := printf "%d-%d" (len $images) (hash.FNV32a (delimit $names "|")) -}}
+{{- $scratch := newScratch -}}
+{{- partial "gallery-grid/init.html" (dict
+  "images" $images
+  "id" (printf "category-%s__%s" ($categoryName | urlize) $signature)
+  "Scratch" $scratch
+  "page" $page
+) -}}
+{{- $gallery := $scratch.Get "result" -}}
+
+{{- if not ($page.Scratch.Get "hugg-assets-loaded") -}}
+  {{- partial "gallery-grid/gallery-config.html" $page -}}
+  {{- $page.Scratch.Set "hugg-assets-loaded" true -}}
+{{- end -}}
+<div id="hugogridgallery" data-hugg-image-data-url="{{ $gallery.imageDataUrl }}"></div>
+
+{{- $categoryNames := slice -}}
+{{- range $categoriesData -}}
+  {{- $categoryNames = $categoryNames | append .name -}}
+{{- end -}}
+{{- $categoryNames = sort $categoryNames -}}
+{{- $index := -1 -}}
+{{- range $currentIndex, $name := $categoryNames -}}
+  {{- if eq $name $categoryName -}}{{- $index = $currentIndex -}}{{- end -}}
+{{- end -}}
+{{- if and (gt (len $categoryNames) 1) (ge $index 0) -}}
+  <nav class="hugg-nav">
+    <div class="hugg-nav-prev">
+      {{- if gt $index 0 -}}
+        {{- $previous := index $categoryNames (sub $index 1) -}}
+        Previous Category:
+        <a href="{{ printf "%s%s/" $taxonomyURL ($previous | urlize) }}">{{ $previous }}</a>
+      {{- end -}}
+    </div>
+    <div class="hugg-nav-next">
+      {{- if lt (add $index 1) (len $categoryNames) -}}
+        {{- $next := index $categoryNames (add $index 1) -}}
+        Next Category:
+        <a href="{{ printf "%s%s/" $taxonomyURL ($next | urlize) }}">{{ $next }}</a>
+      {{- end -}}
+    </div>
+  </nav>
+{{- end -}}
+
+{{- $groups := slice
+  (dict "label" "Games" "pages" (sort (where $galleries "Params.hugg.role" "game") "Title"))
+  (dict "label" "Stories" "pages" (sort (where $galleries "Params.hugg.role" "story") "Title"))
+-}}
+{{- range $group := $groups -}}
+  {{- if gt (len $group.pages) 0 -}}
+    <div class="hugg-tags">
+      <p class="hugg-tags-headline">{{ $group.label }}</p>
+      {{- range $galleryPage := $group.pages -}}
+        {{- $selected := in $galleryPage.Params.hugg.categories $categoryName -}}
+        <a class="{{ if $selected }}hugg-selected{{ else }}hugg-link{{ end }}" href="{{ $galleryPage.RelPermalink }}">{{ $galleryPage.Title }}</a>
+      {{- end -}}
+    </div>
+  {{- end -}}
+{{- end -}}
+
+{{- $categories := slice -}}
+{{- range $galleryPage := $galleries -}}
+  {{- range $galleryPage.Params.hugg.categories -}}
+    {{- $categories = $categories | append . -}}
+  {{- end -}}
+{{- end -}}
+{{- $categories = $categories | uniq | sort -}}
+{{- if gt (len $categories) 0 -}}
+  <div class="hugg-tags">
+    <p class="hugg-tags-headline">Categories</p>
+    {{- range $category := $categories -}}
+      <a class="{{ if eq $categoryName $category }}hugg-selected{{ else }}hugg-link{{ end }}"
+         href="{{ printf "%s%s/" $taxonomyURL ($category | urlize) }}">{{ $category }}</a>
+    {{- end -}}
+  </div>
+{{- end -}}

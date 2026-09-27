@@ -24,10 +24,32 @@
     {{- continue -}}
   {{- end -}}
 
-  {{- $full := $img -}}
+  {{/* Thumbs ZUERST erzeugen – VOR Wasserzeichen, damit sie clean bleiben */}}
+  {{- $t20  := ($img.Resize "20x").RelPermalink -}}
+  {{- $t100 := ($img.Resize "100x").RelPermalink -}}
+  {{- $t250 := ($img.Resize "250x").RelPermalink -}}
+  {{- $t500 := ($img.Resize "500x").RelPermalink -}}
 
-  {{/* Optional: Wasserzeichen auf FULL anwenden */}}
-  {{- with site.Data.gallery.config.watermark -}}
+  {{/* Große Version für Lightbox - längere Seite maximal maxImageSize (webtauglich) */}}
+  {{- $maxSize := hugo.Data.hugo_grid_gallery.config.maxImageSize | default 1920 -}}
+  {{- $large := $img -}}
+  {{- if gt $img.Width $img.Height -}}
+    {{- /* Querformat - Breite ist länger */}}
+    {{- if gt $img.Width $maxSize -}}
+      {{- $large = $img.Resize (printf "%dx" $maxSize) -}}
+    {{- end -}}
+  {{- else -}}
+    {{- /* Hochformat - Höhe ist länger */}}
+    {{- if gt $img.Height $maxSize -}}
+      {{- $large = $img.Resize (printf "x%d" $maxSize) -}}
+    {{- end -}}
+  {{- end -}}
+
+  {{/* full ist jetzt die skalierte große Version */}}
+  {{- $full := $large -}}
+
+  {{/* Optional: Wasserzeichen NUR auf FULL anwenden (Konfiguration aus data/hugo_grid_gallery/config.json) */}}
+  {{- with hugo.Data.hugo_grid_gallery.config.watermark -}}
     {{- $wmConf := . -}}
     {{- with resources.Get $wmConf.image -}}
       {{- $wm := . -}}
@@ -43,12 +65,6 @@
       {{- $full = $full.Filter (images.Overlay $wm $x $y) -}}
     {{- end -}}
   {{- end -}}
-
-  {{/* Thumbs erzeugen – IMMER URLs ins JSON schreiben */}}
-  {{- $t20  := ($img.Resize "20x").RelPermalink -}}
-  {{- $t100 := ($img.Resize "100x").RelPermalink -}}
-  {{- $t250 := ($img.Resize "250x").RelPermalink -}}
-  {{- $t500 := ($img.Resize "500x").RelPermalink -}}
 
   {{/* Nummer aus Dateiname */}}
   {{- $match := findRE $re $title -}}

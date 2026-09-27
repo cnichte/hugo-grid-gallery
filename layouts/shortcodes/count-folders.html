@@ -1,4 +1,4 @@
-{{/* 
+{{/*
   Shortcode: count-folders
   Counts child pages (leaf + branch bundles).
 
@@ -16,32 +16,12 @@
     {{< count-folders path="/galleries" componentTag="strong" >}}
 */}}
 
-{{- $sectionRaw    := .Get "section"       | default "" -}}
-{{- $pathRaw       := .Get "path"          | default "" -}}
 {{- $numberTag     := .Get "numberTag"     | default "" -}}
 {{- $componentTag  := .Get "componentTag"  | default "" -}}
+{{- $role          := .Get "role"          | default "" -}}
 
-{{- $count := 0 -}}
-
-{{/* 1) Section-Zählung (empfohlen): alle RegularPages der Section */}}
-{{- if ne $sectionRaw "" -}}
-  {{- $section := trim $sectionRaw "/" -}}
-  {{- $count = (where site.RegularPages "Section" "==" $section) | len -}}
-
-{{/* 2) Path-Zählung (Fallback): Kinder der Zielseite zählen */}}
-{{- else if ne $pathRaw "" -}}
-  {{- $path := trim $pathRaw "/" -}}
-  {{- $target := or (site.GetPage (printf "/%s" $path)) (site.GetPage "section" $path) -}}
-  {{- if $target -}}
-    {{- $count = (where $target.Pages "BundleType" "ne" "") | len -}}
-  {{- else -}}
-    {{- $count = 0 -}}
-  {{- end -}}
-
-{{/* 3) Kein Param: Kinder der aktuellen Seite */}}
-{{- else -}}
-  {{- $count = (where .Page.Pages "BundleType" "ne" "") | len -}}
-{{- end -}}
+{{- $pages := partial "gallery-grid/collection-pages.html" (dict "page" .Page "role" $role) -}}
+{{- $count := len $pages -}}
 
 {{/* Dekoration */}}
 {{- $numOpen  := cond (ne $numberTag "") (printf "<%s>"  $numberTag) "" -}}

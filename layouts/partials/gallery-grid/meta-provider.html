@@ -8,59 +8,28 @@
              }
 */}}
 
-{{- $p := .page -}}
-{{- $cfg := (index site.Params "hugo-grid-gallery") | default dict -}}
+{{- $page := .page -}}
+{{- $collectionResult := partial "gallery-grid/collection-config.html" (dict "page" $page) -}}
+{{- $meta := slice -}}
+{{- $metaCats := slice -}}
+{{- $metaKey := "" -}}
+{{- $metaCategoriesKey := "" -}}
 
-{{/* Auto-Schlüssel aus Section ableiten (falls vorhanden) */}}
-{{- $sec := $p.Section | default "" -}}
-{{- $autoMeta := cond $sec (printf "%s_meta" $sec) "" -}}
-{{- $autoCats := cond $sec (printf "%s_meta-categories" $sec) "" -}}
-
-{{/* Kandidaten-Listen in Prioritätsreihenfolge aufbauen */}}
-{{- $candidatesMeta := slice -}}
-{{- if $autoMeta }}               {{ $candidatesMeta = $candidatesMeta | append $autoMeta }}            {{ end }}
-{{- with $p.CurrentSection }}     {{ with .Params.metaKey }}               {{ $candidatesMeta = $candidatesMeta | append . }} {{ end }} {{ end }}
-{{- with $p.Params.metaKey }}     {{ $candidatesMeta = $candidatesMeta | append . }}                     {{ end }}
-{{- with $cfg.metaKey }}          {{ $candidatesMeta = $candidatesMeta | append . }}                     {{ end }}
-
-{{- $candidatesCats := slice -}}
-{{- if $autoCats }}               {{ $candidatesCats = $candidatesCats | append $autoCats }}            {{ end }}
-{{- with $p.CurrentSection }}     {{ with .Params.metaCategoriesKey }}     {{ $candidatesCats = $candidatesCats | append . }} {{ end }} {{ end }}
-{{- with $p.Params.metaCategoriesKey }} {{ $candidatesCats = $candidatesCats | append . }}               {{ end }}
-{{- with $cfg.metaCategoriesKey }} {{ $candidatesCats = $candidatesCats | append . }}                    {{ end }}
-
-{{/* Erstes vorhandenes Element aus site.Data wählen (per Scratch) */}}
-{{- $pick := newScratch -}}
-{{- $pick.Set "metaKey" "" -}}
-{{- range $k := $candidatesMeta -}}
-  {{- with (index site.Data $k) -}}
-    {{- if not ($pick.Get "metaKey") -}}
-      {{- $pick.Set "metaKey" $k -}}
-    {{- end -}}
+{{- with $collectionResult -}}
+  {{- $metaKey = .params.metaKey | default "" -}}
+  {{- $metaCategoriesKey = .params.metaCategoriesKey | default "" -}}
+  {{- if $metaKey -}}
+    {{- $meta = index hugo.Data.hugo_grid_gallery $metaKey | default (slice) -}}
+  {{- end -}}
+  {{- if $metaCategoriesKey -}}
+    {{- $metaCats = index hugo.Data.hugo_grid_gallery $metaCategoriesKey | default (slice) -}}
   {{- end -}}
 {{- end -}}
 
-{{- $pick.Set "catsKey" "" -}}
-{{- range $k := $candidatesCats -}}
-  {{- with (index site.Data $k) -}}
-    {{- if not ($pick.Get "catsKey") -}}
-      {{- $pick.Set "catsKey" $k -}}
-    {{- end -}}
-  {{- end -}}
-{{- end -}}
-
-{{- $metaKey := $pick.Get "metaKey" -}}
-{{- $catsKey := $pick.Get "catsKey" -}}
-
-{{- $meta    := cond $metaKey (index site.Data $metaKey) (slice) -}}
-{{- $metaCats:= cond $catsKey (index site.Data $catsKey) (slice) -}}
-
-{{- $out := dict
-      "meta"     $meta
-      "metaCats" $metaCats
-      "keys"     (dict "meta" $metaKey "cats" $catsKey)
+{{- $result := dict
+  "meta" $meta
+  "metaCats" $metaCats
+  "keys" (dict "meta" $metaKey "cats" $metaCategoriesKey)
+  "usedKey" $metaKey
 -}}
-
-{{/* Ergebnis an Aufrufer zurückgeben */}}
-{{- $dest := .Scratch | default (newScratch) -}}
-{{- $dest.Set "metaProviderResult" $out -}}
+{{- (.Scratch | default (newScratch)).Set "metaProviderResult" $result -}}

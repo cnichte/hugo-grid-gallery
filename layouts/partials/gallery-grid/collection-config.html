@@ -1,0 +1,25 @@
+{{- $page := .page -}}
+{{- $result := dict -}}
+{{- $found := false -}}
+
+{{- with $page.Params.hugg -}}
+  {{- with .collection -}}
+    {{- $result = dict "params" $page.Params.hugg "root" $page -}}
+    {{- $found = true -}}
+  {{- end -}}
+{{- end -}}
+
+{{- if not $found -}}
+  {{- range $ancestor := $page.Ancestors -}}
+    {{- if not $found -}}
+      {{- with $ancestor.Params.hugg -}}
+        {{- with .collection -}}
+          {{- $result = dict "params" $ancestor.Params.hugg "root" $ancestor -}}
+          {{- $found = true -}}
+        {{- end -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+
+{{- return $result -}}

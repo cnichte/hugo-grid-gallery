@@ -1,4 +1,4 @@
-{{/* 
+{{/*
   platform-title-counts.html
   Zählt pro Plattform die Anzahl der Titel (nicht Items).
   Optionen:
@@ -13,7 +13,10 @@
 */}}
 
 {{- $ctx := .ctx | default . | default site -}}
-{{- $games := $ctx.Site.Data.games_meta -}}
+{{- $games := .games | default (slice) -}}
+{{- if eq (len $games) 0 -}}
+  {{- $games = partial "gallery-grid/collection-metadata.html" (dict "page" $ctx) -}}
+{{- end -}}
 {{- $showTitles := .showTitles | default false -}}
 {{- $sortBy := .sortBy | default "name" -}}
 {{- $descending := .descending | default true -}}

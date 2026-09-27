@@ -15,7 +15,7 @@ Defaults:
 {{- $typesArg       := .Get "types"          | default "" -}}
 {{- $sectionsArg    := .Get "sections"       | default "" -}}
 {{- $under          := .Get "under"          | default "" -}}
-{{- $categoriesData := .Get "categoriesData" | default (.Page.Params.categoriesData | default "") -}}
+{{- $categoriesData := .Get "categoriesData" | default (.Page.Params.hugg.categoriesData | default "") -}}
 
 {{/* types parsen & trimmen */}}
 {{- $types := slice -}}

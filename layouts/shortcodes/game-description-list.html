@@ -1,50 +1,66 @@
-{{/* game-description-list.html - Listet Spiele aus einer der games.json Datei als HTML */}}
-{{ $json := .Site.Data.games_meta}}
+{{- $page := .Page -}}
+{{- $collectionResult := partial "gallery-grid/collection-config.html" (dict "page" $page) -}}
+{{- if not $collectionResult -}}
+  {{- errorf "hugo-grid-gallery: no params.hugg.collection ancestor found for %s" $page.File.Path -}}
+{{- end -}}
+{{- $collection := $collectionResult.params.collection -}}
+{{- $metaKey := $collectionResult.params.metaKey -}}
+{{- $json := partial "gallery-grid/collection-metadata.html" (dict "page" $page) -}}
+{{- $galleryPages := partial "gallery-grid/collection-pages.html" (dict "page" $page) -}}
 
-{{/* Inhaltsverzeichnis */}}
-{{ $links := slice }}
-{{ range $entry := sort $json "title" }}
-  {{ $links = $links | append (printf "<a href=\"#%s\">%s</a>" ($entry.title | urlize) $entry.title) }}
-{{ end }}
+{{- $links := slice -}}
+{{- range $entry := sort $json "title" -}}
+  {{- $id := $entry.id | default "" -}}
+  {{- if not $id -}}
+    {{- errorf "hugo-grid-gallery: metadata entry %q in %s requires id" $entry.title $metaKey -}}
+  {{- end -}}
+  {{- $anchor := partial "gallery-grid/card-anchor.html" (dict "collection" $collection "id" $id) -}}
+  {{- $links = $links | append (printf "<a href=\"#%s\">%s</a>" $anchor $entry.title) -}}
+{{- end -}}
 {{ delimit $links ", " | safeHTML }}.
 
-<hr/>
+<hr>
 
 <div class="gallery-list">
-  {{ range $i, $entry := sort $json "title" }}
-    {{ $anchor := $entry.title | urlize }}
-    <section class="gallery-entry">
-      {{/* TODO <h Tag (oder h Tag-Ebene) als Parameter übergeben. */}}
-      <h4 id="{{ $anchor }}">
-        {{ add $i 1 }}. {{ $entry.title }}
+  {{- range $index, $entry := sort $json "title" -}}
+    {{- $id := $entry.id | default "" -}}
+    {{- $anchor := partial "gallery-grid/card-anchor.html" (dict "collection" $collection "id" $id) -}}
+    {{- $matches := where $galleryPages "Params.hugg.id" $id -}}
+    {{- if ne (len $matches) 1 -}}
+      {{- errorf "hugo-grid-gallery: expected one gallery for %s/%s, found %d" $collection $id (len $matches) -}}
+    {{- end -}}
+    {{- if eq (len $matches) 1 -}}
+      {{- $galleryPage := index $matches 0 -}}
+    <section id="{{ $anchor }}" class="gallery-entry">
+      <h4>
+        {{ add $index 1 }}. {{ $entry.title }}
         <a href="#{{ $anchor }}">#</a>
       </h4>
 
       <p>{{ $entry.description }}</p>
 
-      {{ if $entry.galleryLink }}
       <ul>
-        <li>Travel time: {{ partial "sum-played-hours.html" (dict "ctx" $ "title" $entry.title) }}</li>{{/* Root-Kontext ($) */}}
-        <li>Platform: {{ (index $entry.items 0).platform }}</li> {{/* Ein items element ist immer da */}}
+        <li>Travel time: {{ partial "sum-played-hours.html" (dict "ctx" $page "games" $json "title" $entry.title) }}</li>
+        <li>Platform: {{ (index $entry.items 0).platform }}</li>
         {{- if $entry.developer.link -}}
           <li>Developer: <a href="{{ $entry.developer.link }}" target="_blank" rel="noopener">{{ $entry.developer.name }}</a></li>
         {{- else -}}
           <li>Developer: {{ $entry.developer.name }}</li>
         {{- end -}}
         {{- if and $entry.publisher.name $entry.publisher.link -}}
-          <li>Publisher: {{ partial "link.html" (dict "page"  .Page "text" $entry.publisher.name "href"  $entry.publisher.link "title" $entry.publisher.name) }}</li>
+          <li>Publisher: <a href="{{ $entry.publisher.link }}" target="_blank" rel="noopener">{{ $entry.publisher.name }}</a></li>
         {{- else if $entry.publisher.name -}}
           <li>Publisher: {{ $entry.publisher.name }}</li>
         {{- end -}}
-        <li>Rating Photomode: {{ partial "star-rating.html" (dict "rating" $entry.review.rating "max" 5) }}</li> 
-        <li>Status: {{ (index $entry.items 0).state }}</li> {{/* Ein items element ist immer da */}}</li>
+        <li>Rating Photomode: {{ partial "star-rating.html" (dict "rating" $entry.review.rating "max" 5) }}</li>
+        <li>Status: {{ (index $entry.items 0).state }}</li>
         <li>
-          <a href="{{ $entry.galleryLink }}">Visit Gallery</a>{{ partial "count-images-page-partial.html" (dict "path" $entry.galleryLink "prefix" " - " "suffix" " virtual Photographs" "numberTag" "code") }}
+          <a class="hugg-gallery-link" href="{{ $galleryPage.RelPermalink }}">&rarr; Visit Gallery</a>{{ partial "count-images-page-partial.html" (dict "path" $galleryPage.RelPermalink "prefix" " - " "suffix" " virtual Photographs" "numberTag" "code") }}
         </li>
       </ul>
-      {{ end }}
     </section>
-  {{ end }}
+    {{- end -}}
+  {{- end -}}
 </div>
 
-<hr/>
+<hr>

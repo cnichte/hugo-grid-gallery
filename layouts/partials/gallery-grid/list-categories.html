@@ -1,0 +1,56 @@
+{{- $page := . -}}
+{{- $collectionResult := partial "gallery-grid/collection-config.html" (dict "page" $page) -}}
+{{- if not $collectionResult -}}
+  {{- errorf "hugo-grid-gallery: no params.hugg.collection ancestor found for %s" $page.File.Path -}}
+{{- end -}}
+{{- $galleries := partial "gallery-grid/collection-pages.html" (dict "page" $page) -}}
+{{- $taxonomyBase := $collectionResult.params.taxonomyBase | default "gallery_categories" -}}
+{{- $taxonomyURL := printf "%s%s/" $collectionResult.root.RelPermalink (strings.Trim $taxonomyBase "/") -}}
+
+{{- $scratch := newScratch -}}
+{{- partial "gallery-grid/meta-provider.html" (dict "page" $page "Scratch" $scratch) -}}
+{{- $categoriesData := ($scratch.Get "metaProviderResult").metaCats -}}
+
+{{- $categories := slice -}}
+{{- range $galleries -}}
+  {{- range .Params.hugg.categories -}}
+    {{- $categories = $categories | append . -}}
+  {{- end -}}
+{{- end -}}
+{{- $categories = $categories | uniq | sort -}}
+
+{{- if not ($page.Scratch.Get "hugg-assets-loaded") -}}
+  {{- partial "gallery-grid/gallery-config.html" $page -}}
+  {{- $page.Scratch.Set "hugg-assets-loaded" true -}}
+{{- end -}}
+
+<div class="hugg-cards" id="gallery-container">
+  {{- range $category := $categories -}}
+    {{- $metadata := where $categoriesData "name" $category -}}
+    {{- $matching := where $galleries "Params.hugg.categories" "intersect" (slice $category) -}}
+    {{- $thumbnails := slice -}}
+    {{- $imageCount := 0 -}}
+    {{- range $matching -}}
+      {{- $images := partial "get-images.html" (dict "page" .) -}}
+      {{- $galleryThumbnails := partial "gallery-grid/get-gallery-index.html" (dict "images" $images "page" .) -}}
+      {{- $thumbnails = $thumbnails | append $galleryThumbnails -}}
+      {{- $imageCount = add $imageCount (len $galleryThumbnails) -}}
+    {{- end -}}
+    {{- if gt (len $thumbnails) 0 -}}
+      {{- $thumbnail := index $thumbnails (mod (hash.FNV32a $category) (len $thumbnails)) -}}
+      {{- $categoryURL := printf "%s%s/" $taxonomyURL ($category | urlize) -}}
+      <div class="hugg-card" data-title="{{ $category }}" data-gallery-count="{{ len $matching }}" data-image-count="{{ $imageCount }}">
+        <a class="hugg-card-img" href="{{ $categoryURL }}">
+          <img src="{{ $thumbnail.thumb }}" alt="{{ $category }}" width="{{ $thumbnail.width }}" height="{{ $thumbnail.height }}" loading="lazy">
+          <span class="hugg-num-photos">{{ $imageCount }} {{ cond (eq $imageCount 1) "photo" "photos" }}</span>
+        </a>
+        <div class="hugg-card-body">
+          <h3 class="hugg-card-title"><a href="{{ $categoryURL }}">{{ $category }}</a></h3>
+          {{- if gt (len $metadata) 0 -}}
+            {{- with (index $metadata 0).description -}}<p class="hugg-card-desc">{{ . | markdownify }}</p>{{- end -}}
+          {{- end -}}
+        </div>
+      </div>
+    {{- end -}}
+  {{- end -}}
+</div>
