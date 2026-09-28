@@ -29,7 +29,8 @@
 {{- $galleryID := $validation.id -}}
 {{- $matches := where $meta "id" $galleryID -}}
 {{- if ne (len $matches) 1 -}}
-  {{- if $debug }}{{ warnf "teaser.html: expected one metadata entry for %q, got %d" $galleryID (len $matches) }}{{ end -}}
+  {{- $collectionParams := $validation.collectionResult.params -}}
+  {{- errorf "hugo-grid-gallery: invalid Gallery Card metadata match for %s/%s referenced by %s; expected exactly one entry, found %d" $collectionParams.collection $galleryID $p.File.Path (len $matches) -}}
   {{- return -}}
 {{- end -}}
 {{- $entry := index $matches 0 -}}
