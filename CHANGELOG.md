@@ -3,6 +3,13 @@
 All notable changes to this project are documented in this file.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [2.0.1] - 2026-09-28
+
+### Fixed
+
+- Allow `story` and `standalone` galleries without Gallery Card metadata while
+	preserving strict Card metadata validation for `game` galleries.
+
 ## [2.0.0] - 2026-09-28
 
 ### Added

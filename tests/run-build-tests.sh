@@ -42,6 +42,25 @@ expect_failure() {
   echo "PASS: $name"
 }
 
+expect_success() {
+  name=$1
+  content_dir=$2
+  output="$temporary_root/$name.log"
+
+  if ! hugo \
+    --source "$fixture" \
+    --contentDir "$content_dir" \
+    --themesDir "$themes_dir" \
+    --destination "$temporary_root/$name-public" \
+    >"$output" 2>&1; then
+    echo "FAIL: $name build unexpectedly failed." >&2
+    cat "$output" >&2
+    return 1
+  fi
+
+  echo "PASS: $name"
+}
+
 expect_failure \
   "missing-type" \
   "content-missing-type" \
@@ -58,6 +77,9 @@ expect_failure \
   "missing-card-entry" \
   "content-missing-card-entry" \
   'hugo-grid-gallery: invalid Gallery Card metadata match for invalid/missing-card-entry'
+expect_success \
+  "standalone-without-card-entry" \
+  "content-standalone-without-card-entry"
 
 example_output="$temporary_root/example-public"
 hugo \

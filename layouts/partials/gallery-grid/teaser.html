@@ -27,16 +27,20 @@
 
 {{- $validation := partial "gallery-grid/validate.html" (dict "page" $p "gallery" true) -}}
 {{- $galleryID := $validation.id -}}
+{{- $role := $p.Params.hugg.role | default "" -}}
 {{- $matches := where $meta "id" $galleryID -}}
 {{- if ne (len $matches) 1 -}}
-  {{- $collectionParams := $validation.collectionResult.params -}}
-  {{- errorf "hugo-grid-gallery: invalid Gallery Card metadata match for %s/%s referenced by %s; expected exactly one entry, found %d" $collectionParams.collection $galleryID $p.File.Path (len $matches) -}}
+  {{- if eq $role "game" -}}
+    {{- $collectionParams := $validation.collectionResult.params -}}
+    {{- errorf "hugo-grid-gallery: invalid Gallery Card metadata match for %s/%s referenced by %s; expected exactly one entry, found %d" $collectionParams.collection $galleryID $p.File.Path (len $matches) -}}
+  {{- else if $debug -}}
+    {{- warnf "teaser.html: expected one metadata entry for %q, got %d" $galleryID (len $matches) -}}
+  {{- end -}}
   {{- return -}}
 {{- end -}}
 {{- $entry := index $matches 0 -}}
 
 {{- $hookFromParam := cond (isset $p.Params "teaserPartial") ($p.Params.teaserPartial | default "") "" -}}
-{{- $role := $p.Params.hugg.role | default "" -}}
 {{- $hookByRole := cond (eq $role "game") "gallery-grid/teaser-games.html" "" -}}
 {{- $hookByType := printf "gallery-grid/teaser-type-%s.html" $p.Type -}}
 {{- $hookGeneric := "gallery-grid/teaser-hook.html" -}}
