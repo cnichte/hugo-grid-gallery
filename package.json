@@ -1,6 +1,6 @@
 {
   "name": "hugo-grid-gallery",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Collection-based image galleries for Hugo",
   "homepage": "https://github.com/cnichte/hugo-grid-gallery#readme",
   "bugs": {
