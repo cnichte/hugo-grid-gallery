@@ -14,7 +14,7 @@ test("sorts gallery cards and responds at every layout breakpoint", async ({ pag
   await expect(page.locator(".hugg-updated-title")).toHaveText("Recently Updated ⭐");
   await expect(page.locator(".hugg-updated-link")).toHaveCount(2);
   await expect(page.locator(".hugg-new-symbol")).toHaveCount(4);
-  await expect(page.locator(".hugg-updated-links")).toHaveCSS("justify-content", "center");
+  await expect(page.locator(".hugg-updated-links")).toHaveCSS("justify-content", "flex-start");
   await expect(page.locator(".hugg-updated-link").first()).toHaveCSS("border-top-style", "none");
   await page.locator(".hugg-updated-link").first().hover();
   await expect(page.locator(".hugg-updated-link").first()).toHaveCSS("text-decoration-line", "underline");
@@ -43,6 +43,16 @@ test("sorts gallery cards and responds at every layout breakpoint", async ({ pag
     await expect.poll(async () => page.locator(".hugg-cards").evaluate((grid) =>
       getComputedStyle(grid).gridTemplateColumns.split(" ").length
     )).toBe(columns);
+    const [sortBox, updatedBox] = await Promise.all([
+      page.locator(".hugg-toolbar").boundingBox(),
+      page.locator(".hugg-updated").boundingBox(),
+    ]);
+    if (width < 768) {
+      expect(updatedBox.y).toBeGreaterThanOrEqual(sortBox.y + sortBox.height);
+    } else {
+      expect(updatedBox.x).toBeGreaterThanOrEqual(sortBox.x + sortBox.width);
+      expect(updatedBox.y).toBeLessThan(sortBox.y + sortBox.height);
+    }
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   }
 

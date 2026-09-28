@@ -1,0 +1,10 @@
+{{- if or .showSortToolbar .showRecentlyUpdated -}}
+<div class="hugg-index-controls">
+  {{- if .showSortToolbar -}}
+    {{- partial "gallery-grid/sort-toolbar.html" .page -}}
+  {{- end -}}
+  {{- if .showRecentlyUpdated -}}
+    {{- partial "gallery-grid/recently-updated.html" (dict "pages" .pages "config" .recentConfig) -}}
+  {{- end -}}
+</div>
+{{- end -}}

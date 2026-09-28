@@ -1,11 +1,7 @@
-{{- $flag := "hugg-styles-loaded" -}}
-{{- if not (.Scratch.Get $flag) -}}
-  {{- .Scratch.Set $flag true -}}
-  {{- with resources.Get "hugo-grid-gallery/css/hugg.css" -}}
-    {{- $styles := . -}}
-    {{- if hugo.IsProduction -}}
-      {{- $styles = $styles | resources.Minify | resources.Fingerprint -}}
-    {{- end -}}
-    <link rel="stylesheet" href="{{ $styles.RelPermalink }}"{{ with $styles.Data.Integrity }} integrity="{{ . }}"{{ end }}>
+{{- with resources.Get "hugo-grid-gallery/css/hugg.css" -}}
+  {{- $styles := . -}}
+  {{- if hugo.IsProduction -}}
+    {{- $styles = $styles | resources.Minify | resources.Fingerprint -}}
   {{- end -}}
+  <link rel="stylesheet" href="{{ $styles.RelPermalink }}"{{ with $styles.Data.Integrity }} integrity="{{ . }}"{{ end }}>
 {{- end -}}

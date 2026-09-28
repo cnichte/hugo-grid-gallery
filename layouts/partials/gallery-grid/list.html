@@ -7,10 +7,14 @@
 {{- $recentSymbol := $recentConfig.symbol | default "⭐" -}}
 {{- $recentCutoff := now.AddDate 0 0 (mul -1 $recentDays) -}}
 {{- $showSortToolbar := true -}}
+{{- $showRecentlyUpdated := true -}}
 {{- $collectionConfig := partial "gallery-grid/collection-config.html" (dict "page" $page) -}}
 {{- with $collectionConfig.params -}}
   {{- if isset . "showsorttoolbar" -}}
     {{- $showSortToolbar = .showSortToolbar -}}
+  {{- end -}}
+  {{- if isset . "showrecentlyupdated" -}}
+    {{- $showRecentlyUpdated = .showRecentlyUpdated -}}
   {{- end -}}
 {{- end -}}
 
@@ -21,10 +25,13 @@
 {{- partial "gallery-grid/gallery-config.html" $page -}}
 
 <div id="hugg-gallery-list" class="hugg-sortable" data-hugg-sortable>
-  {{- if $showSortToolbar -}}
-    {{- partial "gallery-grid/sort-toolbar.html" $page -}}
-  {{- end -}}
-  {{- partial "gallery-grid/recently-updated.html" (dict "pages" $galleries "config" $recentConfig) -}}
+  {{- partial "gallery-grid/index-controls.html" (dict
+    "page" $page
+    "pages" $galleries
+    "recentConfig" $recentConfig
+    "showSortToolbar" $showSortToolbar
+    "showRecentlyUpdated" $showRecentlyUpdated
+  ) -}}
 
 <div class="hugg-cards">
   {{- range $galleryPage := $galleries -}}

@@ -12,11 +12,11 @@
 {{- $recent := first $limit (sort $candidates "updated" "desc") -}}
 
 {{- if gt (len $recent) 0 -}}
-<div class="hugg-updated tag-cloud-container">
-  <p class="hugg-updated-title tag-cloud-container-headline">{{ $title }} {{ $symbol }}</p>
+<div class="hugg-updated">
+  <span class="hugg-updated-title">{{ $title }} {{ $symbol }}</span>
   <div class="hugg-updated-links">
     {{- range $item := $recent }}
-    <a class="hugg-updated-link menu-link" href="{{ $item.page.RelPermalink }}">{{ $item.page.LinkTitle }}</a>
+    <a class="hugg-updated-link" href="{{ $item.page.RelPermalink }}">{{ $item.page.LinkTitle }}</a>
     {{- end }}
   </div>
 </div>

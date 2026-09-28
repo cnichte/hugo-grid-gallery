@@ -18,6 +18,11 @@ const gridConfig = ($) =>
 const configValue = (config, key) => config[key] ?? config[key.toLowerCase()];
 
 const index = load("galleries/index.html");
+assert.equal(
+  index('link[rel="stylesheet"][href^="/hugo-grid-gallery/css/hugg"]').length,
+  1,
+  "Gallery index must load the module stylesheet exactly once."
+);
 const cards = index(".hugg-card");
 assert.equal(cards.length, 4, "Gallery index must contain four cards.");
 assert.deepEqual(
@@ -44,6 +49,16 @@ assert.equal(
   index('[data-hugg-sortable] .hugg-sort-control[aria-controls="hugg-gallery-list"]').length,
   3,
   "Sort controls must identify their sortable list."
+);
+assert.equal(
+  index(".hugg-index-controls > .hugg-toolbar + .hugg-updated").length,
+  1,
+  "Sort and Recently Updated controls must share one responsive row."
+);
+assert.equal(
+  index(".hugg-updated.tag-cloud-container, .hugg-updated-link.menu-link").length,
+  0,
+  "Recently Updated must not inherit framed consumer theme controls."
 );
 assert.deepEqual(
   index(".hugg-updated-link").map((_, element) => index(element).text().trim()).get(),

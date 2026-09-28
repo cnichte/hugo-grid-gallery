@@ -3,16 +3,30 @@
 All notable changes to this project are documented in this file.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [2.0.2] - 2026-09-28
+
+### Added in 2.0.2
+
+- Add independently overridable index-control, sorting, and Recently Updated partials with documented CSS hookpoints.
+- Add `showRecentlyUpdated` for collections that compose the controls in their own layouts.
+
+### Changed in 2.0.2
+
+- Place sorting and Recently Updated in one row on wider screens and wrap them below 768 pixels, using plain theme-compatible links.
+
+### Fixed in 2.0.2
+
+- Always emit the Gallery stylesheet for a rendered component instead of suppressing it through page Scratch shared across Hugo output formats.
+
 ## [2.0.1] - 2026-09-28
 
-### Fixed
+### Fixed in 2.0.1
 
-- Allow `story` and `standalone` galleries without Gallery Card metadata while
-	preserving strict Card metadata validation for `game` galleries.
+- Allow `story` and `standalone` galleries without Gallery Card metadata while preserving strict Card metadata validation for `game` galleries.
 
 ## [2.0.0] - 2026-09-28
 
-### Added
+### Added in 2.0.0
 
 - Collection-based gallery identity and navigation.
 - Hierarchical gallery configuration with collection and gallery overrides.
@@ -25,14 +39,14 @@ This project follows [Semantic Versioning](https://semver.org/).
 - An executable example site with positive and negative fixtures.
 - Build, DOM, and browser tests for Hugo Extended 0.156.0 and current versions.
 
-### Changed
+### Changed in 2.0.0
 
 - Gallery pages use a strict `params.hugg` contract.
 - Gallery metadata is loaded exclusively from `data/hugo_grid_gallery/`.
 - Gallery and category links are resolved within their collection.
 - Module defaults no longer modify image order or image contents implicitly.
 
-### Removed
+### Removed in 2.0.0
 
 - Path, title, and section fallbacks for gallery identities.
 - Theme-specific and consumer-specific content and generated build files.
