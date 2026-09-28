@@ -1,0 +1,17 @@
+.vscode
+.gitignore
+.git
+/node_modules/
+.dist
+.DS_Store
+/public/
+/resources/
+/verzeichnis-assets.txt
+/exampleSite/public/
+/exampleSite/resources/
+/playwright-report/
+/test-results/
+/assets/ext/dflip/
+/static/ext/dflip/
+
+TODO.md
