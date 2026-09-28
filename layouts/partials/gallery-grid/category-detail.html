@@ -19,12 +19,11 @@
 
 <div class="hugg-desc">
   {{- $categoryMatches := where $categoriesData "name" $categoryName -}}
+  {{- $description := "" -}}
   {{- if gt (len $categoryMatches) 0 -}}
-    {{- with (index $categoryMatches 0).description -}}
-      <p class="hugg-category-description">{{ . | markdownify }}</p>
-    {{- end -}}
+    {{- $description = (index $categoryMatches 0).description | default "" -}}
   {{- end -}}
-  <p>The Category '{{ $categoryName }}' shows {{ len $images }} virtual Photographs from {{ len $matching }} {{ $itemLabel }}.</p>
+  <p class="hugg-category-description">{{ with $description }}{{ . | markdownify }} {{ end }}The Category '{{ $categoryName }}' shows {{ len $images }} virtual Photographs from {{ len $matching }} {{ $itemLabel }}.</p>
 </div>
 
 {{- if eq (len $images) 0 -}}
