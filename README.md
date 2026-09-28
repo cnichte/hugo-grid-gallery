@@ -582,6 +582,11 @@ Version `2.0.0` is the first tagged V2 release. Because the package already had
 that version before release automation was introduced, its initial tag is
 created directly instead of incrementing to `2.0.1`.
 
+## Kudos to
+
+- [Progressive Image Grid | Pig.js](https://github.com/schlosser/pig.js), Dan Schlosser
+- [Gallery Deluxe](https://themes.gohugo.io/themes/gallerydeluxe/), Bjørn Erik Pedersen
+
 ## Links
 
 - Homepage: [carsten-nichte.de](https://carsten-nichte.de/publications/applications/hugo-grid-gallery/)
