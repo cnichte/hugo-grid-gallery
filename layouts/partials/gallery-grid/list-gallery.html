@@ -113,10 +113,7 @@
 {{ partial "gallery-grid/init.html" $ctx }}
 {{- $gallery := $scratch.Get "result" -}}
 
-{{ if not ($p.Scratch.Get "hugg-assets-loaded") }}
-  {{ partial "gallery-grid/gallery-config.html" $p }}
-  {{ $p.Scratch.Set "hugg-assets-loaded" true }}
-{{ end }}
+{{ partial "gallery-grid/gallery-config.html" $p }}
 
 {{- $gridIndex := add ($p.Scratch.Get "hugg-grid-index" | default 0) 1 -}}
 {{- $p.Scratch.Set "hugg-grid-index" $gridIndex -}}

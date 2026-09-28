@@ -58,7 +58,7 @@
   padding: .25rem .5rem;
   font-size: .75em;
   line-height: 1;
-  background: color-mix(in oklab, currentColor 50%, transparent);
+  background-color: var(--hugg-count-background, rgba(0, 0, 0, .5));
   border-radius: .25rem;
   color: var(--hugg-count-text, #fff);
 }
@@ -108,7 +108,7 @@
   pointer-events: none;
 }
 
-.hugg-sort-control.hugg-selected {
+[data-hugg-sort-by].hugg-selected {
   display: inline-block;
   padding: 2px;
   border: 0;
@@ -129,13 +129,18 @@
   display: flex;
   flex-wrap: wrap;
   gap: .5rem;
+  justify-content: var(--hugg-updated-alignment, center);
 }
 
 .hugg-updated-link {
   padding: .2rem .5rem;
-  border: 1px solid currentColor;
-  border-radius: .25rem;
   text-decoration: none;
+}
+
+.hugg-updated-link:hover,
+.hugg-tags a:hover {
+  text-decoration: underline;
+  opacity: .8;
 }
 
 /* Prev/Next navigation (bottom) */
@@ -152,6 +157,7 @@
 /* Tag clouds */
 .hugg-tags {
   margin-block: 1.5rem;
+  text-align: var(--hugg-tags-alignment, center);
 }
 .hugg-tags .hugg-tags-title {
   margin: 0 0 .5rem 0;
@@ -161,13 +167,12 @@
   display: inline-block;
   margin: .25rem .5rem .25rem 0;
   text-decoration: none;      /* let theme set hover color */
-  border: 1px solid currentColor;
   padding: .25rem .5rem;
-  border-radius: .25rem;
   line-height: 1.2;
 }
 .hugg-tags a.hugg-selected {
-  outline: 2px solid currentColor; /* neutral “selected” */
+  background-color: var(--hugg-tag-selected-background, LinkText);
+  color: var(--hugg-tag-selected-text, Canvas);
 }
 
 /* Container around the JS grid target so themes can space it */

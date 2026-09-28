@@ -17,10 +17,7 @@
 {{- end -}}
 {{- $categories = $categories | uniq | sort -}}
 
-{{- if not ($page.Scratch.Get "hugg-assets-loaded") -}}
-  {{- partial "gallery-grid/gallery-config.html" $page -}}
-  {{- $page.Scratch.Set "hugg-assets-loaded" true -}}
-{{- end -}}
+{{- partial "gallery-grid/gallery-config.html" $page -}}
 
 <div class="hugg-sortable" data-hugg-sortable>
 <div class="hugg-cards">

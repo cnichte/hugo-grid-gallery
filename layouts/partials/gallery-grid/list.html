@@ -6,18 +6,24 @@
 {{- $recentDays := $recentConfig.days | default 7 | int -}}
 {{- $recentSymbol := $recentConfig.symbol | default "⭐" -}}
 {{- $recentCutoff := now.AddDate 0 0 (mul -1 $recentDays) -}}
+{{- $showSortToolbar := true -}}
+{{- $collectionConfig := partial "gallery-grid/collection-config.html" (dict "page" $page) -}}
+{{- with $collectionConfig.params -}}
+  {{- if isset . "showsorttoolbar" -}}
+    {{- $showSortToolbar = .showSortToolbar -}}
+  {{- end -}}
+{{- end -}}
 
 {{- $scratch := newScratch -}}
 {{- partial "gallery-grid/meta-provider.html" (dict "page" $page "Scratch" $scratch) -}}
 {{- $metadata := ($scratch.Get "metaProviderResult").meta -}}
 
-{{- if not ($page.Scratch.Get "hugg-assets-loaded") -}}
-  {{- partial "gallery-grid/gallery-config.html" $page -}}
-  {{- $page.Scratch.Set "hugg-assets-loaded" true -}}
-{{- end -}}
+{{- partial "gallery-grid/gallery-config.html" $page -}}
 
-<div class="hugg-sortable" data-hugg-sortable>
-  {{- partial "gallery-grid/sort-toolbar.html" $page -}}
+<div id="hugg-gallery-list" class="hugg-sortable" data-hugg-sortable>
+  {{- if $showSortToolbar -}}
+    {{- partial "gallery-grid/sort-toolbar.html" $page -}}
+  {{- end -}}
   {{- partial "gallery-grid/recently-updated.html" (dict "pages" $galleries "config" $recentConfig) -}}
 
 <div class="hugg-cards">

@@ -7,7 +7,8 @@
 //       data-title="..." (string)
 //       data-image-count="..." (number)
 //       data-updated="2025-10-05T17:00:27+02:00" (ISO-ish date)
-//   - optional controls with data-hugg-sort-by
+//   - optional controls with data-hugg-sort-by; external controls target the
+//     sortable root via aria-controls
 
 document.addEventListener("DOMContentLoaded", () => {
   document.querySelectorAll("[data-hugg-sortable]").forEach((root) => {
@@ -18,7 +19,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const cards = Array.from(container.querySelectorAll(":scope > .hugg-card"));
     if (!cards.length) return;
 
-    const control = (sortBy) => root.querySelector(`[data-hugg-sort-by="${sortBy}"]`);
+    const control = (sortBy) =>
+      root.querySelector(`[data-hugg-sort-by="${sortBy}"]`) ||
+      (root.id
+        ? document.querySelector(
+            `[data-hugg-sort-by="${sortBy}"][aria-controls="${root.id}"]`
+          )
+        : null);
     const sortControls = {
       title: control("title"),
       count: control("count"),

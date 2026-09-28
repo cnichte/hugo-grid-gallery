@@ -14,6 +14,13 @@ test("sorts gallery cards and responds at every layout breakpoint", async ({ pag
   await expect(page.locator(".hugg-updated-title")).toHaveText("Recently Updated ⭐");
   await expect(page.locator(".hugg-updated-link")).toHaveCount(2);
   await expect(page.locator(".hugg-new-symbol")).toHaveCount(4);
+  await expect(page.locator(".hugg-updated-links")).toHaveCSS("justify-content", "center");
+  await expect(page.locator(".hugg-updated-link").first()).toHaveCSS("border-top-style", "none");
+  await page.locator(".hugg-updated-link").first().hover();
+  await expect(page.locator(".hugg-updated-link").first()).toHaveCSS("text-decoration-line", "underline");
+  await expect(page.locator(".hugg-updated-link").first()).toHaveCSS("opacity", "0.8");
+  await expect(page.locator(".hugg-num-photos").first()).toHaveCSS("background-color", "rgba(0, 0, 0, 0.5)");
+  await expect(page.locator(".hugg-num-photos").first()).toHaveCSS("color", "rgb(255, 255, 255)");
 
   const titles = await cardValues(page, "data-title");
   expect(titles).toEqual([...titles].sort((left, right) =>
@@ -38,6 +45,11 @@ test("sorts gallery cards and responds at every layout breakpoint", async ({ pag
     )).toBe(columns);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   }
+
+  await page.goto("/galleries/game-fixture/");
+  await expect(page.locator(".hugg-tags").first()).toHaveCSS("text-align", "center");
+  await expect(page.locator(".hugg-tags a").first()).toHaveCSS("border-top-style", "none");
+  await expect(page.locator(".hugg-tags a.hugg-selected").first()).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
 });
 
 test("opens gallery images in the bundled Basic lightbox", async ({ page }, testInfo) => {

@@ -65,6 +65,9 @@
 
     {{- with $entry.description -}}
       {{- $wordLimit := $cfg.teaserWordLimit | default 0 -}}
+      {{- with $cfg.teaserWordLimits -}}
+        {{- $wordLimit = index . $role | default $wordLimit -}}
+      {{- end -}}
       {{- $text := . | markdownify | plainify | htmlUnescape -}}
       {{- if gt $wordLimit 0 -}}
         {{- $words := split $text " " -}}

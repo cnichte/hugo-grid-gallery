@@ -7,4 +7,5 @@ params:
     metaKey: alpha_galleries
     metaCategoriesKey: alpha_categories
     taxonomyBase: gallery-categories
+    showPageTitle: false
 ---

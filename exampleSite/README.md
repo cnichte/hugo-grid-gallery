@@ -1,15 +1,27 @@
 # Example site
 
-From the module repository root, build the standalone example with:
+From the module repository root, start the standalone example with:
 
 ```sh
-hugo --source exampleSite --themesDir ../..
+npm run dev
 ```
 
-Run it locally with:
+Open <http://localhost:1313/>. To select another port:
+
+```sh
+npm run dev -- --port 50831
+```
+
+The equivalent direct Hugo command is:
 
 ```sh
 hugo server --source exampleSite --themesDir ../..
+```
+
+Build the standalone example without starting a server with:
+
+```sh
+hugo --source exampleSite --themesDir ../..
 ```
 
 ## Example images

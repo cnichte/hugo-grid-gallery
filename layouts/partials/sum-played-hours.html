@@ -49,7 +49,7 @@
     {{- $h := 0 -}}
     {{- $m := 0 -}}
 
-    {{- $dMatch := findRE "(?i)(\\d+)\\s*d" $playTimeRaw -}}
+    {{- $dMatch := findRE "(?i)(\\d+)\\s*[dt]" $playTimeRaw -}}
     {{- if gt (len $dMatch) 0 -}} {{- $d = int (replaceRE "\\D+" "" (index $dMatch 0)) -}} {{- end -}}
 
     {{- $hMatch := findRE "(?i)(\\d+)\\s*h" $playTimeRaw -}}

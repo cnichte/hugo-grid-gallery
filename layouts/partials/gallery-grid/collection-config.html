@@ -22,4 +22,13 @@
   {{- end -}}
 {{- end -}}
 
+{{- if not $found -}}
+  {{- with site.Home.Params.hugg -}}
+    {{- with .collection -}}
+      {{- $result = dict "params" site.Home.Params.hugg "root" site.Home -}}
+      {{- $found = true -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+
 {{- return $result -}}

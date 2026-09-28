@@ -47,10 +47,7 @@
 ) -}}
 {{- $gallery := $scratch.Get "result" -}}
 
-{{- if not ($page.Scratch.Get "hugg-assets-loaded") -}}
-  {{- partial "gallery-grid/gallery-config.html" $page -}}
-  {{- $page.Scratch.Set "hugg-assets-loaded" true -}}
-{{- end -}}
+{{- partial "gallery-grid/gallery-config.html" $page -}}
 {{- $gridIndex := add ($page.Scratch.Get "hugg-grid-index" | default 0) 1 -}}
 {{- $page.Scratch.Set "hugg-grid-index" $gridIndex -}}
 <div class="hugg-grid" id="hugg-grid-{{ $gridID | urlize }}-{{ $gridIndex }}" data-hugg-image-data-url="{{ $gallery.imageDataUrl }}" data-hugg-config="{{ $galleryConfig | jsonify }}"></div>

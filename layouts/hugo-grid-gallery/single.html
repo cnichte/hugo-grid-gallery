@@ -1,10 +1,19 @@
 {{/* Module: layouts/hugo-grid-gallery/single.html */}}
 {{ define "main" }}
+{{- $showPageTitle := true -}}
+{{- $collectionConfig := partial "gallery-grid/collection-config.html" (dict "page" .) -}}
+{{- with $collectionConfig.params -}}
+  {{- if isset . "showpagetitle" -}}
+    {{- $showPageTitle = .showPageTitle -}}
+  {{- end -}}
+{{- end -}}
 <div class="hugg">
 <article class="hugg-single">
+  {{- if $showPageTitle }}
   <header class="hugg-page-header">
     <h1>{{ .Title }}</h1>
   </header>
+  {{- end }}
   {{ partial "gallery-grid/list-gallery.html" . }}
 </article>
 </div>

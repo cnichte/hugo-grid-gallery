@@ -1,10 +1,6 @@
 {{/* layouts/partials/gallery-grid/gallery-config.html */}}
 
-{{- $flag := "hugg-assets-loaded" -}}
-{{- if not (.Scratch.Get $flag) -}}
-  {{- .Scratch.Set $flag true -}}
-
-  {{/* #################### CSS #################### */}}
+{{/* #################### CSS #################### */}}
 {{ with resources.Get "ext/pig/pig.css" }}
   {{ $r := . }}
   {{ if hugo.IsProduction }}{{ $r = $r | resources.Minify | resources.Fingerprint }}{{ end }}
@@ -19,7 +15,7 @@
 
 {{ partial "gallery-grid/styles.html" . }}
 
-  {{/* #################### JS: Libs zuerst #################### */}}
+{{/* #################### JS: Libs zuerst #################### */}}
 {{ $pigRes := resources.Get "ext/pig/pig.js" }}
 {{ if $pigRes }}
   {{ if hugo.IsProduction }}{{ $pigRes = $pigRes | resources.Minify | fingerprint }}{{ end }}
@@ -51,5 +47,3 @@
 {{ else }}
   {{ warnf "hugo-grid-gallery/js/main.js nicht gefunden" }}
 {{ end }}
-
-{{- end -}}

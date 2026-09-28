@@ -15,7 +15,7 @@
   "type": "commonjs",
   "main": "index.js",
   "scripts": {
-    "dev": "hugo server --disableFastRender --noHTTPCache",
+    "dev": "hugo server --source exampleSite --themesDir ../.. --disableFastRender --noHTTPCache",
     "test": "sh tests/run-build-tests.sh",
     "test:browser": "playwright test",
     "test:all": "npm test && npm run test:browser",

@@ -40,6 +40,11 @@ assert.deepEqual(
   ["Title", "Count", "Updated"],
   "Sort navigation must expose all controls."
 );
+assert.equal(
+  index('[data-hugg-sortable] .hugg-sort-control[aria-controls="hugg-gallery-list"]').length,
+  3,
+  "Sort controls must identify their sortable list."
+);
 assert.deepEqual(
   index(".hugg-updated-link").map((_, element) => index(element).text().trim()).get(),
   ["Story Fixture", "Game Fixture Two"],
@@ -91,12 +96,20 @@ assert.equal(
 
 const standaloneGallery = load("galleries/example-gallery/index.html");
 const standaloneConfig = gridConfig(standaloneGallery);
+assert.equal(standaloneGallery(".hugg-page-header h1").text().trim(), "Example Gallery");
 assert.equal(
   configValue(standaloneConfig, "maxImageSize"),
   1600,
   "Gallery configuration must override Collection and global values."
 );
 assert.equal(configValue(standaloneConfig, "spaceBetweenImages"), 10);
+
+const galleryWithoutModuleTitle = load("collections/alpha/shared-gallery/index.html");
+assert.equal(
+  galleryWithoutModuleTitle(".hugg-page-header").length,
+  0,
+  "Collection configuration must be able to hide the module page title."
+);
 
 const cardPage = load("galleries/cards/index.html");
 assert.equal(cardPage(".hugg-gallery-entry").length, 2, "Card page must contain only Game Cards.");
