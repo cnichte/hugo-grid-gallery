@@ -83,13 +83,13 @@ latest Hugo version.
 After release, consumers can include a version as follows:
 
 ```bash
-hugo mod get github.com/cnichte/hugo-grid-gallery@v2.0.0
+hugo mod get github.com/cnichte/hugo-grid-gallery/v2@v2.0.0
 ```
 
 ```toml
 [module]
   [[module.imports]]
-    path = "github.com/cnichte/hugo-grid-gallery"
+    path = "github.com/cnichte/hugo-grid-gallery/v2"
 ```
 
 For local development, the same import can be replaced without changing any
@@ -97,10 +97,10 @@ content:
 
 ```toml
 [module]
-  replacements = "github.com/cnichte/hugo-grid-gallery -> /absolute/path/to/hugo-grid-gallery"
+  replacements = "github.com/cnichte/hugo-grid-gallery/v2 -> /absolute/path/to/hugo-grid-gallery"
 
   [[module.imports]]
-    path = "github.com/cnichte/hugo-grid-gallery"
+    path = "github.com/cnichte/hugo-grid-gallery/v2"
 ```
 
 Node.js is not required to run the module in a consumer. It is used only for
