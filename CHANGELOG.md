@@ -3,6 +3,12 @@
 All notable changes to this project are documented in this file.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [2.0.7] - 2026-09-28
+
+### Changed in 2.0.7
+
+- Make the Pig grid image loading placeholder themeable through `--hugg-image-placeholder-color`.
+
 ## [2.0.6] - 2026-09-28
 
 ### Fixed in 2.0.6

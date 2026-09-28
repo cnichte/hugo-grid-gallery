@@ -12,12 +12,12 @@
    * https://github.com/schlosser/pig.js
    * The Pig library is MIT License (MIT) Copyright (c) 2015 Dan Schlosser
    * see https://github.com/schlosser/pig.js/blob/master/LICENSE.md
-   * 
+   *
    * added by Carsten Nichte <https://carsten-nichte.de>:
    * - sfLighbox-Support
    * - Ein Tag als Oberlay über das Thumbnail.
    * - Konfiguration siehe: assets/hugo-grid-gallery/index.js
-   * 
+   *
    * Um die modifikationen zu finden, suche nach //!
    */
   const optimizedResize = (function () {
@@ -94,7 +94,7 @@
       "." +
       classPrefix +
       "-figure {" +
-      "  background-color: #D5D5D5;" +
+      "  background-color: var(--hugg-image-placeholder-color, #D5D5D5);" +
       "  overflow: hidden;" +
       "  left: 0;" +
       "  position: absolute;" +
@@ -1004,7 +1004,7 @@ ProgressiveImage.prototype.hide = function () {
   /**
    * Get the DOM element associated with this ProgressiveImage. We default to
    * using this.element, and we create it if it doesn't exist.
-   * 
+   *
    * Das legt nur den <figure> Container an, nicht die Bilder!
    * Wir fügen hier das Tag-Overlay hinzu.
    *

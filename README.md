@@ -521,6 +521,7 @@ Use these custom properties for theme integration without replacing the base sty
 | `--hugg-tag-selected-background`, `--hugg-tag-selected-text`         | Selected category/tag           |
 | `--hugg-card-background`, `--hugg-card-border`, `--hugg-card-radius` | Gallery Card appearance         |
 | `--hugg-focus-color`                                                 | Targeted Gallery Card outline   |
+| `--hugg-image-placeholder-color`                                     | Grid image loading placeholder  |
 | `--hugg-image-tag-background`, `--hugg-image-tag-text`               | Image-number overlay            |
 
 The ExampleSite contains runnable examples for standalone, nested, and same-named collections as well as roles, categories, cards, and statistics.

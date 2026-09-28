@@ -74,6 +74,11 @@ test("opens gallery images in the bundled Basic lightbox", async ({ page }, test
   await expect(page.locator(".hugg-figure")).toHaveCount(4);
   const firstFigure = page.locator(".hugg-figure").first();
   await expect(firstFigure).toHaveCSS("cursor", "zoom-in");
+  await firstFigure.evaluate((figure) => {
+    figure.style.removeProperty("background");
+    document.documentElement.style.setProperty("--hugg-image-placeholder-color", "rgba(0, 0, 0, 0.25)");
+  });
+  await expect(firstFigure).toHaveCSS("background-color", "rgba(0, 0, 0, 0.25)");
   await expect.poll(() => firstFigure.evaluate((figure) => typeof figure.onclick)).toBe("function");
   await expect.poll(() => page.evaluate(() =>
     typeof window.fsLightboxInstances?.gallery?.open
