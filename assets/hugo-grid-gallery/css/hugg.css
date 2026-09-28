@@ -89,7 +89,7 @@
   align-items: baseline;
   flex-wrap: nowrap;
   gap: .5rem 1.5rem;
-  margin-block-end: 1rem;
+  margin-block: 1rem;
 }
 
 .hugg-toolbar,
@@ -132,6 +132,8 @@
 }
 
 .hugg-updated {
+  flex: 1 1 auto;
+  justify-content: var(--hugg-updated-alignment, center);
   gap: .25rem .5rem;
   min-width: 0;
   margin: 0;
@@ -143,7 +145,7 @@
 
 .hugg-updated-links {
   gap: .5rem;
-  justify-content: var(--hugg-updated-alignment, flex-start);
+  justify-content: var(--hugg-updated-alignment, center);
 }
 
 .hugg-updated-link {

@@ -516,7 +516,7 @@ Use these custom properties for theme integration without replacing the base sty
 | `--hugg-count-background`, `--hugg-count-text`                       | Image-count badge colors        |
 | `--hugg-sort-separator-color`                                        | Separator between sort links    |
 | `--hugg-sort-selected-background`, `--hugg-sort-selected-text`       | Active sort option              |
-| `--hugg-updated-alignment`                                           | Recently Updated link alignment |
+| `--hugg-updated-alignment`                                           | Updated alignment (`center`)    |
 | `--hugg-tags-alignment`                                              | Category/tag alignment          |
 | `--hugg-tag-selected-background`, `--hugg-tag-selected-text`         | Selected category/tag           |
 | `--hugg-card-background`, `--hugg-card-border`, `--hugg-card-radius` | Gallery Card appearance         |

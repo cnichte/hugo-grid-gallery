@@ -14,7 +14,10 @@ test("sorts gallery cards and responds at every layout breakpoint", async ({ pag
   await expect(page.locator(".hugg-updated-title")).toHaveText("Recently Updated ⭐");
   await expect(page.locator(".hugg-updated-link")).toHaveCount(2);
   await expect(page.locator(".hugg-new-symbol")).toHaveCount(4);
-  await expect(page.locator(".hugg-updated-links")).toHaveCSS("justify-content", "flex-start");
+  await expect(page.locator(".hugg-index-controls")).toHaveCSS("margin-top", "16px");
+  await expect(page.locator(".hugg-index-controls")).toHaveCSS("margin-bottom", "16px");
+  await expect(page.locator(".hugg-updated")).toHaveCSS("justify-content", "center");
+  await expect(page.locator(".hugg-updated-links")).toHaveCSS("justify-content", "center");
   await expect(page.locator(".hugg-updated-link").first()).toHaveCSS("border-top-style", "none");
   await page.locator(".hugg-updated-link").first().hover();
   await expect(page.locator(".hugg-updated-link").first()).toHaveCSS("text-decoration-line", "underline");

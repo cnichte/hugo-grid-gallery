@@ -3,6 +3,12 @@
 All notable changes to this project are documented in this file.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [2.0.3] - 2026-09-28
+
+### Changed in 2.0.3
+
+- Center Recently Updated in its available row space and give the index controls equal top and bottom margins.
+
 ## [2.0.2] - 2026-09-28
 
 ### Added in 2.0.2
