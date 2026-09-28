@@ -128,6 +128,11 @@ assert.equal(
 
 const cardPage = load("galleries/cards/index.html");
 assert.equal(cardPage(".hugg-gallery-entry").length, 2, "Card page must contain only Game Cards.");
+assert.match(
+  cardPage('script[src^="/hugo-grid-gallery/js/card-fragment"]').attr("src") ?? "",
+  /^\/hugo-grid-gallery\/js\/card-fragment(?:\.[a-f0-9]+)?\.js$/,
+  "Card page must load the fragment restore script."
+);
 assert.match(normalizedText(cardPage, "article"), /Images: 9/);
 assert.match(normalizedText(cardPage, "article"), /Galleries: 4/);
 assert.match(normalizedText(cardPage, "article"), /Games: 2/);

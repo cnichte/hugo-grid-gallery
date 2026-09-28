@@ -3,6 +3,12 @@
 All notable changes to this project are documented in this file.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [2.0.5] - 2026-09-28
+
+### Fixed in 2.0.5
+
+- Restore Gallery Card fragment navigation after browser page restoration on long Card pages.
+
 ## [2.0.4] - 2026-09-28
 
 ### Fixed in 2.0.4

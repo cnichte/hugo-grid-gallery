@@ -65,3 +65,16 @@
 </div>
 
 <hr>
+
+{{- $scriptOptions := dict
+  "target" "es2018"
+  "minify" hugo.IsProduction
+  "sourceMap" (cond hugo.IsProduction "external" "inline")
+-}}
+{{- with resources.Get "hugo-grid-gallery/js/card-fragment.js" -}}
+  {{- $script := . | js.Build $scriptOptions -}}
+  {{- if hugo.IsProduction -}}
+    {{- $script = $script | fingerprint -}}
+  {{- end -}}
+  <script defer src="{{ $script.RelPermalink }}"{{ with $script.Data.Integrity }} integrity="{{ . }}"{{ end }}></script>
+{{- end -}}

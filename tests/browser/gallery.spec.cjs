@@ -83,6 +83,24 @@ test("opens gallery images in the bundled Basic lightbox", async ({ page }, test
   await expect(page.locator(".fslightbox-container img").first()).toBeVisible();
 });
 
+test("restores a Card fragment after browser page restoration", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "desktop-light", "Behavior is independent of color scheme.");
+
+  const anchor = "hugg-card--example--game-fixture-two";
+  await page.setViewportSize({ width: 390, height: 300 });
+  await page.goto(`/galleries/cards/#${anchor}`);
+  const target = page.locator(`#${anchor}`);
+  await expect(target).toHaveCount(1);
+
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+  const topAtPageStart = await target.evaluate((element) => element.getBoundingClientRect().top);
+  await page.evaluate(() => window.dispatchEvent(new PageTransitionEvent("pageshow")));
+
+  await expect.poll(() => target.evaluate((element) => element.getBoundingClientRect().top)).toBeLessThan(topAtPageStart);
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+});
+
 test("matches the gallery visual reference", async ({ page }) => {
   await page.goto("/galleries/example-gallery/");
   await expect(page.locator(".hugg-grid")).toHaveAttribute("data-hugg-initialized", "true");
