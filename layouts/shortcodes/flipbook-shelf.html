@@ -53,7 +53,12 @@ Button. */}}
 {{- $alt := index $fields 2 }}
 {{ with $src -}}
 
-<div class="_df_thumb" id="hugg-flipbook-{{ $.Ordinal }}-{{ $index }}" source="{{ $my_path }}{{ strings.TrimSpace $src }}"
+{{- $id := printf "hugg_flipbook_%d_%d" $.Ordinal $index -}}
+<script>
+  window["option_{{ $id }}"] = option_flipbook;
+</script>
+
+<div class="_df_thumb" id="{{ $id }}" source="{{ $my_path }}{{ strings.TrimSpace $src }}"
   thumb="{{ $my_path }}{{ strings.TrimSpace $cov }}">{{ $alt }}
 </div>
 

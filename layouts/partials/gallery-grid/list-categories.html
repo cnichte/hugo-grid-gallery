@@ -50,7 +50,9 @@
           <span class="hugg-num-photos">{{ $imageCount }} {{ cond (eq $imageCount 1) "photo" "photos" }}</span>
         </a>
         <div class="hugg-card-body">
-          <h3 class="hugg-card-title"><a href="{{ $categoryURL }}">{{ $category }}</a></h3>
+          <!-- <h3 class="hugg-card-title"> -->
+            <h2><a href="{{ $categoryURL }}">{{ $category }}</a></h2>
+          <!-- </h3> -->
           {{- with $categoryMetadata.description -}}
             <p class="hugg-card-desc">{{ . | markdownify }}</p>
           {{- end -}}
