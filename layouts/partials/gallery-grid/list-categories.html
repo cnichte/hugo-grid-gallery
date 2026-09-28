@@ -19,7 +19,7 @@
 
 {{- partial "gallery-grid/gallery-config.html" $page -}}
 
-<div class="hugg-sortable" data-hugg-sortable>
+<div id="hugg-gallery-list" class="hugg-sortable" data-hugg-sortable>
 <div class="hugg-cards">
   {{- range $category := $categories -}}
     {{- $metadata := where $categoriesData "name" $category -}}
@@ -28,6 +28,8 @@
       {{- $categoryMetadata = index $metadata 0 -}}
     {{- end -}}
     {{- $matching := where $galleries "Params.hugg.categories" "intersect" (slice $category) -}}
+    {{- $matchingByUpdated := sort $matching "Lastmod" "desc" -}}
+    {{- $updated := (index $matchingByUpdated 0).Lastmod -}}
     {{- $thumbnails := slice -}}
     {{- $imageCount := 0 -}}
     {{- range $matching -}}
@@ -42,7 +44,7 @@
       {{- $resolvedCover := $coverScratch.Get "resolved" | default dict -}}
       {{- $thumbnail := cond (ne (len $resolvedCover) 0) $resolvedCover (index $thumbnails (mod (hash.FNV32a $category) (len $thumbnails))) -}}
       {{- $categoryURL := printf "%s%s/" $taxonomyURL ($category | urlize) -}}
-      <div class="hugg-card" data-title="{{ $category }}" data-gallery-count="{{ len $matching }}" data-image-count="{{ $imageCount }}">
+      <div class="hugg-card" data-title="{{ $category }}" data-gallery-count="{{ len $matching }}" data-image-count="{{ $imageCount }}" data-updated='{{ $updated | time.Format "2006-01-02T15:04:05Z07:00" }}'>
         <a class="hugg-card-img" href="{{ $categoryURL }}">
           <img src="{{ $thumbnail.thumb }}" alt="{{ $category }}" width="{{ $thumbnail.width }}" height="{{ $thumbnail.height }}" loading="lazy">
           <span class="hugg-num-photos">{{ $imageCount }} {{ cond (eq $imageCount 1) "photo" "photos" }}</span>

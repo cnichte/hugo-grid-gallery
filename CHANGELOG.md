@@ -3,6 +3,12 @@
 All notable changes to this project are documented in this file.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [2.0.6] - 2026-09-28
+
+### Fixed in 2.0.6
+
+- Connect external sort controls to Category indexes and expose each Category's latest Gallery update for Updated sorting.
+
 ## [2.0.5] - 2026-09-28
 
 ### Fixed in 2.0.5

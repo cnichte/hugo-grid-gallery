@@ -67,6 +67,20 @@ assert.deepEqual(
 );
 assert.equal(index(".hugg-new-symbol").length, 4, "Recent Gallery cards must display the configured symbol.");
 
+const categoryIndex = load("galleries/category-index/index.html");
+assert.equal(
+  categoryIndex("#hugg-gallery-list[data-hugg-sortable]").length,
+  1,
+  "Category index must expose the stable target for external sort controls."
+);
+assert.deepEqual(
+  categoryIndex("#hugg-gallery-list > .hugg-cards > .hugg-card")
+    .map((_, element) => categoryIndex(element).attr("data-updated"))
+    .get(),
+  ["2025-02-01T00:00:00Z", "2025-04-01T00:00:00Z"],
+  "Category cards must expose the latest Gallery update for Updated sorting."
+);
+
 const games = load("galleries/games/index.html");
 assert.equal(games(".hugg-card").length, 2, "Game list must contain only Game Galleries.");
 assert.deepEqual(
