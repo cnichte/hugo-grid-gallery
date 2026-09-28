@@ -1,6 +1,6 @@
 {
   "name": "hugo-grid-gallery",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Collection-based image galleries for Hugo",
   "homepage": "https://github.com/cnichte/hugo-grid-gallery#readme",
   "bugs": {
@@ -20,9 +20,9 @@
     "test": "sh tests/run-build-tests.sh",
     "test:browser": "playwright test",
     "test:all": "npm test && npm run test:browser",
-    "release:patch": "npm run test:all && npm version patch && git push --follow-tags",
-    "release:minor": "npm run test:all && npm version minor && git push --follow-tags",
-    "release:major": "npm run test:all && npm version major && git push --follow-tags",
+    "release:patch": "npm run test:all && npm version patch && git push origin main --follow-tags",
+    "release:minor": "npm run test:all && npm version minor && git push origin main --follow-tags",
+    "release:major": "npm run test:all && npm version major && git push origin main --follow-tags",
     "tree": "tree -a -L 5 ./assets",
     "vendor:fslightbox": "cp node_modules/fslightbox/index.js assets/ext/fslightbox/fslightbox.js"
   },
