@@ -3,9 +3,15 @@
 All notable changes to this project are documented in this file.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [2.0.9] - 2026-09-29
+
+### Fixed in 2.0.9
+
+- minor css fixes
+
 ## [2.0.8] - 2026-09-28
 
-### Fixed in 2.0.7
+### Fixed in 2.0.8
 
 - dflip paramteters and sfLightbox pro override fixed
 - minor css fixes
