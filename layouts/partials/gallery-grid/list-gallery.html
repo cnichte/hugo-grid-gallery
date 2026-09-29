@@ -85,7 +85,7 @@
 {{ if or (eq $p.Kind "taxonomy") (eq $p.Kind "term") }}
   <div class="hugg-desc">
     {{- $cat := index (where $catsData "name" $p.Title) 0 -}}
-    {{ with $cat }}<p class="hugg-category-description">{{ .description | markdownify }}</p>{{ end }}
+    {{ with $cat }}<p class="hugg-description">{{ .description | markdownify }}</p>{{ end }}
     <p>The Category ‘{{ $p.Title }}’ shows {{ len $images }} virtual Photographs from {{ len $matching }} computergames.</p>
   </div>
 {{ end }}

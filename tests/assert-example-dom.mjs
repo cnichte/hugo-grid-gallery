@@ -178,12 +178,12 @@ const emptyCategory = load("galleries/gallery-categories/empty/index.html");
 assert.equal(emptyCategory(".hugg-grid").length, 0, "Empty category must not render a Gallery Grid.");
 assert.match(normalizedText(emptyCategory, "article"), /0 virtual Photographs from 0 galleries/);
 assert.equal(
-  emptyCategory(".hugg-desc > .hugg-category-description").length,
+  emptyCategory(".hugg-desc > .hugg-description").length,
   1,
   "Category description and statistics must share one paragraph."
 );
 assert.equal(
-  normalizedText(emptyCategory, ".hugg-category-description"),
+  normalizedText(emptyCategory, ".hugg-description"),
   "A category metadata fixture intentionally assigned to no Gallery. The Category 'Empty' shows 0 virtual Photographs from 0 galleries.",
   "Category statistics must immediately follow the description."
 );

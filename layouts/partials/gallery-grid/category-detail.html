@@ -23,7 +23,7 @@
   {{- if gt (len $categoryMatches) 0 -}}
     {{- $description = (index $categoryMatches 0).description | default "" -}}
   {{- end -}}
-  <p class="hugg-category-description">{{ with $description }}{{ . | markdownify }} {{ end }}The Category '{{ $categoryName }}' shows {{ len $images }} virtual Photographs from {{ len $matching }} {{ $itemLabel }}.</p>
+  <p class="hugg-description">{{ with $description }}{{ . | markdownify }} {{ end }}The Category '{{ $categoryName }}' shows {{ len $images }} virtual Photographs from {{ len $matching }} {{ $itemLabel }}.</p>
 </div>
 
 {{- if eq (len $images) 0 -}}
