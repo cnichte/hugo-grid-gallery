@@ -213,7 +213,7 @@
 
 /* Gallery images open a lightbox; navigational cover images keep link behavior. */
 .hugg-figure {
-  cursor: zoom-in;
+  cursor: pointer; /* zoom-in*/
 }
 
 .hugg-card-index {
