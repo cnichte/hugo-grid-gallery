@@ -6,6 +6,8 @@ params:
   hugg:
     id: game-fixture-two
     role: game
+    config:
+      presentation: carousel
     categories:
       - Role
 ---

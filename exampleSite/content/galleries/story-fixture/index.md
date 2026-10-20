@@ -6,6 +6,8 @@ params:
   hugg:
     id: story-fixture
     role: story
+    config:
+      presentation: single
     categories:
       - Role
 ---

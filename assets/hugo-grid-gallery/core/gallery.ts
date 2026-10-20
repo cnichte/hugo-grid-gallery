@@ -1,5 +1,8 @@
 import { GalleryModel } from './gallery-model.js'
 import { FsLightboxAdapter, type GalleryLightbox } from './gallery-lightbox.js'
+import { GalleryStage, type GalleryPresentation } from './gallery-stage.js'
+
+export type { GalleryPresentation } from './gallery-stage.js'
 
 interface PigImage {
   filename: string
@@ -19,14 +22,15 @@ interface PigOptions {
   onClickHandler(id: string, trigger: HTMLElement): void
 }
 
-interface PigInstance {
+interface GalleryView {
   enable(): void
   destroy(): void
+  show?(id: string): void
 }
 
 declare global {
   interface Window {
-    Pig?: new (images: PigImage[], options: PigOptions) => PigInstance
+    Pig?: new (images: PigImage[], options: PigOptions) => GalleryView
   }
 }
 
@@ -35,11 +39,13 @@ export interface GalleryOptions {
   model: GalleryModel
   gap?: number
   lightbox?: GalleryLightbox
+  presentation?: GalleryPresentation
+  initialImageId?: string
 }
 
 export class Gallery {
   private static readonly instances = new WeakMap<HTMLElement, Gallery>()
-  private readonly engine: PigInstance
+  private readonly engine: GalleryView
   private readonly lightbox: GalleryLightbox
   private readonly originalId: string
   private readonly originalTabIndex: string | null
@@ -49,7 +55,7 @@ export class Gallery {
   readonly container: HTMLElement
 
   constructor(options: GalleryOptions) {
-    const { container, model, gap = 10 } = options
+    const { container, model, gap = 10, presentation = 'grid', initialImageId } = options
     if (!(container instanceof HTMLElement) || !container.isConnected) throw new Error('Gallery requires a connected HTML container.')
     if (Gallery.instances.has(container)) throw new Error('Gallery container is already initialized.')
     if (container.id && document.querySelectorAll(`#${CSS.escape(container.id)}`).length !== 1) {
@@ -57,8 +63,12 @@ export class Gallery {
     }
     if (!(model instanceof GalleryModel)) throw new Error('Gallery requires a validated GalleryModel.')
     if (!Number.isFinite(gap) || gap < 0) throw new Error('Gallery gap must be nonnegative and finite.')
+    if (!['grid', 'carousel', 'single'].includes(presentation)) throw new Error('Gallery presentation must be grid, carousel or single.')
+    if (initialImageId !== undefined && (presentation === 'grid' || !model.images.some(image => image.id === initialImageId))) {
+      throw new Error('Gallery initialImageId requires a known image in carousel or single presentation.')
+    }
     const Constructor = window.Pig
-    if (!Constructor) throw new Error('Gallery requires the Pig layout engine to be loaded.')
+    if (presentation === 'grid' && !Constructor) throw new Error('Gallery requires the Pig layout engine to be loaded.')
     this.lightbox = options.lightbox ?? new FsLightboxAdapter(model, container)
     this.container = container
     this.model = model
@@ -66,9 +76,17 @@ export class Gallery {
     this.originalTabIndex = container.getAttribute('tabindex')
     if (!container.id) container.id = `hugg-runtime-${crypto.randomUUID()}`
     if (this.originalTabIndex === null) container.tabIndex = -1
-    let engine: PigInstance | undefined
+    let engine: GalleryView | undefined
+    const activate = (id: string, trigger: HTMLElement) => {
+      void this.open(id, trigger).catch(error => this.report(error))
+    }
     try {
-      engine = new Constructor(model.images.map(image => ({
+      if (presentation !== 'grid') {
+        engine = new GalleryStage({
+          container, model, presentation, initialImageId, activate,
+          report: error => this.report(error),
+        })
+      } else if (Constructor) engine = new Constructor(model.images.map(image => ({
         filename: image.id,
         aspectRatio: image.width / image.height,
         image: { ...image, full: image.src },
@@ -78,13 +96,9 @@ export class Gallery {
         spaceBetweenImages: gap,
         transitionSpeed: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 500,
         urlForSize: (id, width) => model.source(id, width),
-        onClickHandler: (id, trigger) => {
-          void this.open(id, trigger).catch(error => {
-            console.error('Gallery image activation failed.', error)
-            container.dispatchEvent(new CustomEvent('gallery:error', { detail: error, bubbles: true }))
-          })
-        },
+        onClickHandler: activate,
       })
+      if (!engine) throw new Error('Gallery layout could not be created.')
       engine.enable()
       this.engine = engine
     } catch (error) {
@@ -106,6 +120,12 @@ export class Gallery {
     return this.lightbox.open(index, trigger)
   }
 
+  show(id: string): void {
+    if (this.destroyed) throw new Error('Gallery has been destroyed.')
+    if (!this.engine.show) throw new Error('Gallery show requires carousel or single presentation.')
+    this.engine.show(id)
+  }
+
   destroy(): Promise<void> {
     if (this.destruction) return this.destruction
     this.destroyed = true
@@ -121,5 +141,10 @@ export class Gallery {
     this.container.id = this.originalId
     if (this.originalTabIndex === null) this.container.removeAttribute('tabindex')
     else this.container.setAttribute('tabindex', this.originalTabIndex)
+  }
+
+  private report(error: unknown): void {
+    console.error('Gallery operation failed.', error)
+    this.container.dispatchEvent(new CustomEvent('gallery:error', { detail: error, bubbles: true }))
   }
 }

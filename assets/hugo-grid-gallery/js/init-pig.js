@@ -49,6 +49,8 @@ const HugoGridGallery = {
     const gallery = new Gallery({
       container, model,
       gap: params.spaceBetweenImages ?? params.spacebetweenimages ?? 10,
+      presentation: params.presentation,
+      initialImageId: params.initialImageId ?? params.initialimageid,
     });
     container.dataset.huggInitialized = "true";
     return gallery;

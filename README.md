@@ -106,10 +106,10 @@ if (first) {
 }
 ```
 
-### Shared grid runtime and lifecycle
+### Shared presentation runtime and lifecycle
 
 The typed [`Gallery`](./assets/hugo-grid-gallery/core/gallery.ts) class now
-owns the grid lifecycle. Hugo uses that same implementation, not a second
+owns grid, carousel and single-image presentation. Hugo uses that same implementation, not a second
 initializer with separate layout/lightbox behavior.
 
 For a standalone consumer, serve the compiled `.dist` modules together in
@@ -173,9 +173,71 @@ initializations share one promise; destruction aborts a pending manifest
 fetch without mounting a stale gallery. The initialization promise rejects
 with `AbortError` for that deliberate cancellation.
 
-Carousel, single-image presentation, server-rendered no-JS links, full touch
-acceptance and the Studio site adapter remain subsequent work. Runtime links
-alone are **not** a no-JS Hugo output. No productive consumer sites are changed.
+### Carousel and single image
+
+Use `presentation: "grid" | "carousel" | "single"` (default `"grid"`).
+Carousel and single-image use one shared
+[`GalleryStage`](./assets/hugo-grid-gallery/core/gallery-stage.ts) renderer;
+neither requires Pig or Bootstrap. The existing Basic script is still needed
+unless an explicit `GalleryLightbox` implementation is supplied.
+
+```js
+const gallery = new Gallery({
+  container: document.querySelector("#photos"),
+  model,
+  presentation: "carousel",
+  initialImageId: model.images[0].id
+});
+
+gallery.show(model.images[2].id); // Change the displayed image, without opening.
+await gallery.open(model.images[2].id); // Open that identity in the shared lightbox.
+await gallery.destroy();
+```
+
+- `initialImageId` is optional for carousel/single and must identify a member
+  of the supplied model. It is rejected for grid. `show(id)` is available only
+  for carousel/single and rejects unknown IDs or use after destruction.
+  `open(id)` works in every presentation and uses the complete model order.
+- Only one link/image is rendered even for 1000 approved images. Single-image
+  does **not** trim the lightbox inventory to one image. Empty inventories show
+  an explicit empty state without image links or navigation buttons.
+- The initial image's aspect ratio reserves a stable image viewport. Subsequent
+  portrait/landscape images fit without cropping or changing that viewport's
+  height at the same width. HTML image dimensions retain the actual geometry.
+  Variants update for container size and pixel density; titles are plain text.
+- Carousel provides Previous/Next buttons, wrapping navigation, ArrowLeft/
+  ArrowRight and Home/End. Horizontal touch gestures navigate; vertical touch
+  panning remains available. A completed swipe does not also open the lightbox.
+  The single-image view has no carousel navigation.
+- There is deliberately no autoplay, animated transition, implicit cropping or
+  watermark processing in this first shared presentation. It therefore adds
+  no motion when reduced motion is requested. The existing Bootstrap site's
+  autoplay/crop parameters are **not** a compatibility contract: productive
+  sites have not been migrated.
+- Image-load failures show a local accessible alert, log the error and emit
+  `gallery:error`. Teardown removes only owned nodes/listeners/observer;
+  consumer content remains.
+
+Hugo uses its existing configuration layers and shortcode:
+
+```yaml
+params:
+  hugg:
+    config:
+      presentation: carousel # or single; omit for grid
+      # initialImageId: "/portfolio/galleries/example/photo.jpg"
+```
+
+`initialImageId` is the exact public model ID, not a display index or filename.
+The existing `gallery-grid` shortcode now honors that presentation setting;
+its name remains the Hugo embedding entry point, not a separate rendering
+implementation. The ExampleSite's Game Fixture Two and Story Fixture exercise
+carousel and single-image output respectively.
+
+Server-rendered no-JS links, broader touch/browser acceptance and the Studio
+site adapter remain subsequent work. Runtime links alone are **not** a no-JS
+Hugo output. Browser touch input is tested in Chromium, not certified on
+physical iOS/Android devices. No productive consumer sites are changed.
 
 `npm test` validates the contract and all generated ExampleSite manifests
 and asset references. `npm run test:browser` builds the ESM model before
