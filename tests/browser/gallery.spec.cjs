@@ -80,9 +80,7 @@ test("opens gallery images in the bundled Basic lightbox", async ({ page }, test
   });
   await expect(firstFigure).toHaveCSS("background-color", "rgba(0, 0, 0, 0.25)");
   await expect.poll(() => firstFigure.evaluate((figure) => typeof figure.onclick)).toBe("function");
-  await expect.poll(() => page.evaluate(() =>
-    typeof window.fsLightboxInstances?.gallery?.open
-  )).toBe("function");
+  expect(await page.evaluate(() => Object.keys(window.fsLightboxInstances))).toEqual([]);
   await firstFigure.click();
   await expect(page.locator(".fslightbox-container")).toBeVisible();
   await expect(page.locator(".fslightbox-container img").first()).toBeVisible();
@@ -110,6 +108,7 @@ test("matches the gallery visual reference", async ({ page }) => {
   await page.goto("/galleries/example-gallery/");
   await expect(page.locator(".hugg-grid")).toHaveAttribute("data-hugg-initialized", "true");
   await expect(page.locator(".hugg-figure")).toHaveCount(4);
+  await expect(page.locator(".hugg-figure img.hugg-loaded")).toHaveCount(8);
   await page.evaluate(() => Promise.all(
     [...document.images].map((image) => image.complete ? Promise.resolve() : image.decode())
   ));

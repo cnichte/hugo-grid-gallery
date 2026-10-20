@@ -3,79 +3,16 @@
 
   /**
    * assets/ext/pig/pig.js
-   * This is a manager for our resize handlers. You can add a callback, disable
-   * all resize handlers, and re-enable handlers after they have been disabled.
-   *
-   * optimizedResize is adapted from Mozilla code:
-   * https://developer.mozilla.org/en-US/docs/Web/Events/resize
-   *
    * https://github.com/schlosser/pig.js
    * The Pig library is MIT License (MIT) Copyright (c) 2015 Dan Schlosser
    * see https://github.com/schlosser/pig.js/blob/master/LICENSE.md
    *
    * added by Carsten Nichte <https://carsten-nichte.de>:
-   * - sfLighbox-Support
    * - Ein Tag als Oberlay über das Thumbnail.
-   * - Konfiguration siehe: assets/hugo-grid-gallery/index.js
+   * - Instanzbezogener Layout-Lifecycle; Lightbox im Gallery-Adapter.
    *
    * Um die modifikationen zu finden, suche nach //!
    */
-  const optimizedResize = (function () {
-    const callbacks = [];
-    let running = false;
-
-    // fired on resize event
-    function resize() {
-      console.log("[pig] Resize event fired, running callbacks...");
-      if (!running) {
-        running = true;
-        if (window.requestAnimationFrame) {
-          window.requestAnimationFrame(runCallbacks);
-        } else {
-          setTimeout(runCallbacks, 66);
-        }
-      }
-    }
-
-    // run the actual callbacks
-    function runCallbacks() {
-      callbacks.forEach(function (callback) {
-        callback();
-      });
-
-      running = false;
-    }
-
-    return {
-      /**
-       * Add a callback to be run on resize.
-       *
-       * @param {function} callback - the callback to run on resize.
-       */
-      add: function (callback) {
-        if (!callbacks.length) {
-          window.addEventListener("resize", resize);
-        }
-
-        callbacks.push(callback);
-      },
-
-      /**
-       * Disables all resize handlers.
-       */
-      disable: function () {
-        window.removeEventListener("resize", resize);
-      },
-
-      /**
-       * Enables all resize handlers, if they were disabled.
-       */
-      reEnable: function () {
-        window.addEventListener("resize", resize);
-      },
-    };
-  })();
-
   /**
    * Inject CSS needed to make the grid work in the <head></head>.
    *
@@ -87,11 +24,11 @@
   function _injectStyle(containerId, classPrefix, transitionSpeed) {
     const css =
       "#" +
-      containerId +
+      CSS.escape(containerId) +
       " {" +
       "  position: relative;" +
       "}" +
-      "." +
+      "#" + CSS.escape(containerId) + " ." +
       classPrefix +
       "-figure {" +
       "  background-color: var(--hugg-image-placeholder-color, #D5D5D5);" +
@@ -101,7 +38,7 @@
       "  top: 0;" +
       "  margin: 0;" +
       "}" +
-      "." +
+      "#" + CSS.escape(containerId) + " ." +
       classPrefix +
       "-figure img {" +
       "  left: 0;" +
@@ -117,7 +54,7 @@
       (transitionSpeed / 1000).toString(10) +
       "s ease opacity;" +
       "}" +
-      "." +
+      "#" + CSS.escape(containerId) + " ." +
       classPrefix +
       "-figure img." +
       classPrefix +
@@ -128,18 +65,23 @@
       "  position: relative;" +
       "  width: auto;" +
       "}" +
-      "." +
+      "#" + CSS.escape(containerId) + " ." +
       classPrefix +
       "-figure img." +
       classPrefix +
       "-loaded {" +
       "  opacity: 1;" +
-      "}";
+      "}" +
+      "@media (prefers-reduced-motion: reduce) {" +
+      "#" + CSS.escape(containerId) + " ." + classPrefix + "-figure," +
+      "#" + CSS.escape(containerId) + " ." + classPrefix + "-figure img {" +
+      "transition: none !important;}}";
 
     const head = document.head || document.getElementsByTagName("head")[0];
     const style = document.createElement("style");
 
     style.type = "text/css";
+    style.dataset.pigStyle = containerId;
     if (style.styleSheet) {
       // set style for IE8 and below
       style.styleSheet.cssText = css;
@@ -148,6 +90,7 @@
     }
 
     head.appendChild(style);
+    return style;
   }
 
   /**
@@ -225,6 +168,7 @@
        *   be loaded.
        */
       containerId: "pig",
+      container: null,
 
       /**
        * Type: window | HTMLElement
@@ -301,8 +245,7 @@
        * @returns {string} The URL of the image at the given size.
        */
       urlForSize: function (filename, size) {
-        const img = imagesMap.get(filename);
-        return img && img[size] ? img[size] : "";
+        throw new Error("Pig requires a urlForSize callback.");
       },
       /**
        * Get a callback with the filename of the image
@@ -362,10 +305,13 @@
     _extend(this.settings, options || {});
 
     // Find the container to load images into, if it exists.
-    this.container = document.getElementById(this.settings.containerId);
+    this.container = this.settings.container || document.getElementById(this.settings.containerId);
     if (!this.container) {
-      // console.error('Could not find element with ID ' + this.settings.containerId);
+      throw new Error("Pig requires an existing container.");
     }
+    this.originalHeight = this.container.style.height;
+    this.enabled = false;
+    this.destroyed = false;
 
     this.scroller = this.settings.scroller;
 
@@ -373,49 +319,8 @@
     // images are necessarily in view or loaded.
     this.images = this._parseImageData(imageData);
 
-    // 🧠 FS-Lightbox: Erzeuge einen versteckten Container mit Anker-Elementen
-    // für alle Bilder, damit fslightbox die vollständige Galerie findet,
-    // auch wenn pig die sichtbaren Bilder virtualisiert und nur diese in
-    // den DOM einfügt. Die Anker sind `display:none` und werden einmalig
-    // beim Erstellen der Pig-Instanz angelegt.
-    try {
-      const fsContainerId = "pig-fslightbox-sources";
-      let fsContainer = document.getElementById(fsContainerId);
-      if (!fsContainer) {
-        fsContainer = document.createElement("div");
-        fsContainer.id = fsContainerId;
-        fsContainer.style.display = "none";
-        document.body.appendChild(fsContainer);
-      }
-
-      // Erzeuge pro Bild einen versteckten <a> mit data-fslightbox="gallery"
-      this.images.forEach(function (img, idx) {
-        // Prüfe ob der Link schon existiert (z.B. bei Hot-Reload)
-        if (!fsContainer.querySelector('a[data-pig-index="' + idx + '"]')) {
-          const a = document.createElement("a");
-          a.href = img.all_image_data && img.all_image_data.image ? img.all_image_data.image.full : "";
-          a.setAttribute("data-fslightbox", "gallery");
-          a.setAttribute("data-pig-index", idx);
-          a.setAttribute("title", "Bild vergrößern");
-          fsContainer.appendChild(a);
-        }
-      });
-
-      // Einmaliges Refresh von fslightbox, falls verfügbar
-      if (typeof refreshFsLightbox === "function") {
-        requestAnimationFrame(function () {
-          try {
-            refreshFsLightbox();
-            console.log("🔁 fslightbox initial refresh from pig (hidden anchors)");
-          } catch (e) {}
-        });
-      }
-    } catch (e) {
-      // defensive: falls document/body nicht verfügbar
-    }
-
     // Inject our boilerplate CSS.
-    _injectStyle(
+    this.styleElement = _injectStyle(
       this.settings.containerId,
       this.settings.classPrefix,
       this.settings.transitionSpeed
@@ -522,6 +427,10 @@
   Pig.prototype._computeLayout = function () {
     // Constants
     const wrapperWidth = parseInt(this.container.clientWidth, 10);
+    if (wrapperWidth <= 0) {
+      this.totalHeight = 0;
+      return;
+    }
 
     // State
     let row = []; // The list of images in the current row.
@@ -542,7 +451,7 @@
     // future calls to `_computeLayout` will set "transition: none".
     if (!this.isTransitioning && this.minAspectRatioRequiresTransition) {
       this.isTransitioning = true;
-      setTimeout(function () {
+      this.transitionTimer = setTimeout(() => {
         this.isTransitioning = false;
       }, this._getTransitionTimeout());
     }
@@ -677,7 +586,11 @@
    *
    */
   Pig.prototype._doLayout = function () {
-    console.log("[pig] Doing layout (durch REquestAnimationFrame)...");
+    if (!this.enabled || this.destroyed) return;
+    if (this.container.clientWidth <= 0) {
+      this.images.forEach(image => image.hide());
+      return;
+    }
 
     // Set the container height
     this.container.style.height = this.totalHeight + "px";
@@ -747,7 +660,7 @@
      */
     const onScroll = function () {
 
-      console.log("[pig] Scroll event fired, computing layout...");
+      if (!_this.enabled || _this.destroyed) return;
       // Compute the scroll direction using the latestYOffset and the
       // previousYOffset
       const newYOffset =
@@ -762,7 +675,7 @@
       // Call _this.doLayout, guarded by window.requestAnimationFrame
       if (!_this.inRAF) {
         _this.inRAF = true;
-        window.requestAnimationFrame(function () {
+        _this.layoutFrame = window.requestAnimationFrame(function () {
           _this._doLayout();
           _this.inRAF = false;
         });
@@ -779,6 +692,9 @@
    * @returns {object} The Pig instance, for easy chaining with the constructor.
    */
   Pig.prototype.enable = function () {
+    if (this.destroyed) throw new Error("Pig has been destroyed.");
+    if (this.enabled) return this;
+    this.enabled = true;
     this.onScroll = this._getOnScroll();
     // 1) ZUERST Layout berechnen und anwenden
     this._computeLayout();
@@ -788,16 +704,22 @@
     this.scroller.addEventListener("scroll", this.onScroll);
     this.onScroll();
 
-    optimizedResize.add(
-      function () {
+    this.onResize = () => {
+      if (this.resizeFrame) return;
+      this.resizeFrame = requestAnimationFrame(() => {
+        this.resizeFrame = null;
+        if (!this.enabled || this.destroyed) return;
         this.lastWindowWidth =
           this.scroller === window
             ? window.innerWidth
             : this.scroller.offsetWidth;
         this._computeLayout();
         this._doLayout();
-      }.bind(this)
-    );
+      });
+    };
+    window.addEventListener("resize", this.onResize);
+    this.resizeObserver = new ResizeObserver(this.onResize);
+    this.resizeObserver.observe(this.container);
 
     return this;
   };
@@ -808,9 +730,31 @@
    * @returns {object} The Pig instance.
    */
   Pig.prototype.disable = function () {
+    if (!this.enabled) return this;
+    this.enabled = false;
     this.scroller.removeEventListener("scroll", this.onScroll);
-    optimizedResize.disable();
+    window.removeEventListener("resize", this.onResize);
+    this.resizeObserver?.disconnect();
+    cancelAnimationFrame(this.layoutFrame);
+    cancelAnimationFrame(this.resizeFrame);
+    this.resizeFrame = null;
+    this.inRAF = false;
+    clearTimeout(this.transitionTimer);
+    this.isTransitioning = false;
+    this.images.forEach(image => image.hide());
     return this;
+  };
+
+  Pig.prototype.destroy = function () {
+    if (this.destroyed) return;
+    this.disable();
+    this.destroyed = true;
+    this.styleElement.remove();
+    this.container.style.height = this.originalHeight;
+    this.images.forEach(image => {
+      if (image.element) image.element.onclick = null;
+    });
+    this.images = [];
   };
 
   /**
@@ -879,30 +823,37 @@
    * thumbnail, and create and insert the full image.
    */
   ProgressiveImage.prototype.load = function () {
+    if (this.pig.destroyed || !this.pig.enabled) return;
     // Create a new image element, and insert it into the DOM. It doesn't
     // matter the order of the figure elements, because all positioning
     // is done using transforms.
-    this.existsOnPage = true;
     this._updateStyles();
-    this.pig.container.appendChild(this.getElement()); //! Hier macht er noch was
+    if (!this.existsOnPage) this.pig.container.appendChild(this.getElement());
+    this.existsOnPage = true;
 
     // We run the rest of the function in a 100ms setTimeout so that if the
     // user is scrolling down the page very fast and hide() is called within
     // 100ms of load(), the hide() function will set this.existsOnPage to false
     // and we can exit.
-    setTimeout(
+    if (this.fullImage) {
+      const source = this.pig.settings.urlForSize(this.filename, this.style.width * window.devicePixelRatio);
+      if (this.fullImage.src !== source) this.fullImage.src = source;
+      return;
+    }
+    if (this.loadTimer) return;
+    this.loadTimer = setTimeout(
       function () {
+        this.loadTimer = null;
         // The image was hidden very quickly after being loaded, so don't bother
         // loading it at all.
-        if (!this.existsOnPage) {
+        if (!this.existsOnPage || !this.pig.enabled || this.pig.destroyed) {
           return;
         }
-
-        // console.log("ALL IMAGE DATA", this.all_image_data.image)
 
         // Show thumbnail
         if (!this.thumbnail) {
           this.thumbnail = new Image();
+          this.thumbnail.alt = "";
           this.thumbnail.src = this.pig.settings.urlForSize( this.filename,this.pig.settings.thumbnailSize); // this.all_image_data.image.thumb; // soll ohne Wasserzeichen!
           this.thumbnail.className = this.classNames.thumbnail;
           this.thumbnail.onload = function () {
@@ -919,8 +870,8 @@
         //! Show full image
         if (!this.fullImage) {
           this.fullImage = new Image();
-          this.fullImage.src = this.all_image_data.image.full;
-          this.fullImage.alt = this.filename;
+          this.fullImage.src = this.pig.settings.urlForSize(this.filename, this.style.width * window.devicePixelRatio);
+          this.fullImage.alt = this.all_image_data.image.alt;
           this.fullImage.className = this.classNames.fullImage;
 
           this.fullImage.onload = () => {
@@ -929,27 +880,7 @@
             }
           };
 
-          // Full image direkt anhängen (wir verwenden versteckte Anchors,
-          // die beim Erstellen der Pig-Instanz angelegt wurden, damit
-          // fslightbox die komplette Galerie kennt). Für das sichtbare
-          // Thumbnail hängen wir das Bild direkt an und setzen beim Figure
-          // einen Klick-Handler, der fsLightbox mit dem richtigen Index
-          // öffnet.
           this.getElement().appendChild(this.fullImage);
-
-          // Klick öffnet fsLightbox an dieser Position (falls vorhanden)
-          try {
-            this.getElement().onclick = function (e) {
-              e.preventDefault && e.preventDefault();
-              if (
-                window.fsLightboxInstances &&
-                window.fsLightboxInstances.gallery &&
-                typeof window.fsLightboxInstances.gallery.open === "function"
-              ) {
-                window.fsLightboxInstances.gallery.open(this.index);
-              }
-            }.bind(this);
-          } catch (e) {}
         }
       }.bind(this),
       100
@@ -962,10 +893,13 @@
    * ProgressiveImage object.
    */
 ProgressiveImage.prototype.hide = function () {
+  clearTimeout(this.loadTimer);
+  this.loadTimer = null;
   // Remove the images from the element, so that if a user is scrolling super
   // fast, we won't try to load every image we scroll past.
-  if (this.getElement()) {
+  if (this.element) {
     if (this.thumbnail) {
+      this.thumbnail.onload = null;
       this.thumbnail.src = "";
 
       if (this.thumbnail.parentNode === this.getElement()) {
@@ -976,6 +910,7 @@ ProgressiveImage.prototype.hide = function () {
     }
 
     if (this.fullImage) {
+      this.fullImage.onload = null;
       this.fullImage.src = "";
 
       // ➤ Falls fullImage in einem Link hängt, muss parentNode.parentNode geprüft werden
@@ -995,7 +930,7 @@ ProgressiveImage.prototype.hide = function () {
 
   // Remove the image from the DOM.
   if (this.existsOnPage) {
-    this.pig.container.removeChild(this.getElement());
+    this.element.remove();
   }
 
   this.existsOnPage = false;
@@ -1015,16 +950,19 @@ ProgressiveImage.prototype.hide = function () {
       this.element = document.createElement(this.pig.settings.figureTagName);
       this.element.className = this.classNames.figure;
 
-      /*
       if (this.pig.settings.onClickHandler !== null) {
-        this.element.addEventListener(
-          "click",
-          function () {
-            this.pig.settings.onClickHandler(this.filename);
-          }.bind(this)
-        );
+        this.element.onclick = event => {
+          if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+          event.preventDefault();
+          this.pig.settings.onClickHandler(this.filename, this.element);
+        };
       }
-*/
+      if (this.element.tagName === "A") {
+        const image = this.all_image_data.image;
+        this.element.href = image.detailUrl || image.full;
+        this.element.setAttribute("aria-label", image.title || image.alt || "Open image");
+        this.element.dataset.galleryImageId = image.id;
+      }
       //! Tag-Overlay im Grid-Tumbnail erzeugen
       if (this.imageTag != null) {
         const tag = document.createElement("div");

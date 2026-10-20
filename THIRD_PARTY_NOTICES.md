@@ -26,3 +26,15 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
+
+## Pig.js
+
+The modified layout engine in `assets/ext/pig/pig.js` is based on
+<https://github.com/schlosser/pig.js>.
+
+Copyright (c) 2015 Dan Schlosser.
+
+Pig.js is distributed under the MIT License. The complete MIT permission,
+notice-retention and warranty terms printed above also apply to this component.
+Its copyright and source attribution remain in the distributed engine.
+No fsLightbox Pro assets are included by the shared image-contract extraction.

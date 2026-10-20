@@ -42,12 +42,146 @@ Hugo Grid Gallery therefore extends Pig.js with a Hugo-specific pipeline:
 2. The image pipeline generates small preview and grid variants as well as a size-limited lightbox version.
 3. Optionally, only the lightbox version is watermarked; grid thumbnails remain unchanged.
 4. A signed JSON asset passes dimensions and URLs to the browser and is regenerated when the image set changes.
-5. The extended Pig.js version connects the virtualized grid to fsLightbox. Hidden sources keep all images available in the lightbox, even when Pig.js currently retains only a subset in the DOM.
+5. The shared `Gallery` runtime passes the complete image model to a separate fsLightbox adapter. Pig only lays out and virtualizes the grid; hidden global source anchors are no longer used.
 6. The module adds cards, sorting, categories, navigation, Recently Updated indicators, and the strict collection contract.
 
-Pig.js is therefore the layout engine, not the module's public API. Content and themes interact exclusively through Hugo shortcodes, front matter, metadata, and CSS variables.
+Pig.js is therefore the internal layout engine, not the public API. Hugo content and themes use shortcodes, front matter, metadata, and CSS variables; JavaScript consumers use the shared typed runtime below.
 
-## Requirements
+## Shared image contract (first core extraction)
+
+Hugo now emits a versioned manifest rather than the former array with `full`
+and numeric thumbnail keys. Both the Hugo browser adapter and direct JavaScript
+consumers use `GalleryModel` from
+[`assets/hugo-grid-gallery/core/gallery-model.ts`](./assets/hugo-grid-gallery/core/gallery-model.ts).
+The old payload is rejected; there is no runtime migration or compatibility
+fallback. Rebuild Hugo pages and their browser assets together.
+
+```json
+{
+  "schemaVersion": 1,
+  "images": [{
+    "id": "work-001/photo-001",
+    "width": 1200,
+    "height": 800,
+    "src": "../images/photo-large.jpg",
+    "alt": "",
+    "title": "Public title",
+    "badge": "001",
+    "detailUrl": "../works/work-001/photo-001/",
+    "sources": [
+      { "width": 300, "height": 200, "src": "../images/photo-small.jpg" }
+    ]
+  }]
+}
+```
+
+- IDs are unique within the image list and independent of display names.
+  Hugo uses the original resource URL as the ID, not a generated variant URL.
+- Array order is authoritative. Normalization and reversed/shuffled models do
+  not mutate the caller's data or add cyclic navigation references.
+- Dimensions are positive integers; variants have unique widths and the same
+  aspect ratio (allowing one pixel of resize rounding).
+- `alt` is required and may intentionally be empty. `title`, `badge`,
+  `detailUrl` and `sources` are optional. Arbitrary metadata is rejected.
+  Hugo retains its existing filename-derived text and 2–6 digit badge rule;
+  the shared model itself does not derive public text from IDs or filenames.
+- URLs must use HTTP(S), without credentials. Relative URLs resolve against
+  the manifest's final response URL; direct data requires an explicit base URL.
+- `src` is the explicitly supplied large display asset, not an instruction
+  to find an original. The model neither discovers nor generates images.
+
+`npm run build` emits the browser ESM module and declarations in `.dist`.
+For a direct browser consumer, serve that module locally over HTTP(S):
+
+```js
+import { GalleryModel } from "/assets/gallery-model.js";
+
+const model = await GalleryModel.load(
+  new URL("./data/photos.json", document.baseURI).href
+);
+// For inline data: GalleryModel.fromImages(images, document.baseURI)
+const first = model.images[0];
+if (first) {
+  console.log(first.id, model.source(first.id, 300));
+}
+```
+
+### Shared grid runtime and lifecycle
+
+The typed [`Gallery`](./assets/hugo-grid-gallery/core/gallery.ts) class now
+owns the grid lifecycle. Hugo uses that same implementation, not a second
+initializer with separate layout/lightbox behavior.
+
+For a standalone consumer, serve the compiled `.dist` modules together in
+one directory and load the existing local
+[`assets/ext/pig/pig.js`](./assets/ext/pig/pig.js) and
+[`assets/ext/fslightbox/fslightbox.js`](./assets/ext/fslightbox/fslightbox.js)
+scripts first. Ship the [third-party notices](./THIRD_PARTY_NOTICES.md) with
+those assets. No Bootstrap or CDN is required.
+
+```js
+import { Gallery } from "/assets/gallery.js";
+import { GalleryModel } from "/assets/gallery-model.js";
+
+const model = await GalleryModel.load(
+  new URL("./data/photos.json", document.baseURI).href
+);
+const gallery = new Gallery({
+  container: document.querySelector("#photos"),
+  model,
+  gap: 10
+});
+
+// Public identity, not a DOM index or filename:
+await gallery.open(model.images[0].id);
+await gallery.destroy();
+```
+
+- The container must be connected; IDs, when supplied, must be unique.
+  Two mounts on one container are rejected. `Gallery.forContainer(container)`
+  finds the owning instance without a window-level gallery registry.
+- `destroy()` is idempotent and asynchronous: grid listeners, ResizeObserver,
+  pending frames/load/transition timers, images and owned styles are released;
+  an open lightbox completes its Basic close lifecycle before the promise
+  resolves. Await it before reusing the container. Consumer content and
+  original ID, height and tabindex are preserved.
+- Calls to `open` after destruction or with unknown image IDs reject explicitly.
+  Click-driven errors are logged and emitted as bubbling `gallery:error`
+  events. The Hugo adapter additionally renders an accessible load-error
+  notice and permits an explicit retry.
+- Each instance supplies its complete ordered image list directly to its own
+  fsLightbox Basic object, independently of the visible grid subset. No
+  `window.__pigGallery`, `window.__pigGalleries`, `window.gdImageData`,
+  shared hidden anchors, group `gallery`, or global refresh calls remain.
+- Basic manages document-wide scroll/fullscreen state. The adapter therefore
+  serializes overlay activation: opening another gallery first awaits the
+  previous overlay's close. This is intentional, not image-list merging.
+  The adapter uses Basic's public constructor, props, `open`, `close` and
+  close event, not private teardown hooks. No Pro assets are incorporated.
+- Visible images are actual links to their detail page or large display
+  asset; modified clicks keep normal link behavior. Enter opens the overlay,
+  Tab stays within it, Escape closes it, and focus returns to the triggering
+  link (or the owning container if that link has been virtualized away).
+  Grid and overlay honor reduced motion.
+- Container-only resizes are observed. A hidden zero-width container defers
+  image loading until it becomes measurable.
+
+For Hugo lifecycle integration, the source module
+[`js/init-pig.js`](./assets/hugo-grid-gallery/js/init-pig.js) exports
+`initContainer(container)` and `destroyContainer(container)`. Concurrent
+initializations share one promise; destruction aborts a pending manifest
+fetch without mounting a stale gallery. The initialization promise rejects
+with `AbortError` for that deliberate cancellation.
+
+Carousel, single-image presentation, server-rendered no-JS links, full touch
+acceptance and the Studio site adapter remain subsequent work. Runtime links
+alone are **not** a no-JS Hugo output. No productive consumer sites are changed.
+
+`npm test` validates the contract and all generated ExampleSite manifests
+and asset references. `npm run test:browser` builds the ESM model before
+running actual Hugo/direct-JavaScript browser comparisons.
+
+## Runtime and development requirements
 
 - Hugo Extended 0.156.0 or newer
 - Node.js 20 or newer for development and testing

@@ -1,208 +1,75 @@
-// assets/hugo-grid-gallery/init-pig.js
-//
-// Hier wird assets/ext/pig/pig.js initialisiert und konfiguriert.
-// Der Ursprüngliche Code stammt von Gallery-Deluxe,
-// wurde aber stark angepasst und erweitert:
-// - sfLightbox support
-// - Nummern der Bilder aus dem Dateinamen extrahieren und als Tag-Overlay im Grid-Tumbnail anzeigen.
-//
-// assets/hugo-grid-gallery/js/init-pig.js
-//
-// Initialisiert die Pig-Gallery (assets/ext/pig/pig.js).
-// Anpassungen:
-// - sfLightbox-Support (Links um die Full-Images)
-// - Nummern aus Dateinamen als Tag-Overlay
-// - Robust: wartet bis window.Pig vorhanden ist
-"use strict";
+// Hugo initialization originally derived from Gallery-Deluxe.
+import { GalleryModel } from "../core/gallery-model.js";
+import { Gallery } from "../core/gallery.js";
 
-const debug = 0 ? console.log.bind(console, "[hugo-grid-gallery]") : function () {};
+const pending = new WeakMap();
+const errors = new WeakMap();
 
 const HugoGridGallery = {
-  init: async function () {
-    const dataAttributeName = "data-hugg-image-data-url";
-    const containers = Array.from(
-      document.querySelectorAll(`.hugg-grid[${dataAttributeName}]`)
-    );
-
-    await Promise.all(
-      containers.map((container) => this.initContainer(container, dataAttributeName))
-    );
+  async init() {
+    await Promise.all(Array.from(
+      document.querySelectorAll(".hugg-grid[data-hugg-image-data-url]")
+    ).map(container => this.initContainer(container)));
   },
 
-  initContainer: async function (container, dataAttributeName) {
-    if (container.dataset.huggInitialized === "true") return;
+  initContainer(container) {
+    const existing = Gallery.forContainer(container);
+    if (existing) return Promise.resolve(existing);
+    if (pending.has(container)) return pending.get(container).promise;
+    const controller = new AbortController();
+    errors.get(container)?.remove();
+    errors.delete(container);
+    const operation = this.loadContainer(container, controller.signal).catch(error => {
+      if (error?.name !== "AbortError") {
+        const notice = document.createElement("p");
+        notice.setAttribute("role", "alert");
+        notice.textContent = `Gallery could not be loaded: ${error instanceof Error ? error.message : String(error)}`;
+        container.append(notice);
+        errors.set(container, notice);
+        container.dispatchEvent(new CustomEvent("gallery:error", { detail: error, bubbles: true }));
+      }
+      throw error;
+    }).finally(() => pending.delete(container));
+    pending.set(container, { promise: operation, controller });
+    return operation;
+  },
 
-    const galleryId = container.id;
-    if (!galleryId) throw new Error("HUGG grid container requires an id.");
-
-    const dataUrl = container.getAttribute(dataAttributeName);
-    if (!dataUrl) throw new Error(`No ${dataAttributeName} attribute found.`);
-
-    let params = {};
-    try {
-      params = JSON.parse(container.dataset.huggConfig || "{}");
-    } catch (error) {
-      console.error(`Invalid Gallery configuration for ${galleryId}`, error);
+  async loadContainer(container, signal) {
+    const dataUrl = container.getAttribute("data-hugg-image-data-url");
+    if (!dataUrl) throw new Error("HUGG grid requires data-hugg-image-data-url.");
+    const params = JSON.parse(container.dataset.huggConfig || "{}");
+    if (!params || typeof params !== "object" || Array.isArray(params)) {
+      throw new Error(`Invalid Gallery configuration for ${container.id}`);
     }
+    let model = await GalleryModel.load(new URL(dataUrl, document.baseURI).href, fetch, signal);
+    signal.throwIfAborted();
+    if (!container.isConnected) throw new Error("Gallery container was removed while loading.");
+    if (params.shuffle) model = model.shuffled();
+    else if (params.reverse) model = model.reversed();
+    const gallery = new Gallery({
+      container, model,
+      gap: params.spaceBetweenImages ?? params.spacebetweenimages ?? 10,
+    });
+    container.dataset.huggInitialized = "true";
+    return gallery;
+  },
 
-    let images = await (await fetch(dataUrl)).json();
-
-    if (params.shuffle) {
-      images = images
-        .map((value) => ({ value, sort: Math.random() }))
-        .sort((a, b) => a.sort - b.sort)
-        .map(({ value }) => value);
-    } else if (params.reverse) {
-      images = images.reverse();
+  async destroyContainer(container) {
+    const loading = pending.get(container);
+    if (loading) {
+      loading.controller.abort();
+      try {
+        await loading.promise;
+      } catch (error) {
+        if (error?.name !== "AbortError") throw error;
+      }
     }
-
-    const imagesMap = new Map();
-    const imageData = [];
-
-    for (let i = 0; i < images.length; i++) {
-      const image = images[i];
-      image.prev = images[(i + images.length - 1) % images.length];
-      image.next = images[(i + 1) % images.length];
-
-      const filename = image.title || image.name || image.full;
-      const imageTag = extractNumberFromFilename(filename);
-      image.imageTag = imageTag;
-
-      imageData.push({
-        filename,
-        image,
-        imageTag,
-        aspectRatio: image.width / image.height,
-      });
-
-      imagesMap.set(filename, image);
-    }
-
-    if (!window.gdImageData) {
-      window.gdImageData = imageData.map((item) => ({
-        imageTag: item.image.imageTag,
-        filename: item.filename,
-      }));
-    }
-
-    const options = {
-      containerId: galleryId,
-      spaceBetweenImages:
-        params.spaceBetweenImages ?? params.spacebetweenimages ?? 10,
-      classPrefix: "hugg",
-      /*
-      onClickHandler: function (filename) {
-        const image = imagesMap.get(filename);
-        if (!image || !image.full) return;
-        const a = document.createElement("a");
-        a.href = image.full;
-        a.setAttribute("data-fslightbox", "gallery");
-        a.style.display = "none";
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-      },
-      */
-      urlForSize: function (filename, size) {
-        const image = imagesMap.get(filename);
-        if (!image) return "";
-
-        const val = image[size];
-        if (typeof val === "string") return val;
-        if (val && typeof val === "object" && val.RelPermalink) return val.RelPermalink;
-
-        return "";
-      },
-
-      // robust: colors kann fehlen; Arrays haben length (nicht size)
-      styleForElement: function (filename) {
-        const image = imagesMap.get(filename);
-        if (!image || !image.colors || image.colors.length < 1) return "";
-        const colors = image.colors;
-        const first = colors[0];
-        const second = colors.length > 1 ? colors[1] : "var(--hugg-image-placeholder-color, #ccc)";
-        return ` background: linear-gradient(15deg, ${first}, ${second});`;
-      },
-    };
-
-    // Wichtig: jetzt auf window.Pig zugreifen (wird separat als <script> geladen)
-    const PigCtor = window.Pig;
-    if (!PigCtor) {
-      console.error("❌ Pig ist noch nicht geladen (window.Pig fehlt).");
-      return;
-    }
-
-    const pig = new PigCtor(imageData, options);
-  container.dataset.huggInitialized = "true";
-  window.__pigGalleries = window.__pigGalleries || [];
-  window.__pigGalleries.push(pig);
-  window.__pigGallery = window.__pigGalleries[0];
-
-    debug("🐷 Pig hat Bilder (vor enable):", pig.images.length);
-
-    pig.getImageFromFilename = function (filename) {
-      const entry = this.images.find((e) => e.filename === filename);
-      if (!entry) return undefined;
-      return { ...entry.image, imageTag: entry.imageTag, filename: entry.filename };
-    };
-
-    pig.enable();
-
-    debug(
-      "🐷 Visible count (nach enable):",
-      document.querySelectorAll("figure.hugg-figure").length
-    );
-
-    setTimeout(() => {
-      window.dispatchEvent(new Event("scroll"));
-      window.dispatchEvent(new Event("resize"));
-      requestAnimationFrame(() => {
-        window.__pigGalleries.forEach((gallery) => gallery.update?.());
-      });
-    }, 200);
+    const gallery = Gallery.forContainer(container);
+    if (gallery) await gallery.destroy();
+    errors.get(container)?.remove();
+    errors.delete(container);
+    delete container.dataset.huggInitialized;
   },
 };
-
-// -NN- bis -NNNNNN- (2..6 Ziffern zwischen Bindestrichen)
-function extractNumberFromFilename(filename) {
-/*
-Da regex ja immer wieder rätselhaft ist, hier eine ausführliche Erklärung:
-
-- Das Regex /-(\d{3,6})-/ sucht nach einer Zeichenfolge
-- der Form -XXX- bis -XXXXXX-, also 3 bis 6 Ziffern zwischen Bindestrichen
-- und extrahiert die Ziffern in der Erfassungsgruppe für die weitere Verarbeitung.
-
-1. Aufbau des Regex
-   - `/.../` : Die Schrägstriche begrenzen das Regex in JavaScript.
-   - `-` : Stimmt exakt mit einem Bindestrich (`-`) überein.
-   - `(\d{3,6})` : Dies ist eine Erfassungsgruppe (durch die Klammern `()`), die Folgendes bedeutet:
-     - `\d` : Stimmt mit einer Ziffer (0-9) überein.
-     - `{3,6}` : Gibt an, dass zwischen 3 und 6 Ziffern (einschließlich) erfasst werden sollen.
-   - `-` : Stimmt mit einem weiteren Bindestrich (`-`) überein.
-
-2. Was es tut
-   - Das Regex sucht im `filename`-String nach einer Sequenz, die mit einem Bindestrich (`-`) beginnt, gefolgt von 3 bis 6 Ziffern, und mit einem weiteren Bindestrich (`-`) endet.
-   - Die Ziffern (3 bis 6) werden in der Erfassungsgruppe gespeichert und können später abgerufen werden.
-
-3. Rückgabe von `match`
-   - Wenn eine Übereinstimmung gefunden wird, gibt `filename.match(/-(\d{3,6})-/)` ein Array zurück:
-     - Index `0`: Der gesamte übereinstimmende String (z. B. `-12345-`).
-     - Index `1`: Der Inhalt der ersten Erfassungsgruppe, also die Ziffern (z. B. `12345`).
-   - Wenn keine Übereinstimmung gefunden wird, gibt `match` den Wert `null` zurück.
-
-4. Beispiele
-   - `filename = "test-12345-file.txt"`:
-     - `match` ergibt: `["-12345-", "12345"]`
-     - `match[1]` gibt: `"12345"`
-   - `filename = "test-123-file.txt"`:
-     - `match` ergibt: `["-123-", "123"]`
-   - `filename = "test-12-file.txt"`:
-     - `match` ergibt: `null` (weil weniger als 3 Ziffern nicht passen).
-   - `filename = "test-1234567-file.txt"`:
-     - `match` ergibt: `null` (weil mehr als 6 Ziffern nicht passen).
-*/
-  const match = filename.match(/-(\d{2,6})-/); // <-- //! Regex zum Extrahieren der Nummer
-  return match ? match[1] : null;
-}
 
 export default HugoGridGallery;

@@ -78,7 +78,7 @@ Funktioniert sowohl mit:
 {{- $thumbs := partial "gallery-grid/create-thumbs.html" (dict "images" $images "config" $config) -}}
 {{- if $debug }}{{ warnf "🐛 init.html: %d thumbs erzeugt" (len $thumbs) }}{{ end -}}
 
-{{- $json := $thumbs | jsonify | resources.FromString (printf "%s-gallery.json" (md5 $id)) | resources.Minify -}}
+{{- $json := (dict "schemaVersion" 1 "images" $thumbs) | jsonify | resources.FromString (printf "%s-gallery.json" (md5 $id)) | resources.Minify -}}
 {{- if not $json -}}
   {{- if $debug }}{{ warnf "❌ init.html: Konnte JSON nicht erzeugen für ID=%s" $id }}{{ end -}}
   {{- $scratch.Set "result" (dict "imageDataUrl" "") -}}

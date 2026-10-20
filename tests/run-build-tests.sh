@@ -112,3 +112,13 @@ fi
 echo "PASS: Unified Gallery metadata roles"
 
 node "$root/tests/assert-example-dom.mjs" "$example_output"
+node --import tsx "$root/tests/assert-gallery-manifests.ts" "$example_output"
+
+subpath_output="$temporary_root/subpath-public"
+hugo \
+  --source "$root/exampleSite" \
+  --themesDir "$themes_dir" \
+  --baseURL "https://example.test/portfolio/" \
+  --destination "$subpath_output" \
+  >/dev/null
+node --import tsx "$root/tests/assert-gallery-manifests.ts" "$subpath_output" "https://example.test/portfolio/"

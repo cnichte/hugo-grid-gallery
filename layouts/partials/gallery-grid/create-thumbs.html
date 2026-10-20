@@ -11,8 +11,6 @@
   {{- return -}}
 {{- end -}}
 
-{{- $re := `\d+` -}}
-
 {{- range $index, $img := $images -}}
   {{- with $img.RelPermalink -}}{{- else -}}
     {{- if $debug }}{{ warnf "create-thumbs: [%d] missing RelPermalink – skipped" $index }}{{ end -}}
@@ -26,10 +24,10 @@
   {{- end -}}
 
   {{/* Thumbs ZUERST erzeugen – VOR Wasserzeichen, damit sie clean bleiben */}}
-  {{- $t20  := ($img.Resize "20x").RelPermalink -}}
-  {{- $t100 := ($img.Resize "100x").RelPermalink -}}
-  {{- $t250 := ($img.Resize "250x").RelPermalink -}}
-  {{- $t500 := ($img.Resize "500x").RelPermalink -}}
+  {{- $t20  := $img.Resize "20x" -}}
+  {{- $t100 := $img.Resize "100x" -}}
+  {{- $t250 := $img.Resize "250x" -}}
+  {{- $t500 := $img.Resize "500x" -}}
 
   {{/* Große Version für Lightbox - längere Seite maximal maxImageSize (webtauglich) */}}
   {{- $maxSize := $config.maxImageSize | default 1920 -}}
@@ -68,25 +66,25 @@
   {{- end -}}
 
   {{/* Nummer aus Dateiname */}}
-  {{- $match := findRE $re $title -}}
-  {{- $number := cond (gt (len $match) 0) (index $match 0) "" -}}
+  {{- $match := findRESubmatch `-(\d{2,6})-` $title 1 -}}
+  {{- $number := "" -}}
+  {{- if gt (len $match) 0 -}}
+    {{- $number = index (index $match 0) 1 -}}
+  {{- end -}}
 
-  {{- /* Wenn du aspectRatio drinlassen willst, dann als Float: */ -}}
-  {{- $ratio := div (mul 1.0 ($img.Width)) ($img.Height) -}}
-
+  {{- $sources := slice -}}
+  {{- range slice $t20 $t100 $t250 $t500 -}}
+    {{- $sources = $sources | append (dict "width" .Width "height" .Height "src" .RelPermalink) -}}
+  {{- end -}}
   {{- $entry := dict
+    "id"          $img.RelPermalink
     "title"       $title
-    "name"        $img.Name
-    "width"       $img.Width
-    "height"      $img.Height
-    "thumb"       $t500
-    "full"        $full.RelPermalink
-    "20"          $t20
-    "100"         $t100
-    "250"         $t250
-    "500"         $t500
-    "imageTag"    $number
-    "aspectRatio" $ratio
+    "alt"         $title
+    "width"       $full.Width
+    "height"      $full.Height
+    "src"         $full.RelPermalink
+    "sources"     $sources
+    "badge"       $number
   -}}
 
   {{- if $debug }}{{ warnf "create-thumbs: [%d] %q ok" $index $title }}{{ end -}}
