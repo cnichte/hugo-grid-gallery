@@ -148,6 +148,23 @@ test("actual Hugo pages render configured carousel and single-image presentation
   await expect(page.locator(".hugg-stage-single a")).toHaveCount(1);
 });
 
+test("explicit detail URLs navigate instead of opening the lightbox", async ({ page }) => {
+  await prepare(page);
+  const detailUrl = "/galleries/cards/";
+  await page.evaluate((url) => {
+    const { Gallery, GalleryModel, model, host } = window.presentationTest;
+    const images = model.images.map((image, index) => index === 0 ? { ...image, detailUrl: url } : image);
+    const detailModel = GalleryModel.fromImages(images, document.baseURI);
+    window.presentationTest.gallery = new Gallery({ container: host, model: detailModel, presentation: "carousel" });
+  }, detailUrl);
+  const detailLink = page.locator("#presentation a[data-gallery-image-id]");
+  await detailLink.focus();
+  await expect(detailLink).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(new RegExp(`${detailUrl.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`));
+  await expect(page.locator(".fslightbox-container")).toHaveCount(0);
+});
+
 test("stage resizes public variants, preserves consumer content and reports image failures", async ({ page }) => {
   await prepare(page);
   await page.route("**/broken-public-image.jpg", route => route.fulfill({ status: 404 }));

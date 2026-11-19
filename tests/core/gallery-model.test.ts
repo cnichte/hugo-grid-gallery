@@ -40,6 +40,7 @@ test('rejects ambiguous identities, unsafe URLs, invalid geometry and raw unexpe
     { src: 'https://name:password@example.test/photo.jpg' }, { detailUrl: 'javascript:alert(1)' },
     { sources: [{ width: 300, height: 100, src: 'bad-ratio.jpg' }] },
     { sources: [{ width: 300, height: 200, src: 'a.jpg' }, { width: 300, height: 200, src: 'b.jpg' }] },
+    { sources: [{ width: 1200, height: 800, src: 'same-as-original.jpg' }] },
     { sources: [{ width: 300, height: 200, src: 'a.jpg', private: true }] },
     { metadata: { gps: 'private' } }, { full: 'old-payload.jpg' }, { badge: 42 }
   ]) assert.throws(() => GalleryModel.fromImages([{ ...image(), ...patch }], base), /Gallery/)
@@ -49,12 +50,16 @@ test('rejects ambiguous identities, unsafe URLs, invalid geometry and raw unexpe
 
 test('selects variants by actual width and never loses duplicate filenames or mutates order', () => {
   const model = GalleryModel.fromImages([image('first'), image('second')], base)
+  assert.equal(model.srcSet('first'),
+    'https://example.test/portfolio/images/small.jpg 300w, https://example.test/portfolio/images/medium.jpg 600w, https://example.test/portfolio/images/full.jpg 1200w')
+  assert.equal(GalleryModel.fromImages([{ ...image(), sources: undefined }], base).srcSet('work/photo'), undefined)
   assert.equal(model.source('first', 20), 'https://example.test/portfolio/images/small.jpg')
   assert.equal(model.source('first', 400), 'https://example.test/portfolio/images/medium.jpg')
   assert.equal(model.source('first', 900), 'https://example.test/portfolio/images/full.jpg')
   assert.deepEqual(model.reversed().images.map(value => value.id), ['second', 'first'])
   assert.deepEqual(model.images.map(value => value.id), ['first', 'second'])
   assert.throws(() => model.source('missing', 20), /Gallery/)
+  assert.throws(() => model.srcSet('missing'), /Gallery/)
   assert.throws(() => model.source('first', NaN), /Gallery/)
 })
 

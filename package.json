@@ -14,10 +14,35 @@
   "author": "",
   "private": true,
   "type": "commonjs",
-  "main": "index.js",
+  "main": "./.dist/gallery.js",
+  "types": "./.dist/gallery.d.ts",
+  "exports": {
+    ".": {
+      "types": "./.dist/gallery.d.ts",
+      "import": "./.dist/gallery.js"
+    },
+    "./model": {
+      "types": "./.dist/gallery-model.d.ts",
+      "import": "./.dist/gallery-model.js"
+    },
+    "./runtime/*.js": "./.dist/*.js",
+    "./assets/pig.js": "./assets/ext/pig/pig.js",
+    "./assets/fslightbox.js": "./assets/ext/fslightbox/fslightbox.js",
+    "./notices": "./THIRD_PARTY_NOTICES.md"
+  },
+  "files": [
+    ".dist/*.js",
+    ".dist/*.d.ts",
+    ".dist/package.json",
+    "assets/ext/pig/pig.js",
+    "assets/ext/fslightbox/fslightbox.js",
+    "THIRD_PARTY_NOTICES.md"
+  ],
   "scripts": {
     "dev": "hugo server --source exampleSite --themesDir ../.. --disableFastRender --noHTTPCache",
-    "build": "tsc -p tsconfig.gallery.json",
+    "build": "tsc -p tsconfig.gallery.json && node scripts/prepare-gallery-package.cjs",
+    "build:watch": "npm run build && tsc -p tsconfig.gallery.json --watch --preserveWatchOutput",
+    "prepack": "npm run build",
     "test": "npm run test:core && sh tests/run-build-tests.sh",
     "test:core": "tsx --test tests/core/*.test.ts",
     "test:browser": "npm run build && playwright test",

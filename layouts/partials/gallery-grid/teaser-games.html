@@ -8,6 +8,7 @@
     Oder per Page-Param: teaserPartial = "gallery-grid/teaser-games.html"
 */}}
 {{- $e := .entry -}}
+{{- $page := .page -}}
 {{- $isIndex := .index | default false -}}
 
 {{- with $e.developer -}}
@@ -27,4 +28,8 @@
       {{- else }} {{ .name }}{{ end -}}
     {{- if $isIndex }}</p>{{ else }}</span>{{ end -}}
   {{- end -}}
+{{- end -}}
+{{- if not $isIndex -}}
+  {{- $images := partial "get-images.html" (dict "page" $page) -}}
+  {{- if gt (len $images) 0 }} <span class="hugg-photo-count">This gallery contains {{ len $images }} virtual Photographs.</span>{{ end -}}
 {{- end -}}

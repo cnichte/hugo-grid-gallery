@@ -71,11 +71,25 @@ export class GalleryModel {
   }
 
   source(id: string, width: number): string {
-    const image = this.byId.get(id)
-    if (!image) throw new Error(`Gallery image id not found: ${id}`)
+    const image = this.image(id)
     if (!Number.isFinite(width) || width <= 0) throw new Error('Gallery requested width must be positive and finite.')
     const sources = [...(image.sources ?? []), image].sort((a, b) => a.width - b.width)
     return (sources.find(source => source.width >= width) ?? sources[sources.length - 1]).src
+  }
+
+  image(id: string): GalleryImage {
+    const image = this.byId.get(id)
+    if (!image) throw new Error(`Gallery image id not found: ${id}`)
+    return image
+  }
+
+  srcSet(id: string): string | undefined {
+    const image = this.image(id)
+    if (!image.sources?.length) return undefined
+    return [...image.sources, image]
+      .sort((a, b) => a.width - b.width)
+      .map(source => `${source.src} ${source.width}w`)
+      .join(', ')
   }
 
   reversed(): GalleryModel {
@@ -136,7 +150,9 @@ export class GalleryModel {
       const source = this.geometry(this.object(entry, ['width', 'height', 'src'], `${label} source ${index}`), base, label)
       // A resize can round one dimension by a pixel.
       const ratioError = Math.abs(source.height - source.width * image.height / image.width)
-      if (widths.has(source.width) || ratioError > 1) throw new Error(`Gallery ${label} variants require unique widths and matching aspect ratios.`)
+      if (source.width === image.width || widths.has(source.width) || ratioError > 1) {
+        throw new Error(`Gallery ${label} variants require unique widths and matching aspect ratios.`)
+      }
       widths.add(source.width)
       return Object.freeze(source)
     }).sort((a, b) => a.width - b.width))

@@ -49,6 +49,7 @@ export class Gallery {
   private readonly lightbox: GalleryLightbox
   private readonly originalId: string
   private readonly originalTabIndex: string | null
+  private readonly responsiveObserver: MutationObserver | undefined
   private destroyed = false
   private destruction: Promise<void> | undefined
   readonly model: GalleryModel
@@ -76,11 +77,20 @@ export class Gallery {
     this.originalTabIndex = container.getAttribute('tabindex')
     if (!container.id) container.id = `hugg-runtime-${crypto.randomUUID()}`
     if (this.originalTabIndex === null) container.tabIndex = -1
+    this.responsiveObserver = presentation === 'grid'
+      ? new MutationObserver(() => this.applyResponsiveSources())
+      : undefined
     let engine: GalleryView | undefined
     const activate = (id: string, trigger: HTMLElement) => {
+      const image = model.images.find(candidate => candidate.id === id)
+      if (image?.detailUrl) {
+        window.location.assign(image.detailUrl)
+        return
+      }
       void this.open(id, trigger).catch(error => this.report(error))
     }
     try {
+      this.responsiveObserver?.observe(container, { childList: true, subtree: true })
       if (presentation !== 'grid') {
         engine = new GalleryStage({
           container, model, presentation, initialImageId, activate,
@@ -101,7 +111,9 @@ export class Gallery {
       if (!engine) throw new Error('Gallery layout could not be created.')
       engine.enable()
       this.engine = engine
+      this.applyResponsiveSources()
     } catch (error) {
+      this.responsiveObserver?.disconnect()
       engine?.destroy()
       this.restoreContainer()
       throw error
@@ -129,6 +141,7 @@ export class Gallery {
   destroy(): Promise<void> {
     if (this.destruction) return this.destruction
     this.destroyed = true
+    this.responsiveObserver?.disconnect()
     this.engine.destroy()
     this.destruction = this.lightbox.destroy().then(() => {
       this.restoreContainer()
@@ -141,6 +154,29 @@ export class Gallery {
     this.container.id = this.originalId
     if (this.originalTabIndex === null) this.container.removeAttribute('tabindex')
     else this.container.setAttribute('tabindex', this.originalTabIndex)
+  }
+
+  private applyResponsiveSources(): void {
+    if (this.destroyed || !this.responsiveObserver) return
+    this.container.querySelectorAll('a[data-gallery-image-id]').forEach(link => {
+      if (!(link instanceof HTMLAnchorElement)) return
+      const id = link.dataset.galleryImageId
+      if (!id) return
+      const srcSet = this.model.srcSet(id)
+      if (!srcSet) return
+      const image = this.model.image(id)
+      link.querySelectorAll('img').forEach(element => {
+        if (!(element instanceof HTMLImageElement)) return
+        if (element.getAttribute('srcset') === srcSet &&
+            element.getAttribute('sizes') === 'auto, 100vw' &&
+            element.width === image.width && element.height === image.height && element.loading === 'lazy') return
+        element.srcset = srcSet
+        element.sizes = 'auto, 100vw'
+        element.width = image.width
+        element.height = image.height
+        element.loading = 'lazy'
+      })
+    })
   }
 
   private report(error: unknown): void {

@@ -56,7 +56,7 @@
         <li>Rating Photomode: {{ partial "star-rating.html" (dict "rating" $entry.review.rating "max" 5) }}</li>
         <li>Status: {{ (index $entry.items 0).state }}</li>
         <li>
-          <a class="hugg-gallery-link" href="{{ $galleryPage.RelPermalink }}">&rarr; Visit Gallery</a>{{ partial "count-images-page-partial.html" (dict "path" $galleryPage.RelPermalink "prefix" " - " "suffix" " virtual Photographs" "numberTag" "code") }}
+          &rarr; <a class="hugg-gallery-link" href="{{ $galleryPage.RelPermalink }}">Visit Gallery</a>{{ partial "count-images-page-partial.html" (dict "path" $galleryPage.RelPermalink "prefix" " - " "suffix" " virtual Photographs" "numberTag" "code") }}
         </li>
       </ul>
     </section>

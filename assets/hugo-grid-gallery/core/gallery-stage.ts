@@ -39,6 +39,7 @@ export class GalleryStage {
     this.link.style.touchAction = options.presentation === 'carousel' ? 'pan-y' : 'auto'
     this.image.style.cssText = 'display:block;width:100%;height:100%;object-fit:contain'
     this.image.decoding = 'async'
+    this.image.loading = 'lazy'
     this.caption.className = 'hugg-stage-caption'
     this.status.className = 'hugg-stage-status'
     this.status.setAttribute('aria-live', 'polite')
@@ -157,6 +158,14 @@ export class GalleryStage {
     this.image.alt = image.alt
     this.image.width = image.width
     this.image.height = image.height
+    const srcSet = this.options.model.srcSet(image.id)
+    if (srcSet) {
+      this.image.srcset = srcSet
+      this.image.sizes = 'auto, 100vw'
+    } else {
+      this.image.removeAttribute('srcset')
+      this.image.removeAttribute('sizes')
+    }
     this.caption.textContent = image.title ?? ''
     this.caption.hidden = !image.title
     this.status.textContent = `${index + 1} / ${this.options.model.images.length}`

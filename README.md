@@ -91,6 +91,35 @@ fallback. Rebuild Hugo pages and their browser assets together.
   to find an original. The model neither discovers nor generates images.
 
 `npm run build` emits the browser ESM module and declarations in `.dist`.
+The generated directory has its own ESM package boundary; the Hugo repository
+itself keeps its CommonJS configuration.
+
+### Local npm consumers
+
+For joint development, install this checkout with `npm install /path/to/hugo-grid-gallery`
+(a local directory dependency, with npm's `install-links` left disabled).
+Run `npm run build:watch` here: it first creates the ESM build and then
+recompiles the framework-independent core on changes, without building Hugo.
+The linked consumer uses that same `.dist` directory; no archive or reinstall
+is needed for core edits. Restart a running Node consumer when it has already
+imported a changed module, since Node caches loaded ESM modules.
+
+`npm pack --pack-destination /path/to/consumer/vendor` builds a versioned local
+archive for distribution without publishing it. Import `Gallery`
+from `hugo-grid-gallery` and `GalleryModel` (including its public types) from
+`hugo-grid-gallery/model`. Consumers do not import source files or depend on
+the location of this checkout.
+
+Browser output can copy the four `hugo-grid-gallery/runtime/*.js` modules
+(`gallery`, `gallery-model`, `gallery-lightbox`, `gallery-stage`) into one
+directory, preserving their filenames. The additional exported assets are
+`hugo-grid-gallery/assets/pig.js`, `hugo-grid-gallery/assets/fslightbox.js`
+and `hugo-grid-gallery/notices`. Resolve these package exports rather than
+guessing paths inside `node_modules`. Always distribute the notices.
+The package allowlist excludes Hugo layouts, example content, tests and
+private Pro assets; it includes only compiled core modules, declarations,
+Basic/Pig scripts and package documentation.
+
 For a direct browser consumer, serve that module locally over HTTP(S):
 
 ```js
