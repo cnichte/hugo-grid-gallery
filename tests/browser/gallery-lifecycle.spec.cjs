@@ -18,6 +18,63 @@ async function prepare(page) {
   await expect(page.locator(".hugg-grid")).toHaveAttribute("data-hugg-initialized", "true");
 }
 
+test("configures grid image sizing before assigning responsive sources", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "desktop-light", "Behavior is independent of color scheme.");
+  await prepare(page);
+  await page.evaluate(async () => {
+    const { Gallery } = await import("/gallery-core/gallery.js");
+    const { GalleryModel } = await import("/gallery-core/gallery-model.js");
+    const source = document.querySelector(".hugg-grid");
+    const model = await GalleryModel.load(new URL(source.dataset.huggImageDataUrl, document.baseURI).href);
+    const properties = ["width", "height", "loading", "sizes", "srcset"];
+    const descriptors = new Map();
+    const events = [];
+    for (const property of properties) {
+      const descriptor = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, property);
+      descriptors.set(property, descriptor);
+      Object.defineProperty(HTMLImageElement.prototype, property, {
+        ...descriptor,
+        set(value) {
+          if (this.closest("#responsive-grid")) events.push({ image: this, property });
+          descriptor.set.call(this, value);
+        },
+      });
+    }
+    const host = document.createElement("div");
+    host.id = "responsive-grid";
+    host.style.width = "400px";
+    document.body.prepend(host);
+    window.responsiveGrid = { gallery: new Gallery({ container: host, model }), descriptors, events };
+  });
+  const grid = page.locator("#responsive-grid");
+  await expect(grid.locator(".hugg-figure").first().locator("img:not(.hugg-thumbnail).hugg-loaded")).toBeVisible();
+  await expect(grid.locator(".hugg-figure").first().locator("img[srcset]")).toHaveCount(2);
+  const first = grid.locator(".hugg-figure").first();
+  const result = await first.evaluate(figure => {
+    const images = [...figure.querySelectorAll("img")];
+    return images.map(image => ({
+      order: window.responsiveGrid.events.filter(event => event.image === image).map(event => event.property),
+      sizes: image.sizes,
+      loading: image.loading,
+      srcset: image.srcset,
+      expected: window.responsiveGrid.gallery.model.srcSet(figure.dataset.galleryImageId),
+    }));
+  });
+  for (const image of result) {
+    expect(image.order.slice(0, 5)).toEqual(["width", "height", "loading", "sizes", "srcset"]);
+    expect(image.sizes).toBe("auto, 100vw");
+    expect(image.loading).toBe("lazy");
+    expect(image.srcset).toBe(image.expected);
+  }
+  await page.evaluate(async () => {
+    const { gallery, descriptors } = window.responsiveGrid;
+    await gallery.destroy();
+    for (const [property, descriptor] of descriptors) {
+      Object.defineProperty(HTMLImageElement.prototype, property, descriptor);
+    }
+  });
+});
+
 test("isolates full virtualized inventories and destroys only the owning gallery", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "desktop-light", "Lifecycle is independent of color scheme.");
   const errors = [];

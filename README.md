@@ -45,6 +45,9 @@ Hugo Grid Gallery therefore extends Pig.js with a Hugo-specific pipeline:
 5. The shared `Gallery` runtime passes the complete image model to a separate fsLightbox adapter. Pig only lays out and virtualizes the grid; hidden global source anchors are no longer used.
 6. The module adds cards, sorting, categories, navigation, Recently Updated indicators, and the strict collection contract.
 
+Grid images use responsive variants. Their dimensions, lazy loading, and `sizes`
+are configured before `srcset` to avoid incorrect lightbox sizing in Safari.
+
 Pig.js is therefore the internal layout engine, not the public API. Hugo content and themes use shortcodes, front matter, metadata, and CSS variables; JavaScript consumers use the shared typed runtime below.
 
 ## Shared image contract (first core extraction)

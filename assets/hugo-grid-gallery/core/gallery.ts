@@ -170,11 +170,12 @@ export class Gallery {
         if (element.getAttribute('srcset') === srcSet &&
             element.getAttribute('sizes') === 'auto, 100vw' &&
             element.width === image.width && element.height === image.height && element.loading === 'lazy') return
-        element.srcset = srcSet
-        element.sizes = 'auto, 100vw'
+        // Configure sizing before srcset triggers responsive source selection.
         element.width = image.width
         element.height = image.height
         element.loading = 'lazy'
+        element.sizes = 'auto, 100vw'
+        element.srcset = srcSet
       })
     })
   }
